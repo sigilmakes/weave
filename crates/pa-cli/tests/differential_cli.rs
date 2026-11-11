@@ -218,7 +218,7 @@ const CORPUS: &[&[&str]] = &[
     &["package", "update", "--self"],
     &["package", "update", "a", "b"],
     &["package", "update", "self"],
-    &["package", "update", "prime-agent"],
+    &["package", "update", "wv"],
     &["package", "update", "pi"],
     &["package", "update", "--force"],
     &["package", "install"],
@@ -377,7 +377,7 @@ fn ts_binary_on_path(search_path: &std::ffi::OsStr) -> Result<PathBuf, String> {
 #[test]
 fn path_reference_rejects_rust_binary() {
     let directory = tempfile::tempdir().unwrap();
-    let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
+    let rust = PathBuf::from(env!("CARGO_BIN_EXE_wv"));
     let candidate = directory.path().join("prime-agent");
     std::os::unix::fs::symlink(&rust, &candidate).unwrap();
     let error = ts_binary_on_path(directory.path().as_os_str()).unwrap_err();
@@ -641,27 +641,27 @@ fn declared_native_contract(
         ),
         ["update", "--self"] | ["update", "--force", "--self"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 1, "", "Error: An update target is no longer needed.\nUse \"prime-agent update [--force]\".\n", roots))
-                && declared_output_matches(native, 1, "", "Error: Unknown option for update: --self\nRun \"prime-agent help update\" for usage.\n", roots),
+                && declared_output_matches(native, 1, "", "Error: Unknown option for update: --self\nRun \"wv help update\" for usage.\n", roots),
         ),
         ["update", "package"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 1, "", "Error: Package updates moved to the package command.\nUse \"prime-agent package update [source]\".\n", roots))
-                && declared_output_matches(native, 1, "", "Error: Unknown option for update: package\nRun \"prime-agent help update\" for usage.\n", roots),
+                && declared_output_matches(native, 1, "", "Error: Unknown option for update: package\nRun \"wv help update\" for usage.\n", roots),
         ),
         ["update", "--extensions"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 1, "", "Error: Package updates moved to the package command.\nUse \"prime-agent package update [source]\".\n", roots))
-                && declared_output_matches(native, 1, "", "Error: Unknown option for update: --extensions\nRun \"prime-agent help update\" for usage.\n", roots),
+                && declared_output_matches(native, 1, "", "Error: Unknown option for update: --extensions\nRun \"wv help update\" for usage.\n", roots),
         ),
         ["update", "--self", "package"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 1, "", "Error: Prime Agent and package updates are now separate.\nRun \"prime-agent update [--force]\" and \"prime-agent package update [source]\" separately.\n", roots))
-                && declared_output_matches(native, 1, "", "Error: Unknown option for update: --self\nRun \"prime-agent help update\" for usage.\n", roots),
+                && declared_output_matches(native, 1, "", "Error: Unknown option for update: --self\nRun \"wv help update\" for usage.\n", roots),
         ),
         ["update", "self", "pkg"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 1, "", "Error: Prime Agent and package updates are now separate.\nRun \"prime-agent update [--force]\" and \"prime-agent package update [source]\" separately.\n", roots))
-                && declared_output_matches(native, 1, "", "Error: Unknown option for update: self\nRun \"prime-agent help update\" for usage.\n", roots),
+                && declared_output_matches(native, 1, "", "Error: Unknown option for update: self\nRun \"wv help update\" for usage.\n", roots),
         ),
         ["package", "update", "--self" | "--force"] | ["package", "update", "--extension", "x", "--self" | "y"] | ["package", "update", "--extensions", "--rollback"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 1, "", "Error: Package updates accept only an optional source. Use \"prime-agent update --force\" to update Prime Agent.\n", roots))
-                && declared_output_matches(native, 1, "", "Error: Package updates accept only an optional source. Use \"prime-agent update\" to update Prime Agent.\n", roots),
+                && declared_output_matches(native, 1, "", "Error: Package updates accept only an optional source. Use \"wv update\" to update Weave.\n", roots),
         ),
         _ => None,
     }
@@ -688,7 +688,7 @@ fn declared_late_console_case(case: &[&str]) -> bool {
 #[pa_test_scratch::pa_test]
 #[test]
 fn native_cli_contract_fixtures() {
-    let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
+    let rust = PathBuf::from(env!("CARGO_BIN_EXE_wv"));
     let sandbox = sandbox("native-contract");
     for case in [
         &["--help"][..],
@@ -732,7 +732,7 @@ fn differential_corpus_matches_ts_binary() {
     let Some(ts) = ts_binary() else {
         return;
     };
-    let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
+    let rust = PathBuf::from(env!("CARGO_BIN_EXE_wv"));
     let ts_sandbox = sandbox("ts");
     let rs_sandbox = sandbox("rs");
     let sandbox_roots: Vec<&Path> = vec![&ts_sandbox, &rs_sandbox];
@@ -808,7 +808,7 @@ fn differential_env_flag_cases_match_ts_binary() {
     let Some(ts) = ts_binary() else {
         return;
     };
-    let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
+    let rust = PathBuf::from(env!("CARGO_BIN_EXE_wv"));
     let ts_sandbox = sandbox("ts-env");
     let rs_sandbox = sandbox("rs-env");
     let sandbox_roots: Vec<&Path> = vec![&ts_sandbox, &rs_sandbox];
@@ -879,7 +879,7 @@ fn differential_session_export_matches_ts_binary() {
     let Some(ts) = ts_binary() else {
         return;
     };
-    let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
+    let rust = PathBuf::from(env!("CARGO_BIN_EXE_wv"));
     let ts_sandbox = sandbox("ts-export");
     let rs_sandbox = sandbox("rs-export");
     let sandbox_roots: Vec<&Path> = vec![&ts_sandbox, &rs_sandbox];

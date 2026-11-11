@@ -19,7 +19,7 @@ use pa_test_scratch::Command;
 
 fn run(args: &[&str], script: &serde_json::Value) -> (String, String, i32) {
     let home = tempfile::TempDir::new().unwrap();
-    let bin = env!("CARGO_BIN_EXE_prime-agent");
+    let bin = env!("CARGO_BIN_EXE_wv");
     let output = Command::new(bin)
         .args(args)
         .env("HOME", home.path())
@@ -115,7 +115,7 @@ fn run_in_home(
     args: &[&str],
     script: &serde_json::Value,
 ) -> (String, String, i32) {
-    let bin = env!("CARGO_BIN_EXE_prime-agent");
+    let bin = env!("CARGO_BIN_EXE_wv");
     let output = Command::new(bin)
         .args(args)
         .env("HOME", home)
@@ -311,7 +311,7 @@ fn fresh_lease_failure_rejects_print_json_and_rpc_before_model_http_or_journal_a
             "models":[{"id":"lease-model","name":"Lease model","reasoning":false,"input":["text"],
                 "contextWindow":10000,"maxTokens":1000,"cost":{"input":0,"output":0,"cacheRead":0,"cacheWrite":0}}]
         }}}).to_string()).unwrap();
-        let output = Command::new(env!("CARGO_BIN_EXE_prime-agent"))
+        let output = Command::new(env!("CARGO_BIN_EXE_wv"))
             .args(&args)
             .args(["--provider", "lease-fixture", "--model", "lease-model"])
             .env("HOME", home.path())
@@ -480,7 +480,7 @@ fn print_mode_resume_unknown_selector_fails_with_browse_hint() {
         "stderr: {stderr}"
     );
     assert!(
-        stderr.contains("Open prime-agent and press left-arrow to browse sessions."),
+        stderr.contains("Open wv and press left-arrow to browse sessions."),
         "stderr: {stderr}"
     );
 }
@@ -967,7 +967,7 @@ fn run_in_home_cwd(
     args: &[&str],
     script: &serde_json::Value,
 ) -> (String, String, i32) {
-    let bin = env!("CARGO_BIN_EXE_prime-agent");
+    let bin = env!("CARGO_BIN_EXE_wv");
     let output = Command::new(bin)
         .args(args)
         .env("HOME", home)
