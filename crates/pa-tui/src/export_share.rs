@@ -304,6 +304,7 @@ esac
                 "--nocapture",
             ])
             .env(CHILD, dir.path())
+            .env("PA_TEST_PRIVATE_HOME_ROOT", dir.path())
             .env("PATH", dir.path())
             .env("HOME", dir.path())
             .env("TMPDIR", dir.path())

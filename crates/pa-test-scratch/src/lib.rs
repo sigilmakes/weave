@@ -35,6 +35,9 @@ pub use pa_test_macros::pa_test;
 pub use timing::{TestTiming, TimingRecorder, TimingSpan};
 
 #[cfg(unix)]
+mod private_home;
+
+#[cfg(unix)]
 mod hook {
     use std::path::{Path, PathBuf};
     use std::sync::OnceLock;
@@ -59,6 +62,7 @@ mod hook {
             // The scratch root is the new temporary directory for this process and every child it
             // spawns, so a test that writes a fixture without naming a path still lands here.
             std::env::set_var("TMPDIR", &root);
+            super::private_home::install(&root);
             let process_owner = std::env::var_os("PA_TEST_PROCESS_OWNER").is_none();
             #[cfg(target_os = "linux")]
             if process_owner {

@@ -135,6 +135,48 @@ mod tests {
         assert!(env.get("PATH").unwrap().contains("/bin"));
     }
 
+    #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
+    #[test]
+    fn startup_excludes_the_ambient_agent_bin_from_shell_path() {
+        const PROBE: &str = "PA_TEST_SHELL_AGENT_PATH_PROBE";
+        if std::env::var_os(PROBE).is_some() {
+            let env = get_shell_env();
+            assert!(
+                !std::env::split_paths(&env["PATH"])
+                    .any(|path| path == std::path::Path::new("/ambient-agent/bin")),
+                "shell PATH retained the ambient agent bin: {}",
+                env["PATH"]
+            );
+            assert_eq!(
+                std::env::var("PA_TEST_REAL_PI_CODING_AGENT_DIR").unwrap(),
+                "/ambient-agent"
+            );
+            let root = std::env::var_os("PA_TEST_PRIVATE_HOME_ROOT").unwrap();
+            assert!(std::path::Path::new(&get_agent_dir()).starts_with(root));
+            return;
+        }
+        let output = pa_test_scratch::Command::new(std::env::current_exe().unwrap())
+            .env_clear()
+            .args([
+                "--exact",
+                "tools::shell_utils::tests::startup_excludes_the_ambient_agent_bin_from_shell_path",
+                "--nocapture",
+            ])
+            .env(PROBE, "1")
+            .env("PI_CODING_AGENT_DIR", "/ambient-agent")
+            .env("PATH", "/tools")
+            .env("TMPDIR", std::env::temp_dir())
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
     #[pa_test_scratch::pa_test]
     #[test]
     fn sanitize_removes_control_chars() {

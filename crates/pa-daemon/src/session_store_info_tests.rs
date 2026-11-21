@@ -695,17 +695,26 @@ fn bulk_zero_usage_session_fixture(path: &Path, index: usize) {
 #[test]
 fn zero_usage_states_are_capped_by_count_not_only_the_usage_budget() {
     let dir = test_dir();
+    let generation = SessionInfoGeneration::from_metadata(&fs::metadata(&dir).unwrap());
+    let mut cache = SessionInfoScanCache::default();
     // Zero-usage sessions: a timestamped user message each (no assistant usage block, so
     // only the count cap can evict; the message also passes the modified_ms > 0 store guard).
     for index in 0..(SESSION_SCAN_MAX_CACHED_STATES + 8) {
         let path = dir.join(format!("zero-{index}.jsonl"));
-        bulk_zero_usage_session_fixture(&path, index);
-        let info = read_session_info(&path).unwrap();
+        let mut state = SessionScanState::fresh(generation);
+        for row in [
+            json!({"type":"session","id":format!("z{index}"),"timestamp":"2026-09-23T00:00:00.000Z","cwd":"/test"}),
+            json!({"type":"message","id":format!("zm{index}"),"timestamp":"2026-09-23T00:00:00.000Z","message":{"role":"user","content":"n","timestamp":1_790_110_000_000_u64}}),
+        ] {
+            fold_scan_entry(&mut state.acc, &row.to_string()).unwrap();
+        }
+        let info = state.build_info(&path, || None).unwrap();
+        assert!(info.usage.is_none());
+        cache.store_state(&path, state);
         assert_eq!(info.message_count, 1);
     }
     // The cache really populated past the cap and stayed capped: LRU-first eviction
     // dropped the earliest-written files, the latest stay resident.
-    let cache = super::session_info_cache().lock().unwrap();
     assert_eq!(
         super::SESSION_SCAN_MAX_CACHED_STATES,
         cache.states.len(),
@@ -720,6 +729,7 @@ fn zero_usage_states_are_capped_by_count_not_only_the_usage_budget() {
         "zero-{}.jsonl",
         super::SESSION_SCAN_MAX_CACHED_STATES + 7
     ))));
+    fs::remove_dir_all(dir).unwrap();
 }
 
 #[pa_test_scratch::pa_test]

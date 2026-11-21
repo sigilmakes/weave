@@ -494,6 +494,7 @@ async fn killed_skill_sync_refuses_reacquisition_requires_offline_recovery() {
         std::fs::write(&uv, script).unwrap();
         let mut command = std::process::Command::new(std::env::current_exe().unwrap());
         command.env_clear().env("PATH", std::env::var_os("PATH").unwrap_or_default())
+            .env("PA_TEST_PRIVATE_HOME_ROOT", root.path())
             .env("HOME", root.path()).env("TMPDIR", root.path())
             .env("XDG_CONFIG_HOME", root.path().join("config")).env("XDG_DATA_HOME", root.path().join("data"))
             .env("XDG_STATE_HOME", root.path().join("state")).env("XDG_CACHE_HOME", root.path().join("cache"))

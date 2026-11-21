@@ -43,6 +43,7 @@ const CACHE_FILL_DEADLINE: Duration = Duration::from_secs(30);
 const SEEDED_CHILDREN: usize = 60;
 const SEEDED_MESSAGES_PER_CHILD: usize = 800;
 const SEEDED_ASSISTANT_CONTENT_KB: usize = 12;
+const SEEDED_TOKENS_PER_ASSISTANT_ROW: usize = 1000;
 
 struct Daemon {
     child: Child,
@@ -171,7 +172,7 @@ fn scripted_turn(client: &mut Client, session_id: &str, text: &str, id: &str) {
 /// Seed one persisted child session file: a version-3 header plus a parent-
 /// chained message run with usage records, sized in the megabytes so an inline
 /// walk pays a real parse cost per child.
-fn seed_child_session(dir: &std::path::Path, child_id: &str) {
+fn seed_child_session(dir: &std::path::Path, child_id: &str) -> u64 {
     const CHILD_HEADER_ROWS: u64 = 1;
     let fixture_generation = pa_test_scratch::timing::span("setup.fixture_generation");
     std::fs::create_dir_all(dir).expect("child dir");
@@ -199,7 +200,7 @@ fn seed_child_session(dir: &std::path::Path, child_id: &str) {
                 "content": if index % 2 == 0 { "seed question" } else { &filler },
                 "usage": if index % 2 == 1 {
                     serde_json::json!({
-                        "input": 1000, "output": 100, "cacheRead": 0, "cacheWrite": 0,
+                        "input": SEEDED_TOKENS_PER_ASSISTANT_ROW, "output": 100, "cacheRead": 0, "cacheWrite": 0,
                         "totalTokens": 1100,
                         "cost": { "input": 1, "output": 1, "cacheRead": 0, "cacheWrite": 0, "total": 2 },
                     })
@@ -214,6 +215,7 @@ fn seed_child_session(dir: &std::path::Path, child_id: &str) {
         write_session_rows(&file, &content),
         SEEDED_MESSAGES_PER_CHILD as u64 + CHILD_HEADER_ROWS
     );
+    content.len() as u64
 }
 
 #[pa_test_scratch::pa_test]
@@ -270,10 +272,12 @@ fn get_context_tree_answers_from_memory_on_a_grown_store() {
     let artifacts_root = agent_dir
         .join("session-artifacts")
         .join(&durable_session_id);
-    for index in 0..SEEDED_CHILDREN {
-        let child_dir = artifacts_root.join(format!("sub-latency-{index:03}"));
-        seed_child_session(&child_dir, &format!("latency-child-{index:03}"));
-    }
+    let expected_seeded_bytes: u64 = (0..SEEDED_CHILDREN)
+        .map(|index| {
+            let child_dir = artifacts_root.join(format!("sub-latency-{index:03}"));
+            seed_child_session(&child_dir, &format!("latency-child-{index:03}"))
+        })
+        .sum();
     let seeded_bytes: u64 = (0..SEEDED_CHILDREN)
         .map(|index| {
             std::fs::metadata(
@@ -285,6 +289,7 @@ fn get_context_tree_answers_from_memory_on_a_grown_store() {
             .len()
         })
         .sum();
+    assert_eq!(seeded_bytes, expected_seeded_bytes);
 
     // The attach warms the cache (the background walk fires here), like the
     // operator's chat surface attaching at open.
@@ -340,6 +345,13 @@ fn get_context_tree_answers_from_memory_on_a_grown_store() {
                 with_usage, SEEDED_CHILDREN,
                 "persisted children must carry the seeded usage"
             );
+            for node in children {
+                assert_eq!(
+                    node["totalUsage"]["input"].as_u64(),
+                    Some((SEEDED_MESSAGES_PER_CHILD / 2 * SEEDED_TOKENS_PER_ASSISTANT_ROW) as u64),
+                    "the reader must consume every seeded assistant usage row"
+                );
+            }
             saw_seeded_children = true;
             break;
         }

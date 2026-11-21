@@ -141,6 +141,7 @@ fn isolated_command(executable: &Path, root: &Path) -> Command {
     assert!(executable.is_absolute(), "child executable must be pinned");
     let mut command = Command::new(executable);
     command.env_clear().current_dir(root).stdin(Stdio::null());
+    command.env("PA_TEST_PRIVATE_HOME_ROOT", root);
     for key in [
         "HOME",
         "USERPROFILE",
