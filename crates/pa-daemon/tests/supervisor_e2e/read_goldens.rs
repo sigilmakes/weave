@@ -97,9 +97,8 @@ fn session_stats_and_header_match_live_daemon_goldens() {
         vec!["type", "version", "id", "timestamp", "cwd", "rlmDepth"]
     );
 
-    // get_session_stats: the TS stats shape over the scripted turn. The
-    // scripted engine has no model, so `contextUsage` is omitted exactly like
-    // a TS session without a model context window.
+    // Recorded totals retain their wire shape; a scripted engine explicitly
+    // reports that its live context figure is unavailable.
     client.send_command(
         "st1",
         &serde_json::json!({ "type": "get_session_stats", "activeSessionId": session_id }),
@@ -124,6 +123,8 @@ fn session_stats_and_header_match_live_daemon_goldens() {
     assert_eq!(data["tokens"]["cacheRead"], 0);
     assert_eq!(data["tokens"]["cacheWrite"], 0);
     assert_eq!(data["tokens"]["total"], 128);
+    assert_eq!(data["contextUsage"]["tokens"], serde_json::Value::Null);
+    assert!(data["contextUsage"]["unavailable"].is_string());
     let stats_keys: Vec<&str> = data
         .as_object()
         .expect("stats object")
@@ -143,6 +144,7 @@ fn session_stats_and_header_match_live_daemon_goldens() {
             "totalMessages",
             "tokens",
             "cost",
+            "contextUsage",
         ]
     );
 

@@ -422,7 +422,7 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
     crate::mcp::McpManager::register_host_handlers(&mcp_manager, &mut handlers);
     let turn_boundary = Arc::new(super::turn_boundary::TurnBoundaryRequests::new());
     turn_boundary.register_model_info_handler(&mut handlers, model_info.clone());
-    super::history_host::register_history_handlers(&turn_boundary, &mut handlers);
+    turn_boundary.register_history_handlers(&mut handlers);
     let keep_recent_tokens = compaction_settings
         .keep_recent_tokens
         .unwrap_or(super::compaction::DEFAULT_KEEP_RECENT_TOKENS);

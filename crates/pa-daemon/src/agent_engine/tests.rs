@@ -10,6 +10,7 @@ use serde_json::Map;
 mod abort;
 pub(crate) mod abort_fixture;
 mod compaction;
+mod context_usage;
 mod failover_facts;
 mod goal;
 mod model_resolution;

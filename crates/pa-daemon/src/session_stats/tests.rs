@@ -93,7 +93,7 @@ fn entry_with_usage(total_tokens: u64) -> (&'static str, Value) {
     )
 }
 
-/// The usage accounting bridges the gap; the context estimate stays on the strict branch.
+/// The usage accounting bridges the gap.
 #[test]
 fn ghost_gap_does_not_zero_the_token_totals() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -121,7 +121,7 @@ fn ghost_gap_does_not_zero_the_token_totals() {
         1,
         "the strict walk truncates at the ghost"
     );
-    let stats = session_stats(&store, Some(1000));
+    let stats = session_stats(&store, None);
     assert_eq!(
         stats["tokens"]["input"],
         json!(10),
@@ -132,13 +132,6 @@ fn ghost_gap_does_not_zero_the_token_totals() {
     assert_eq!(stats["tokens"]["total"], json!(115));
     assert_eq!(stats["assistantMessages"], json!(1));
     assert_eq!(stats["userMessages"], json!(2));
-    // The context estimate anchors on the strict branch only: the gap
-    // entry's user message estimates, the pre-gap assistant does not.
-    assert_eq!(
-        stats["contextUsage"]["tokens"],
-        json!(4),
-        "13 chars, ceil/4"
-    );
 }
 
 #[test]
@@ -154,7 +147,7 @@ fn counts_messages_tool_calls_and_tokens() {
             json!({ "message": message("toolResult", &json!({ "content": "out" })) }),
         ),
     ]);
-    let stats = session_stats(&store, Some(1000));
+    let stats = session_stats(&store, None);
     let expected = json!({
         "sessionFile": store.path.display().to_string(),
         "sessionId": "s1",
@@ -165,70 +158,12 @@ fn counts_messages_tool_calls_and_tokens() {
         "totalMessages": 3,
         "tokens": { "input": 10, "output": 5, "cacheRead": 0, "cacheWrite": 0, "total": 15 },
         "cost": 0.25,
-        "contextUsage": { "tokens": 129, "contextWindow": 1000, "percent": 12.9 },
     });
     assert_eq!(stats, expected);
 }
 
 #[test]
-fn context_usage_sums_trailing_estimates() {
-    // No usage at all: everything is estimated.
-    let store = store_with(&[(
-        "message",
-        json!({ "message": message("user", &json!({ "content": "12345678" })) }),
-    )]);
-    let stats = session_stats(&store, Some(1000));
-    assert_eq!(stats["contextUsage"]["tokens"], 2, "8 chars / 4");
-    assert_eq!(stats["contextUsage"]["percent"], 0.2);
-}
-
-#[test]
-fn compaction_without_post_usage_returns_null_tokens() {
-    let store = store_with(&[
-        (
-            "message",
-            json!({ "message": message("user", &json!({ "content": "hi" })) }),
-        ),
-        entry_with_usage(50),
-        ("compaction", json!({ "firstKeptEntryId": "e2" })),
-        (
-            "message",
-            json!({ "message": message("user", &json!({ "content": "again" })) }),
-        ),
-    ]);
-    let stats = session_stats(&store, Some(1000));
-    assert_eq!(stats["contextUsage"]["tokens"], Value::Null);
-    assert_eq!(stats["contextUsage"]["percent"], Value::Null);
-    assert_eq!(stats["contextUsage"]["contextWindow"], 1000);
-}
-
-#[test]
-fn compaction_with_post_usage_estimates() {
-    let store = store_with(&[
-        entry_with_usage(50),
-        ("compaction", json!({ "firstKeptEntryId": "e1" })),
-        entry_with_usage(300),
-        (
-            "message",
-            json!({ "message": message("user", &json!({ "content": "1234" })) }),
-        ),
-    ]);
-    let stats = session_stats(&store, Some(1000));
-    assert_eq!(
-        stats["contextUsage"]["tokens"], 301,
-        "300 usage + 1 estimated"
-    );
-}
-
-#[test]
-fn no_context_window_omits_usage() {
-    let store = store_with(&[entry_with_usage(128)]);
-    let stats = session_stats(&store, None);
-    assert!(stats.get("contextUsage").is_none());
-}
-
-#[test]
-fn aborted_assistant_usage_is_skipped() {
+fn aborted_assistant_usage_counts_toward_recorded_totals() {
     let store = store_with(&[
         (
             "message",
@@ -240,14 +175,11 @@ fn aborted_assistant_usage_is_skipped() {
         ),
         entry_with_usage(128),
     ]);
-    let stats = session_stats(&store, Some(1000));
-    // The aborted turn still counts as an assistant message, but only the valid usage
-    // anchors the estimate.
+    let stats = session_stats(&store, None);
     assert_eq!(stats["assistantMessages"], 2);
     // Token totals sum every assistant usage, aborted or not (TS `getSessionStats` does not
     // filter on stopReason).
     assert_eq!(stats["tokens"]["total"], 17);
-    assert_eq!(stats["contextUsage"]["tokens"], 128);
 }
 
 /// The compaction boundary against the windowed reader: the windowed store
@@ -340,14 +272,11 @@ fn compaction_boundary_serves_the_windowed_reader() {
             "cacheWrite": 0, "total": 7_300,
         },
         "cost": 0.875,
-        "contextUsage": {
-            "tokens": 3_100, "contextWindow": 1_000, "percent": 310.0,
-        },
     });
-    assert_eq!(session_stats(&full, Some(1_000)), expected);
+    assert_eq!(session_stats(&full, None), expected);
     // The windowed store (retained region) and the full store walk the same kept region:
     // identical active numbers.
-    assert_eq!(session_stats(&windowed, Some(1_000)), expected);
+    assert_eq!(session_stats(&windowed, None), expected);
 }
 
 /// The audit's captured devbox session (sanitized): the pre-cut ancestry is
@@ -382,16 +311,11 @@ fn captured_compaction_boundary_matches_ts_active_stats() {
             "total": 223_936_248,
         },
         "cost": 3.921_395,
-        "contextUsage": {
-            "tokens": 53_519,
-            "contextWindow": 200_000,
-            "percent": 26.759_500_000_000_003,
-        },
     });
-    assert_eq!(session_stats(&full, Some(200_000)), expected);
+    assert_eq!(session_stats(&full, None), expected);
     // The windowed store (retained region) and the full store walk the same kept region:
     // identical active numbers.
-    assert_eq!(session_stats(&windowed, Some(200_000)), expected);
+    assert_eq!(session_stats(&windowed, None), expected);
 }
 
 /// The compaction boundary in miniature: kept rows plus a ghost-parent row
@@ -470,12 +394,9 @@ fn compaction_boundary_drops_the_pre_cut_ancestry() {
         "totalMessages": 6,
         "tokens": { "input": 30, "output": 15, "cacheRead": 0, "cacheWrite": 0, "total": 45 },
         "cost": 1.0,
-        // The strict branch truncates at the ghost parent, so the context estimate anchors on
-        // the last row alone.
-        "contextUsage": { "tokens": 15, "contextWindow": 1000, "percent": 1.5 },
     });
-    assert_eq!(session_stats(&full, Some(1000)), expected);
-    assert_eq!(session_stats(&windowed, Some(1000)), expected);
+    assert_eq!(session_stats(&full, None), expected);
+    assert_eq!(session_stats(&windowed, None), expected);
 }
 
 /// TS `buildSessionContext` records the last compaction along its leaf-to-root path only,

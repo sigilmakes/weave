@@ -165,36 +165,25 @@ impl ActivityDock {
     }
 }
 
-/// Context usage for the tray label (`N (P%)`).
+/// Context usage for the tray label.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ContextUsage {
-    pub tokens: u64,
-    pub context_window: u64,
+pub enum ContextUsage {
+    Available { tokens: u64, context_window: u64 },
+    Unavailable,
 }
 
 impl ContextUsage {
-    /// The wire shape (TS `SessionStats["contextUsage"]`, served by
-    /// `get_session_stats` and carried by the attach snapshot's state):
-    /// unknown tokens — a session right after a compaction — yield
-    /// `None`, which clears the tray display instead of keeping the
-    /// stale one (TS `patchConnectionState` replaces the snapshot).
     #[must_use]
     pub fn from_wire(usage: &Value) -> Option<Self> {
+        if usage.get("unavailable").and_then(Value::as_str).is_some() {
+            return Some(Self::Unavailable);
+        }
         let tokens = usage.get("tokens").and_then(Value::as_u64)?;
         let context_window = usage.get("contextWindow").and_then(Value::as_u64)?;
-        Some(Self {
+        Some(Self::Available {
             tokens,
             context_window,
         })
-    }
-
-    #[must_use]
-    pub fn percent(&self) -> f64 {
-        if self.context_window == 0 {
-            0.0
-        } else {
-            (self.tokens as f64 / self.context_window as f64) * 100.0
-        }
     }
 }
 
@@ -480,11 +469,20 @@ pub fn render_tray_with_hint(
             right.push(Span::styled(" \u{00b7} ".to_string(), dim));
         }
         right.push(Span::styled(
-            format!(
-                "{} ({:.0}%)",
-                format_token_count(context.tokens),
-                context.percent()
-            ),
+            match context {
+                ContextUsage::Available {
+                    tokens,
+                    context_window,
+                } => {
+                    let percent = if *context_window == 0 {
+                        0.0
+                    } else {
+                        (*tokens as f64 / *context_window as f64) * 100.0
+                    };
+                    format!("{} ({percent:.0}%)", format_token_count(*tokens))
+                }
+                ContextUsage::Unavailable => "context unavailable".to_string(),
+            },
             dim,
         ));
     }

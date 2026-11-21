@@ -13,11 +13,11 @@ use crate::worker::Worker;
 impl Worker {
     /// `get_connection_state`: the connection state block with the TS
     /// `createConnectionState` `heartbeat` overlay (the TS null here).
-    pub(crate) fn handle_get_connection_state(&self) -> DaemonResponse {
+    pub(crate) async fn handle_get_connection_state(&self) -> DaemonResponse {
         if let Err(response) = self.require_created("get_connection_state") {
             return response;
         }
-        let (core, inputs) = self.connection_state_inputs();
+        let (core, inputs) = self.connection_state_inputs().await;
         let state = Self::connection_state_locked(&core, inputs);
         drop(core);
         let mut value = serde_json::to_value(&state).unwrap_or(Value::Null);
@@ -66,6 +66,8 @@ impl Worker {
         }
         // The root node is in-memory data: the usage walk reads the live store
         // borrow-based, so the request answers from memory even on a grown store.
+        let live_context_usage =
+            crate::session_stats::engine_context_usage(self.engine.as_ref()).await;
         let (label, context_usage, own_usage, total_usage, session_id, own_usage_by_model) = {
             let core = self.core.lock().unwrap();
 
@@ -73,9 +75,7 @@ impl Worker {
             let label = store
                 .and_then(|store| store.session_name().map(str::to_string))
                 .unwrap_or_else(|| "main agent".to_string());
-            let context_usage = store.and_then(|store| {
-                crate::session_stats::store_context_usage(store, self.engine.model_context_window())
-            });
+            let context_usage = store.map(|_| live_context_usage);
             let session_id = store.map(|store| store.session_id().to_string());
             // The per-model own-usage breakdown rides the node when every
             // usage-carrying row resolved to a model (`None` degrades to the plain totals).

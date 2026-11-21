@@ -186,6 +186,30 @@ fn context_tree_root_only_matches_ts() {
 }
 
 #[test]
+fn context_tree_explicit_unavailable_usage_has_no_numeric_meter() {
+    for context_window in [serde_json::json!(128_000), serde_json::Value::Null] {
+        let tree = serde_json::json!({
+            "id": "root", "label": "session", "status": "active",
+            "ownUsage": {"input": 9123},
+            "contextUsage": {
+                "tokens": null, "percent": null, "contextWindow": context_window,
+                "unavailable": "context strategy has no meter"
+            },
+            "children": []
+        });
+        let rows = plain(&context_tree_rows(&tree, 100, ContextTreeScope::Collapsed));
+        assert_eq!(
+            rows.iter()
+                .filter(|row| row.ends_with("unavailable"))
+                .count(),
+            2
+        );
+        assert!(rows.iter().any(|row| row == "Current: unavailable"));
+        assert!(!rows.iter().any(|row| row.contains('%')));
+    }
+}
+
+#[test]
 fn context_tree_full_shape_matches_ts() {
     let tree = json(
         r#"{

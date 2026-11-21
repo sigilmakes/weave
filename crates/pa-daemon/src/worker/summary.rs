@@ -15,22 +15,24 @@ impl Worker {
         SummaryInputs::lock(&self.core, self.engine.as_ref(), &self.user_bash)
     }
 
-    pub(crate) fn connection_state_inputs(
+    pub(crate) async fn connection_state_inputs(
         &self,
     ) -> (
         std::sync::MutexGuard<'_, SessionCore>,
         ConnectionStateInputs,
     ) {
-        ConnectionStateInputs::lock(&self.core, self.engine.as_ref(), &self.user_bash)
+        let usage = crate::session_stats::engine_context_usage(self.engine.as_ref()).await;
+        ConnectionStateInputs::lock(&self.core, self.engine.as_ref(), &self.user_bash, &usage)
     }
 
-    pub(crate) fn attach_inputs(
+    pub(crate) async fn attach_inputs(
         &self,
     ) -> (
         std::sync::MutexGuard<'_, SessionCore>,
         SummaryInputs,
         ConnectionStateInputs,
     ) {
+        let usage = crate::session_stats::engine_context_usage(self.engine.as_ref()).await;
         loop {
             let details = ModelDetails::read(self.engine.as_ref(), ModelDetailScope::Connection);
             let core = self.core.lock().unwrap();
@@ -41,8 +43,12 @@ impl Worker {
                     &self.user_bash,
                     details.model.clone(),
                 );
-                let connection =
-                    ConnectionStateInputs::capture(self.engine.as_ref(), &self.user_bash, details);
+                let connection = ConnectionStateInputs::capture(
+                    self.engine.as_ref(),
+                    &self.user_bash,
+                    details,
+                    usage.clone(),
+                );
                 if self.engine.model_identity() == identity {
                     return (core, summary, connection);
                 }
@@ -124,18 +130,7 @@ impl Worker {
             goal: inputs.goal,
             scoped_models: core.scoped_models.clone(),
             active_tool_names: Vec::new(),
-            // TS `createAgentConnectionState` carries `contextUsage:
-            // session.getContextUsage()` in every attach snapshot, so
-            // the client's first frame reads the tray's context usage
-            // off the snapshot instead of blocking on a
-            // `get_session_stats` round-trip (TS fetches stats only
-            // after a turn or compaction settles). The same store walk
-            // `get_session_stats` serves, under the same core lock the
-            // attach already holds: `None` without a model context
-            // window, exactly like the stats response.
-            context_usage: store.and_then(|store| {
-                crate::session_stats::store_context_usage(store, inputs.model_context_window)
-            }),
+            context_usage: store.map(|_| inputs.context_usage),
         }
     }
 
@@ -365,7 +360,6 @@ struct ModelDetails {
     identity: (Option<String>, Option<String>),
     model: Option<Value>,
     available_thinking_levels: Option<Vec<String>>,
-    model_context_window: Option<u64>,
 }
 
 impl ModelDetails {
@@ -373,12 +367,9 @@ impl ModelDetails {
         loop {
             let identity = engine.model_identity();
             let model = engine.model_metadata();
-            let (available_thinking_levels, model_context_window) = match scope {
-                ModelDetailScope::Summary => (None, None),
-                ModelDetailScope::Connection => (
-                    engine.supported_thinking_levels(),
-                    engine.model_context_window(),
-                ),
+            let available_thinking_levels = match scope {
+                ModelDetailScope::Summary => None,
+                ModelDetailScope::Connection => engine.supported_thinking_levels(),
             };
             // Warm the engine's cached effective level while no core guard is
             // held: an uncached level may also resolve the model registry.
@@ -388,7 +379,6 @@ impl ModelDetails {
                     identity,
                     model,
                     available_thinking_levels,
-                    model_context_window,
                 };
             }
         }
@@ -453,7 +443,7 @@ pub(crate) struct ConnectionStateInputs {
     available_thinking_levels: Vec<String>,
     is_bash_running: bool,
     goal: Value,
-    model_context_window: Option<u64>,
+    context_usage: Value,
 }
 
 impl ConnectionStateInputs {
@@ -461,13 +451,14 @@ impl ConnectionStateInputs {
         core: &'a Mutex<SessionCore>,
         engine: &dyn SessionEngine,
         user_bash: &crate::user_bash::UserBash,
+        context_usage: &Value,
     ) -> (std::sync::MutexGuard<'a, SessionCore>, Self) {
         loop {
             let details = ModelDetails::read(engine, ModelDetailScope::Connection);
             let core = core.lock().unwrap();
             if engine.model_identity() == details.identity {
                 let identity = details.identity.clone();
-                let inputs = Self::capture(engine, user_bash, details);
+                let inputs = Self::capture(engine, user_bash, details, context_usage.clone());
                 if engine.model_identity() == identity {
                     return (core, inputs);
                 }
@@ -479,6 +470,7 @@ impl ConnectionStateInputs {
         engine: &dyn SessionEngine,
         user_bash: &crate::user_bash::UserBash,
         details: ModelDetails,
+        context_usage: Value,
     ) -> Self {
         Self {
             model: details.model,
@@ -490,7 +482,7 @@ impl ConnectionStateInputs {
                 .unwrap_or_else(|| vec!["off".to_string()]),
             is_bash_running: user_bash.is_running(),
             goal: engine.goal_state_value(),
-            model_context_window: details.model_context_window,
+            context_usage,
         }
     }
 }

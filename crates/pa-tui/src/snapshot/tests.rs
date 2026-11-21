@@ -2033,8 +2033,13 @@ fn attach_snapshot_carries_the_tray_context_usage() {
     let data = attach_data_from_response(attach).unwrap();
     let reconstructed = reconstruct(&data);
     let usage = reconstructed.context_usage.expect("snapshot context usage");
-    assert_eq!(usage.tokens, 9_400);
-    assert_eq!(usage.context_window, 128_000);
+    assert_eq!(
+        usage,
+        crate::chrome::ContextUsage::Available {
+            tokens: 9_400,
+            context_window: 128_000,
+        }
+    );
 
     // Unknown tokens (a fresh compaction) clear the tray display.
     let mut attach = slim_attach();
@@ -2046,6 +2051,25 @@ fn attach_snapshot_carries_the_tray_context_usage() {
         json!({ "tokens": null, "contextWindow": 128_000, "percent": null });
     let data = attach_data_from_response(attach).unwrap();
     assert_eq!(reconstruct(&data).context_usage, None);
+
+    for context_window in [json!(128_000), Value::Null] {
+        let mut attach = slim_attach();
+        attach
+            .get_mut("snapshot")
+            .expect("snapshot")
+            .get_mut("state")
+            .expect("state")["contextUsage"] = json!({
+            "tokens": null,
+            "percent": null,
+            "contextWindow": context_window,
+            "unavailable": "context strategy has no meter"
+        });
+        let data = attach_data_from_response(attach).unwrap();
+        assert_eq!(
+            reconstruct(&data).context_usage,
+            Some(crate::chrome::ContextUsage::Unavailable)
+        );
+    }
 
     // A state without the field (a model-less session) stays `None`.
     let data = attach_data_from_response(slim_attach()).unwrap();

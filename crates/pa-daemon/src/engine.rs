@@ -232,6 +232,21 @@ pub trait SessionEngine: Send + Sync {
     fn model_context_window(&self) -> Option<u64> {
         None
     }
+    /// Read the model-facing context figure. Engines without a live view report
+    /// unavailability; callers must not substitute recorded provider usage.
+    fn live_context_usage(
+        &self,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<
+                    Output = Result<Option<pa_core::session_engine::turn_boundary::ContextUsage>>,
+                > + Send
+                + '_,
+        >,
+    > {
+        Box::pin(async { anyhow::bail!("the session has no live engine context") })
+    }
+
     /// The worker's turn loop completed: clear turn-scoped continuation
     /// state. Child task prompts are admitted at spawn, never here.
     fn on_turn_done(&self) {}
