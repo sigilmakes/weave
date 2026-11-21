@@ -6,6 +6,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Result};
+use pa_core::session::artifacts::NestedArtifactsRoot;
 use pa_types::daemon::DaemonCommand;
 use serde_json::{json, Value};
 
@@ -19,6 +20,7 @@ use crate::daemon_session_list::{
 struct ParsedDaemonCommand {
     socket_path: PathBuf,
     json: bool,
+    check: bool,
     positionals: Vec<String>,
     /// `--help`/`-h` becomes the internal no-op `help` command, exactly like the TS
     /// `runDaemonClientCommand` fallthrough.
@@ -30,6 +32,19 @@ struct ParsedDaemonCommand {
 pub(crate) fn run_daemon_command(command: &str, args: &[String]) -> Result<()> {
     let parsed = parse_daemon_command(command, args)?;
     if parsed.help {
+        return Ok(());
+    }
+    if parsed.check {
+        if parsed.json {
+            bail!("--check prints a text report; it is not a JSON command");
+        }
+        if !parsed.positionals.is_empty() {
+            bail!(
+                "--check takes no other arguments: {}",
+                parsed.positionals.join(" ")
+            );
+        }
+        run_artifacts_check()?;
         return Ok(());
     }
     let mut client = DaemonClient::connect(&parsed.socket_path)?;
@@ -49,6 +64,7 @@ pub(crate) fn run_daemon_command(command: &str, args: &[String]) -> Result<()> {
 fn parse_daemon_command(command: &str, args: &[String]) -> Result<ParsedDaemonCommand> {
     let mut socket_path = default_socket_path();
     let mut json = false;
+    let mut check = false;
     let mut positionals: Vec<String> = Vec::new();
     let mut passthrough = false;
     let mut index = 0;
@@ -71,6 +87,7 @@ fn parse_daemon_command(command: &str, args: &[String]) -> Result<ParsedDaemonCo
             return Ok(ParsedDaemonCommand {
                 socket_path,
                 json,
+                check,
                 positionals,
                 help: true,
             });
@@ -87,14 +104,89 @@ fn parse_daemon_command(command: &str, args: &[String]) -> Result<ParsedDaemonCo
             json = true;
             continue;
         }
+        if arg == "--check" && (command == "list" || command == "sessions") {
+            check = true;
+            continue;
+        }
         positionals.push(arg.to_string());
     }
     Ok(ParsedDaemonCommand {
         socket_path,
         json,
+        check,
         positionals,
         help: false,
     })
+}
+
+/// `list --check` / `sessions --check`: the read-only report of nested artifacts trees, so an
+/// operator can size up what the old artifact-dir formula duplicated before removing anything by
+/// hand. The tree is derived from the same session dir the listing scans. Nothing under it is
+/// created, renamed, or removed.
+fn run_artifacts_check() -> Result<()> {
+    let sessions_dir = pa_daemon::paths::sessions_dir(&crate::config::get_agent_dir())?;
+    let root = pa_core::session::artifacts::session_artifacts_root(&sessions_dir)
+        .ok_or_else(|| anyhow!("{} has no parent directory", sessions_dir.display()))?;
+    let nested = pa_core::session::artifacts::nested_artifacts_roots(&root);
+    print!("{}", artifacts_check_report(&root, &nested));
+    Ok(())
+}
+
+/// The `--check` report: one line per nested root, then the space those roots hold. A root's
+/// size covers its whole subtree, so the total adds only the roots that are not inside another
+/// listed root; the deeper lines are already counted by their parents.
+fn artifacts_check_report(root: &Path, nested: &[NestedArtifactsRoot]) -> String {
+    use std::fmt::Write as _;
+
+    if nested.is_empty() {
+        return format!(
+            "No nested session-artifacts roots under {}\n",
+            root.display()
+        );
+    }
+    let outermost: u64 = nested
+        .iter()
+        .filter(|entry| {
+            !nested
+                .iter()
+                .any(|other| other.path != entry.path && entry.path.starts_with(&other.path))
+        })
+        .map(|entry| entry.bytes)
+        .sum();
+    let mut report = format!(
+        "Nested session-artifacts roots under {}: {}\n",
+        root.display(),
+        nested.len()
+    );
+    for entry in nested {
+        let _ = writeln!(
+            report,
+            "{:>10}  {}",
+            format_bytes(entry.bytes),
+            entry.path.display()
+        );
+    }
+    let _ = writeln!(
+        report,
+        "\n{:>10}  outermost roots only",
+        format_bytes(outermost)
+    );
+    report
+}
+
+/// A byte count with a binary unit, two decimals above a kibibyte.
+fn format_bytes(bytes: u64) -> String {
+    const UNITS: [&str; 4] = ["KiB", "MiB", "GiB", "TiB"];
+    if bytes < 1024 {
+        return format!("{bytes} B");
+    }
+    let mut value = bytes as f64 / 1024.0;
+    let mut unit = 0;
+    while value >= 1024.0 && unit + 1 < UNITS.len() {
+        value /= 1024.0;
+        unit += 1;
+    }
+    format!("{value:.2} {}", UNITS[unit])
 }
 
 fn default_socket_path() -> PathBuf {
@@ -669,6 +761,36 @@ mod tests {
 
         let missing = parse_daemon_command("list", &args(&["--daemon-socket"])).unwrap_err();
         assert_eq!(missing.to_string(), "--daemon-socket requires a value");
+    }
+
+    #[test]
+    fn the_check_report_sizes_the_outermost_roots_only() {
+        let nested = [
+            NestedArtifactsRoot {
+                path: PathBuf::from("/agent/session-artifacts/p/session-artifacts"),
+                bytes: 1536,
+            },
+            NestedArtifactsRoot {
+                path: PathBuf::from(
+                    "/agent/session-artifacts/p/session-artifacts/c/session-artifacts",
+                ),
+                bytes: 512,
+            },
+        ];
+        assert_eq!(
+            artifacts_check_report(Path::new("/agent/session-artifacts"), &nested),
+            concat!(
+                "Nested session-artifacts roots under /agent/session-artifacts: 2\n",
+                "  1.50 KiB  /agent/session-artifacts/p/session-artifacts\n",
+                "     512 B  /agent/session-artifacts/p/session-artifacts/c/session-artifacts\n",
+                "\n",
+                "  1.50 KiB  outermost roots only\n",
+            )
+        );
+        assert_eq!(
+            artifacts_check_report(Path::new("/agent/session-artifacts"), &[]),
+            "No nested session-artifacts roots under /agent/session-artifacts\n"
+        );
     }
 
     #[test]

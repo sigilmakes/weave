@@ -1,0 +1,1 @@
+- Child sessions write artifacts to the agent's `session-artifacts` tree instead of nesting a second tree under their parent's partition, and `list --check` / `sessions --check` report every nested root with its size.

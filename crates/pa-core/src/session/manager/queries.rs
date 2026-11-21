@@ -2,6 +2,7 @@
 //! history snapshot, the branch scans, the window-backed reads, and the getters.
 
 use super::{FileEntry, Path, SessionHeader, SessionManager, SessionTree};
+use crate::session::artifacts;
 
 impl SessionManager {
     /// The active compacted context without hydrating old message bodies: an
@@ -310,18 +311,13 @@ impl SessionManager {
         self.window = None;
         Ok(())
     }
-    /// Session artifact directory (`dirname(sessionDir)/session-artifacts/<id>`);
+    /// Session artifact directory (the agent's artifacts tree, keyed by session id);
     /// only persisted sessions have one.
     #[must_use]
     pub fn get_session_artifact_dir(&self) -> Option<std::path::PathBuf> {
         self.persist
-            .then(|| {
-                self.session_dir
-                    .parent()
-                    .map(|root| root.join("session-artifacts"))
-            })
+            .then(|| artifacts::session_artifact_dir(&self.session_dir, &self.session_id))
             .flatten()
-            .map(|root| root.join(&self.session_id))
     }
 
     #[must_use]

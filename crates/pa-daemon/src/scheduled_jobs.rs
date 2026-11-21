@@ -27,12 +27,9 @@ use crate::worker::{QueuedItem, SessionCore, Worker};
 /// turn must not pin the dispatch lane forever).
 const FIRE_SETTLE_TIMEOUT_MS: u64 = 15 * 60 * 1000;
 
-/// The session-artifact directory for one session file: `<sessions>/../session-artifacts/<id>`.
+/// The session-artifact directory for one session file: the agent's artifacts tree keyed by id.
 pub(crate) fn session_artifact_dir(session_file: &Path, session_id: &str) -> Option<PathBuf> {
-    session_file
-        .parent()?
-        .parent()
-        .map(|root| root.join("session-artifacts").join(session_id))
+    pa_core::session::artifacts::session_artifact_dir(session_file.parent()?, session_id)
 }
 
 /// The scheduler hooks: how a claimed job reaches this session.
