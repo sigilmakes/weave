@@ -6,6 +6,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Result};
+use pa_core::session::artifacts::NestedArtifactsRoot;
 use pa_types::daemon::DaemonCommand;
 use serde_json::{json, Value};
 
@@ -34,7 +35,10 @@ pub(crate) fn run_daemon_command(command: &str, args: &[String]) -> Result<()> {
         return Ok(());
     }
     if parsed.check {
-        run_artifacts_check(parsed.json);
+        if parsed.json {
+            bail!("--check prints a text report; it is not a JSON command");
+        }
+        run_artifacts_check()?;
         return Ok(());
     }
     let mut client = DaemonClient::connect(&parsed.socket_path)?;
@@ -111,12 +115,30 @@ fn parse_daemon_command(command: &str, args: &[String]) -> Result<ParsedDaemonCo
 
 /// `list --check` / `sessions --check`: the read-only report of nested artifacts trees, so an
 /// operator can size up what the old artifact-dir formula duplicated before removing anything by
-/// hand. Nothing under the tree is created, renamed, or removed.
-fn run_artifacts_check(json: bool) {
-    let root = crate::config::get_agent_dir().join("session-artifacts");
+/// hand. The tree is derived from the same session dir the listing scans. Nothing under it is
+/// created, renamed, or removed.
+fn run_artifacts_check() -> Result<()> {
+    let sessions_dir = pa_daemon::paths::sessions_dir(&crate::config::get_agent_dir())?;
+    let root = pa_core::session::artifacts::session_artifacts_root(&sessions_dir)
+        .ok_or_else(|| anyhow!("{} has no parent directory", sessions_dir.display()))?;
     let nested = pa_core::session::artifacts::nested_artifacts_roots(&root);
-    // A root inside another root is already counted by its ancestor.
-    let on_disk: u64 = nested
+    print!("{}", artifacts_check_report(&root, &nested));
+    Ok(())
+}
+
+/// The `--check` report: one line per nested root, then the space those roots hold. A root's
+/// size covers its whole subtree, so the total adds only the roots that are not inside another
+/// listed root; the deeper lines are already counted by their parents.
+fn artifacts_check_report(root: &Path, nested: &[NestedArtifactsRoot]) -> String {
+    use std::fmt::Write as _;
+
+    if nested.is_empty() {
+        return format!(
+            "No nested session-artifacts roots under {}\n",
+            root.display()
+        );
+    }
+    let outermost: u64 = nested
         .iter()
         .filter(|entry| {
             !nested
@@ -125,41 +147,25 @@ fn run_artifacts_check(json: bool) {
         })
         .map(|entry| entry.bytes)
         .sum();
-    if json {
-        print_json(&json!({
-            "root": root.display().to_string(),
-            "nestedRoots": nested
-                .iter()
-                .map(|entry| json!({
-                    "path": entry.path.display().to_string(),
-                    "bytes": entry.bytes,
-                }))
-                .collect::<Vec<_>>(),
-            "totalBytes": on_disk,
-        }));
-        return;
-    }
-    if nested.is_empty() {
-        println!("No nested session-artifacts roots under {}", root.display());
-        return;
-    }
-    println!(
-        "Nested session-artifacts roots under {}: {}",
+    let mut report = format!(
+        "Nested session-artifacts roots under {}: {}\n",
         root.display(),
         nested.len()
     );
-    for entry in &nested {
-        println!(
+    for entry in nested {
+        let _ = writeln!(
+            report,
             "{:>10}  {}",
             format_bytes(entry.bytes),
             entry.path.display()
         );
     }
-    println!(
-        "\n{:>10}  on disk in {} nested roots",
-        format_bytes(on_disk),
-        nested.len()
+    let _ = writeln!(
+        report,
+        "\n{:>10}  outermost roots only",
+        format_bytes(outermost)
     );
+    report
 }
 
 /// A byte count with a binary unit, two decimals above a kibibyte.
@@ -749,6 +755,36 @@ mod tests {
 
         let missing = parse_daemon_command("list", &args(&["--daemon-socket"])).unwrap_err();
         assert_eq!(missing.to_string(), "--daemon-socket requires a value");
+    }
+
+    #[test]
+    fn the_check_report_sizes_the_outermost_roots_only() {
+        let nested = [
+            NestedArtifactsRoot {
+                path: PathBuf::from("/agent/session-artifacts/p/session-artifacts"),
+                bytes: 1536,
+            },
+            NestedArtifactsRoot {
+                path: PathBuf::from(
+                    "/agent/session-artifacts/p/session-artifacts/c/session-artifacts",
+                ),
+                bytes: 512,
+            },
+        ];
+        assert_eq!(
+            artifacts_check_report(Path::new("/agent/session-artifacts"), &nested),
+            concat!(
+                "Nested session-artifacts roots under /agent/session-artifacts: 2\n",
+                "  1.50 KiB  /agent/session-artifacts/p/session-artifacts\n",
+                "     512 B  /agent/session-artifacts/p/session-artifacts/c/session-artifacts\n",
+                "\n",
+                "  1.50 KiB  outermost roots only\n",
+            )
+        );
+        assert_eq!(
+            artifacts_check_report(Path::new("/agent/session-artifacts"), &[]),
+            "No nested session-artifacts roots under /agent/session-artifacts\n"
+        );
     }
 
     #[test]

@@ -4,10 +4,17 @@ use std::path::{Path, PathBuf};
 
 const ARTIFACTS_DIR_NAME: &str = "session-artifacts";
 
-/// The artifacts tree that owns a session dir. A session dir already inside the tree (an RLM
-/// child's partition under `<root>/<parent>/<child>`) belongs to that tree; a top-level session
-/// dir's tree is its sibling `session-artifacts` directory. The probe is bounded to the two
-/// levels a partition can nest, so an unrelated directory deeper in the path never matches.
+/// The artifacts tree that owns a session dir: the nearest ancestor named `session-artifacts`,
+/// probed at distances one and two, else the dir's sibling `session-artifacts` directory.
+///
+/// The bound matches the two layouts a live session dir can have. A top-level dir is
+/// `<agent>/<sessions>` (distance one is the agent dir, which is not the tree). A current child
+/// dir is exactly `<agent>/session-artifacts/<parent>/<child>` (distance two is the tree). A dir
+/// written by the pre-fix formula, `<agent>/session-artifacts/<parent>/session-artifacts/<child>`,
+/// resolves to the inner tree at distance two, so those children keep their existing partition
+/// instead of moving. Probing further would not help: an unrelated ancestor named
+/// `session-artifacts` at distance one or two still matches, which is why this stays a probe of
+/// the session dir's own surroundings rather than a search up the whole path.
 #[must_use]
 pub fn session_artifacts_root(session_dir: &Path) -> Option<PathBuf> {
     for ancestor in session_dir.ancestors().skip(1).take(2) {
@@ -37,6 +44,9 @@ pub struct NestedArtifactsRoot {
 
 /// Every `session-artifacts` root below `artifacts_root`, each sized over its whole subtree.
 /// Read-only: nothing under the tree is created, renamed, or removed.
+///
+/// A size counts regular files only: symlinks are skipped, so a link cycle cannot be followed,
+/// and an unreadable directory contributes zero rather than failing the report.
 #[must_use]
 pub fn nested_artifacts_roots(artifacts_root: &Path) -> Vec<NestedArtifactsRoot> {
     let mut nested = Vec::new();

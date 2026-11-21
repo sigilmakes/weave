@@ -363,6 +363,13 @@ fn print_inline_subagents_wait_for_replies_and_combine_them() {
             "the disposed kernel's final snapshot landed at {}",
             snapshot.display()
         );
+        // The other half of the fix: the child wrote nothing into a second
+        // tree under its parent's partition.
+        assert!(
+            !artifacts.join("session-artifacts").exists(),
+            "no nested artifacts tree under the parent's partition: {}",
+            artifacts.display()
+        );
     }
 }
 
