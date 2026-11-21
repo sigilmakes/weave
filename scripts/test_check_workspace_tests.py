@@ -69,6 +69,20 @@ class WorkspaceTestScheduling(unittest.TestCase):
             self.assertEqual(env["RUST_TEST_THREADS"], "4")
             self.assertEqual(env["CARGO_HOME"], ambient["CARGO_HOME"])
 
+    def test_target_environment_marks_the_private_home_owner(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            kernel = root / "qualified/bin/python"
+            kernel.parent.mkdir(parents=True)
+            kernel.write_text("approved fixture")
+            state = root / "isolated"
+            ambient = {"PATH": "/tools", "CARGO_TARGET_DIR": str(root / "target"),
+                       "CARGO_HOME": str(root / "cargo"),
+                       "PRIME_AGENT_KERNEL_PYTHON": str(kernel),
+                       "PA_E2E_KERNEL_PYTHON": str(kernel)}
+            env = gate.target_environment(root, state, ambient)
+            self.assertEqual(env["PA_TEST_PRIVATE_HOME_ROOT"], str(state))
+
     def test_disabled_and_feature_gated_manifests_fail_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             manifest = Path(tmp) / "Cargo.toml"

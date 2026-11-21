@@ -7,6 +7,7 @@ const DIRECTORIES: &[(&str, &str, &str)] = &[
     ("XDG_CACHE_HOME", "PA_TEST_REAL_XDG_CACHE_HOME", "cache"),
     ("XDG_DATA_HOME", "PA_TEST_REAL_XDG_DATA_HOME", "data"),
     ("XDG_STATE_HOME", "PA_TEST_REAL_XDG_STATE_HOME", "state"),
+    ("XDG_RUNTIME_DIR", "PA_TEST_REAL_XDG_RUNTIME_DIR", "runtime"),
     (
         "PRIME_AGENT_CODING_AGENT_DIR",
         "PA_TEST_REAL_CODING_AGENT_DIR",
@@ -43,6 +44,19 @@ const INHERITED_DIRECTORIES: &[(&str, &str, &str)] = &[
     ),
 ];
 
+const SOCKET_PATHS: &[(&str, &str, &str)] = &[(
+    "PRIME_AGENT_DAEMON_SOCKET",
+    "PA_TEST_REAL_DAEMON_SOCKET",
+    "daemon.sock",
+)];
+const PACKAGE_VARIABLES: &[(&str, &str)] = &[
+    ("PI_PACKAGE_DIR", "PA_TEST_REAL_PI_PACKAGE_DIR"),
+    (
+        "PI_SKIP_VERSION_CHECK",
+        "PA_TEST_REAL_PI_SKIP_VERSION_CHECK",
+    ),
+];
+
 pub(crate) fn install(root: &Path) {
     // Re-executed fixtures inherit isolation and may explicitly override individual paths.
     if std::env::var_os(ROOT_MARKER).is_some() {
@@ -62,6 +76,31 @@ pub(crate) fn install(root: &Path) {
         let directory = root.join(relative);
         std::fs::create_dir_all(&directory).expect("private test home directory");
         std::env::set_var(variable, directory);
+    }
+    for &(variable, original, relative) in SOCKET_PATHS {
+        if let Some(value) = std::env::var_os(variable) {
+            if Path::new(&value).starts_with(root) {
+                continue;
+            }
+            std::env::set_var(original, value);
+        }
+        std::env::set_var(variable, root.join(relative));
+    }
+    for &(variable, original) in PACKAGE_VARIABLES {
+        if let Some(value) = std::env::var_os(variable) {
+            std::env::set_var(original, value);
+        }
+        std::env::remove_var(variable);
+    }
+    let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(2)
+        .expect("scratch crate belongs to the workspace");
+    if checkout
+        .join("prime-agent-runtime/pyproject.toml")
+        .is_file()
+    {
+        std::env::set_var("PI_PACKAGE_DIR", checkout);
     }
     std::env::set_var(ROOT_MARKER, root);
 }
@@ -107,6 +146,105 @@ mod tests {
             child.env(variable, &original);
         }
         assert!(child.status().unwrap().success());
+    }
+
+    #[test]
+    fn startup_replaces_installed_package_variables() {
+        const PROBE: &str = "PA_TEST_PACKAGE_PROBE";
+        if std::env::var_os(PROBE).is_some() {
+            assert_eq!(
+                std::env::var("PA_TEST_REAL_PI_PACKAGE_DIR").unwrap(),
+                "/installed-package"
+            );
+            assert_eq!(
+                std::env::var("PA_TEST_REAL_PI_SKIP_VERSION_CHECK").unwrap(),
+                "1"
+            );
+            assert!(std::env::var_os("PI_SKIP_VERSION_CHECK").is_none());
+            let checkout = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .ancestors()
+                .nth(2)
+                .unwrap();
+            if checkout
+                .join("prime-agent-runtime/pyproject.toml")
+                .is_file()
+            {
+                assert_eq!(
+                    std::env::var_os("PI_PACKAGE_DIR").as_deref(),
+                    Some(checkout.as_os_str())
+                );
+            } else {
+                assert!(std::env::var_os("PI_PACKAGE_DIR").is_none());
+            }
+            return;
+        }
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "private_home::tests::startup_replaces_installed_package_variables",
+            ])
+            .env_remove(ROOT_MARKER)
+            .env(PROBE, "1")
+            .env("PI_PACKAGE_DIR", "/installed-package")
+            .env("PI_SKIP_VERSION_CHECK", "1")
+            .status()
+            .unwrap();
+        assert!(status.success());
+    }
+
+    #[test]
+    fn startup_replaces_external_daemon_socket() {
+        const PROBE: &str = "PA_TEST_SOCKET_PROBE";
+        if std::env::var_os(PROBE).is_some() {
+            assert_eq!(
+                std::env::var("PA_TEST_REAL_DAEMON_SOCKET").unwrap(),
+                "/external-daemon.sock"
+            );
+            assert_eq!(
+                std::env::var_os("PRIME_AGENT_DAEMON_SOCKET").map(std::path::PathBuf::from),
+                Some(std::env::temp_dir().join("daemon.sock"))
+            );
+            return;
+        }
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "private_home::tests::startup_replaces_external_daemon_socket",
+            ])
+            .env_remove(ROOT_MARKER)
+            .env(PROBE, "1")
+            .env("PRIME_AGENT_DAEMON_SOCKET", "/external-daemon.sock")
+            .status()
+            .unwrap();
+        assert!(status.success());
+    }
+
+    #[test]
+    fn startup_replaces_external_runtime_directory() {
+        const PROBE: &str = "PA_TEST_RUNTIME_DIR_PROBE";
+        if std::env::var_os(PROBE).is_some() {
+            assert_eq!(
+                std::env::var("PA_TEST_REAL_XDG_RUNTIME_DIR").unwrap(),
+                "/external-runtime"
+            );
+            assert_eq!(
+                std::env::var_os("XDG_RUNTIME_DIR").map(std::path::PathBuf::from),
+                Some(std::env::temp_dir().join("runtime"))
+            );
+            assert!(std::env::temp_dir().join("runtime").is_dir());
+            return;
+        }
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "private_home::tests::startup_replaces_external_runtime_directory",
+            ])
+            .env_remove(ROOT_MARKER)
+            .env(PROBE, "1")
+            .env("XDG_RUNTIME_DIR", "/external-runtime")
+            .status()
+            .unwrap();
+        assert!(status.success());
     }
 
     #[test]
