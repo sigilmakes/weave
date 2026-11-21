@@ -229,6 +229,11 @@ impl HistoryWalk {
     }
 
     fn push_message(&mut self, id: Option<String>, source: Option<usize>, message: AgentMessage) {
+        if crate::session_engine::compaction::has_usage(&message) {
+            // A fresh observation describes the view as it stands now, edits and
+            // all, so the correction the previous anchor needed no longer applies.
+            self.usage_drift = UsageDrift::default();
+        }
         let role = role_of(&message);
         let turn = self.advance_turn(role);
         let seq = self.next_seq;
@@ -368,10 +373,12 @@ impl HistoryWalk {
                                 describe(&snapshot[position], position)
                             ));
                         }
-                        if anchor.is_some_and(|anchor| position == anchor) {
-                            anchor_lost = true;
-                        } else if anchor.is_some_and(|anchor| position < anchor) {
-                            drift.tokens -= token_delta(&snapshot[position]);
+                        if snapshot[position].message.is_some() {
+                            if anchor.is_some_and(|anchor| position == anchor) {
+                                anchor_lost = true;
+                            } else if anchor.is_some_and(|anchor| position < anchor) {
+                                drift.tokens -= token_delta(&snapshot[position]);
+                            }
                         }
                         dropped.insert(position);
                     }
@@ -401,10 +408,12 @@ impl HistoryWalk {
                         .message
                         .as_ref()
                         .map_or_else(|| text_tokens(&replacement.text), estimate_tokens);
-                    if anchor.is_some_and(|anchor| position == anchor) {
-                        anchor_lost = true;
-                    } else if anchor.is_some_and(|anchor| position < anchor) {
-                        drift.tokens += token_delta(&replacement) - token_delta(entry);
+                    if replacement.message.is_some() {
+                        if anchor.is_some_and(|anchor| position == anchor) {
+                            anchor_lost = true;
+                        } else if anchor.is_some_and(|anchor| position < anchor) {
+                            drift.tokens += token_delta(&replacement) - token_delta(entry);
+                        }
                     }
                     replaced.insert(position, replacement);
                 }
@@ -1616,6 +1625,107 @@ mod tests {
         assert!(error.contains("drop and replace"), "{error}");
         assert_eq!(walk.entries.len(), 4, "a rejected edit mutates nothing");
         assert_eq!(walk.entries[1].text, "m1");
+    }
+
+    #[test]
+    fn a_fresh_usage_anchor_resets_the_edit_correction() {
+        let big = "x".repeat(200_000);
+        let lines = [
+            header(),
+            user_row("u0", "", &big),
+            user_row("u1", "u0", "kept"),
+            assistant_row_with_usage("a0", "u1", 90_000),
+            edit_row("e0", "a0", &serde_json::json!([{"op": "drop", "at": 0}])),
+            assistant_row_with_usage("a1", "e0", 40_000),
+            user_row("u2", "a1", "after"),
+            edit_row("e1", "u2", &serde_json::json!([{"op": "drop", "at": "u1"}])),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        let settings = crate::session_engine::compaction::CompactionSettings {
+            threshold_percent: 50.0,
+            enabled: true,
+            reserve_tokens: 0,
+            keep_recent_tokens: 1_000,
+        };
+        let before_second_edit = crate::session_engine::compaction::context_tokens_with_drift(
+            &walk.messages(),
+            walk.usage_drift,
+        );
+        let dropped = walk
+            .hidden
+            .iter()
+            .find(|entry| entry.id.as_deref() == Some("u1"))
+            .unwrap();
+        assert_eq!(
+            walk.usage_drift.tokens,
+            -i64::try_from(dropped.tokens).unwrap(),
+            "the second edit drops one row above the 40_000 anchor"
+        );
+        let trailing = estimate_tokens(walk.messages().last().unwrap());
+        assert_eq!(
+            before_second_edit,
+            40_001 + trailing - dropped.tokens,
+            "the anchor reports the edited view, without the 50_000-token drop"
+        );
+        assert!(
+            !walk.usage_drift.anchor_lost,
+            "the first edit's lost anchor is forgotten once a new one reports"
+        );
+        assert!(
+            !crate::session_engine::compaction::threshold_compaction_due_with_drift(
+                &walk.messages(),
+                walk.usage_drift,
+                200_000,
+                0,
+                &settings
+            ),
+            "a fresh 40_000-token observation is not the 0 the stale drift claimed"
+        );
+    }
+
+    #[test]
+    fn a_note_before_the_anchor_does_not_move_the_estimate() {
+        let big = "x".repeat(200_000);
+        let note = "y".repeat(200_000);
+        let lines = [
+            header(),
+            user_row("u0", "", &big),
+            assistant_row_with_usage("a0", "u0", 90_000),
+            edit_row(
+                "e0",
+                "a0",
+                &serde_json::json!([{"op": "insert", "text": note, "role": "notes", "after": 0}]),
+            ),
+            edit_row("e1", "e0", &serde_json::json!([{"op": "drop", "at": 1}])),
+            edit_row(
+                "e2",
+                "e1",
+                &serde_json::json!([{"op": "insert", "text": note, "role": "notes", "after": 0}]),
+            ),
+            edit_row(
+                "e3",
+                "e2",
+                &serde_json::json!([{"op": "replace", "at": 1, "text": note}]),
+            ),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        assert_eq!(walk.skipped_edits, 0);
+        assert!(
+            walk.usage_drift.is_clean(),
+            "a note has no message, so no edit of one changes what the anchor counted"
+        );
+        let estimate = crate::session_engine::compaction::context_tokens_with_drift(
+            &walk.messages(),
+            walk.usage_drift,
+        );
+        assert_eq!(
+            estimate,
+            crate::session_engine::compaction::estimate_context_tokens(&walk.messages()).tokens,
+            "no correction: the anchor plus whatever trails it"
+        );
+        assert!((90_000..91_000).contains(&estimate), "{estimate}");
     }
 
     #[test]

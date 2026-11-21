@@ -417,16 +417,28 @@ async fn edit(
         .upgrade()
         .ok_or_else(|| anyhow::anyhow!("the session ended before the edit could be served"))?;
     requests.mark_refresh();
-    let live = requests.assemble_live_view().await?;
+    let window = runtime.context_window.unwrap_or_default();
+    let counts_line = format!(
+        "dropped {}, replaced {}, inserted {}",
+        counts.dropped, counts.replaced, counts.inserted
+    );
+    let Ok(live) = requests.assemble_live_view().await else {
+        // The row is written and the walk validated it before the write, so a
+        // failed assembly costs the figure, not the edit; retrying would only
+        // append a second row.
+        return Ok(json!({
+            "status": format!(
+                "{counts_line} \u{2014} written; live unmeasured (the view did not assemble)"
+            ),
+            "live_tokens": Value::Null,
+            "window": window,
+        }));
+    };
     let live_tokens =
         crate::session_engine::compaction::context_tokens_with_drift(&live.messages, live.drift);
-    let window = runtime.context_window.unwrap_or_default();
     Ok(json!({
         "status": format!(
-            "dropped {}, replaced {}, inserted {} \u{2014} live {} / {}",
-            counts.dropped,
-            counts.replaced,
-            counts.inserted,
+            "{counts_line} \u{2014} live {} / {}",
             thousands(live_tokens),
             thousands(window)
         ),
@@ -1013,6 +1025,30 @@ mod tests {
             user_texts_loop(&agent.state().await.messages),
             vec!["m0", "m1", "m2"]
         );
+    }
+
+    #[tokio::test]
+    async fn compact_status_reports_the_figure_history_index_reports_after_an_edit() {
+        let (_dir, session) = session_with(12);
+        let (requests, mut handlers, _session, _tmp) = registered(session);
+        requests.register_compact_handlers(&mut handlers, 1_000);
+        let index = handler(&handlers, "history.index");
+        let status = handler(&handlers, "compact.status");
+
+        let before = index(payload(json!({"limit": 1}))).await.unwrap();
+        handler(&handlers, "history.edit")(payload(json!({
+            "changes": [{"op": "drop", "at": [0, 6]}],
+        })))
+        .await
+        .unwrap();
+        let after = index(payload(json!({"limit": 1}))).await.unwrap();
+        assert!(after["live_tokens"].as_u64() < before["live_tokens"].as_u64());
+
+        let compact = status(payload(json!({}))).await.unwrap();
+        assert_eq!(compact["tokens"], after["live_tokens"]);
+        assert_eq!(compact["context_window"], after["window"]);
+        let expected_percent = after["live_tokens"].as_u64().unwrap() as f64 / 200_000.0 * 100.0;
+        assert!((compact["percent"].as_f64().unwrap() - expected_percent).abs() < 1e-9);
     }
 
     #[tokio::test]

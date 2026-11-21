@@ -161,7 +161,7 @@ A session entry recording the agent's own substitution of part of the context vi
 _Avoid_: Compaction, history deletion
 
 **History view**:
-The ordered entries one leaf's request is built from after every compaction and context edit on the path has applied. It is the view `history.path()` reports and a context edit addresses; it is not the session tree.
+The ordered entries one leaf's request is built from after every compaction and context edit on the path has applied. A note is in the view but never in the request; a compaction row in an archive representation the provider replays stands for the expanded prefix, not one message. It is the view a context edit addresses; `history.path()` reports a bounded, previewed form of it (500 entries, 200 characters each, by default) and `history.get()` one entry or region in full. It is not the session tree.
 _Avoid_: Session tree, canonical history
 
 **Compaction strategy**:

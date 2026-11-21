@@ -1300,7 +1300,7 @@ impl AgentSessionEngine {
                             .collect::<Vec<_>>();
                         let due = pa_core::session_engine::compaction::threshold_compaction_due_with_drift(
                             &messages,
-                            engine.session.context_usage_drift(),
+                            engine.session.context_usage_drift().await,
                             model.context_window,
                             pa_core::session_engine::compaction::request_output_budget(
                                 &model,

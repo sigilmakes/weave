@@ -572,7 +572,7 @@ async fn history_index_matches_the_request_the_engine_sends() {
         .unwrap();
 
     let (sent, _) = engine.session.assembled_context(None).await.unwrap();
-    let drift = engine.session.context_usage_drift();
+    let drift = engine.session.context_usage_drift().await;
     let expected = crate::session_engine::compaction::context_tokens_with_drift(&sent, drift);
     assert_eq!(index["live_tokens"], expected);
     assert_eq!(index["window"], model.context_window);
@@ -670,4 +670,274 @@ async fn the_live_view_tracks_the_session_and_the_send_path() {
         after.messages.len() < before.messages.len(),
         "the drop landed"
     );
+}
+
+fn turn_with_usage(
+    steps: Vec<pa_agent::scripted::ScriptStep>,
+    input: u64,
+) -> pa_agent::scripted::ScriptedTurn {
+    let steps = steps
+        .into_iter()
+        .map(|step| match step {
+            pa_agent::scripted::ScriptStep::Event(event) => {
+                let event = match *event {
+                    pa_agent::stream::AssistantMessageEvent::Done {
+                        reason,
+                        mut message,
+                    } => {
+                        message.usage = pa_agent::types::Usage {
+                            input,
+                            output: 1,
+                            cache_read: 0,
+                            cache_write: 0,
+                            total_tokens: input + 1,
+                            cost: pa_agent::types::UsageCost::default(),
+                        };
+                        pa_agent::stream::AssistantMessageEvent::Done { reason, message }
+                    }
+                    other => other,
+                };
+                pa_agent::scripted::ScriptStep::Event(Box::new(event))
+            }
+            other @ pa_agent::scripted::ScriptStep::SleepMs(_) => other,
+        })
+        .collect();
+    pa_agent::scripted::ScriptedTurn::Events(steps)
+}
+
+struct EngineEditTool {
+    requests: Arc<
+        std::sync::Mutex<Option<Arc<crate::session_engine::turn_boundary::TurnBoundaryRequests>>>,
+    >,
+    changes: serde_json::Value,
+}
+
+static ENGINE_EDIT_SCHEMA: std::sync::LazyLock<serde_json::Value> =
+    std::sync::LazyLock::new(|| serde_json::json!({"type": "object"}));
+
+impl pa_agent::types::AgentTool for EngineEditTool {
+    fn name(&self) -> &'static str {
+        "history_edit"
+    }
+
+    fn description(&self) -> &'static str {
+        "edit the history view"
+    }
+
+    fn parameters(&self) -> &serde_json::Value {
+        &ENGINE_EDIT_SCHEMA
+    }
+
+    fn execute(
+        self: Arc<Self>,
+        _tool_call_id: String,
+        _params: serde_json::Value,
+        _signal: pa_agent::abort::AbortSignal,
+        _on_update: pa_agent::types::AgentToolUpdateCallback,
+    ) -> pa_agent::BoxFut<'static, anyhow::Result<pa_agent::types::AgentToolResult>> {
+        let changes = self.changes.clone();
+        let requests = self.requests.lock().unwrap().clone().expect("bound engine");
+        Box::pin(async move {
+            let mut handlers = crate::kernel::shared::HostRequestHandlers::default();
+            crate::session_engine::history_host::register_history_handlers(
+                &requests,
+                &mut handlers,
+            );
+            let edit = handlers.get("history.edit").unwrap().clone();
+            let response = edit(crate::kernel::shared::HostRequestPayload {
+                data: serde_json::json!({"changes": changes}),
+            })
+            .await?;
+            let status = response["status"].as_str().unwrap_or_default().to_string();
+            Ok(pa_agent::types::AgentToolResult::text(status))
+        })
+    }
+}
+
+/// An edit inside a real run: request two must lack the dropped turn, and
+/// `history.index` must report the usage the provider returned after it.
+#[tokio::test]
+async fn an_edit_lands_in_the_second_request_and_index_reports_the_post_edit_usage() {
+    let model = pa_agent::types::Model {
+        id: "m".into(),
+        name: "m".into(),
+        api: "test".into(),
+        provider: "test".into(),
+        base_url: "http://localhost".into(),
+        reasoning: false,
+        cost: pa_agent::types::UsageCost::default(),
+        context_window: 100_000,
+        max_tokens: 100,
+        input: Vec::new(),
+        max_tokens_explicit: false,
+    };
+    let provider = Arc::new(ScriptedProvider::new(model.clone()));
+    provider.push_turn(turn_with_usage(
+        pa_agent::scripted::tool_call_turn_steps(
+            &model,
+            None,
+            vec![("call-1", "history_edit", serde_json::json!({}))],
+        ),
+        90_000,
+    ));
+    provider.push_turn(turn_with_usage(
+        pa_agent::scripted::text_turn_steps(&model, "second"),
+        40_000,
+    ));
+    let tmp = tempfile::tempdir().unwrap();
+    let cwd = tmp.path().join("project");
+    std::fs::create_dir_all(&cwd).unwrap();
+    let slot = Arc::new(std::sync::Mutex::new(None));
+    let engine = create_session(SessionEngineConfig {
+        on_late_sent_agent_message: None,
+        context_startup_boundary: crate::session_engine::ContextStartupBoundary::Current,
+        context_startup_admitted_input_ids: Vec::new(),
+        on_initial_context_selection: None,
+        ollama_cloud: None,
+        semantic_edges: None,
+        cron_store: None,
+        queued_steering_probe: None,
+        should_stop_after_turn: None,
+        image_model_router: None,
+        steering_mode: None,
+        follow_up_mode: None,
+        cwd: cwd.clone(),
+        agent_dir: tmp.path().join("agent"),
+        mcp_manager: None,
+        model: Some(model.clone()),
+        thinking_level: None,
+        stream_fn: Some(provider.stream_fn()),
+        tools: vec![Arc::new(EngineEditTool {
+            requests: Arc::clone(&slot),
+            changes: serde_json::json!([{"op": "drop", "at": 0}]),
+        })],
+        custom_system_prompt: None,
+        prompt_guidelines: vec![],
+        generic_mcp_servers: vec![],
+        allow_recursion: None,
+        session_manager: None,
+        extra_host_handlers: None,
+        conversation_log_path: None,
+        additional_skill_paths: vec![],
+        additional_prompt_paths: vec![],
+        extra_builtin_skill_overrides: vec![],
+        rlm_subagent_host: None,
+        rlm_usage_store: None,
+        progress_note_emit: None,
+        rlm_depth: None,
+        daemonless: true,
+        model_info: None,
+        on_background_work_settled: None,
+        prewarm_ipython_kernel: None,
+        queued_goal_context_purge: None,
+    })
+    .await
+    .unwrap();
+    *slot.lock().unwrap() = Some(Arc::clone(&engine.turn_boundary));
+
+    let dropped = "x".repeat(200_000);
+    engine
+        .prompt(&dropped, PromptOptions::default())
+        .await
+        .unwrap();
+    engine.session.agent().wait_for_idle().await;
+
+    let calls = provider.calls();
+    assert_eq!(
+        calls.len(),
+        2,
+        "the request before the edit and the one after it"
+    );
+    let first = user_texts_sent(&calls[0].messages);
+    assert!(
+        first.iter().any(|text| text.len() > 100_000),
+        "the drop has a target"
+    );
+    let second = user_texts_sent(&calls[1].messages);
+    assert!(
+        second.iter().all(|text| text.len() < 100_000),
+        "the request after the edit does not carry the dropped turn"
+    );
+
+    let mut handlers = crate::kernel::shared::HostRequestHandlers::default();
+    crate::session_engine::history_host::register_history_handlers(
+        &engine.turn_boundary,
+        &mut handlers,
+    );
+    let index =
+        handlers.get("history.index").unwrap().clone()(crate::kernel::shared::HostRequestPayload {
+            data: serde_json::json!({"limit": 5}),
+        })
+        .await
+        .unwrap();
+
+    let state = engine.session.agent().state().await.messages;
+    let session_messages: Vec<crate::session_engine::SessionAgentMessage> = state
+        .iter()
+        .filter_map(crate::session_engine::loop_message_to_session)
+        .collect();
+    let drift = engine.session.context_usage_drift().await;
+    assert!(
+        drift.is_clean(),
+        "the assistant that answered the edit is the anchor and resets the correction"
+    );
+    assert_eq!(
+        index["live_tokens"],
+        crate::session_engine::compaction::estimate_context_tokens(&session_messages).tokens
+    );
+    assert_eq!(
+        index["live_tokens"], 40_001,
+        "the usage the provider reported after the edit, not the pre-edit 90_001"
+    );
+
+    let settings = crate::session_engine::compaction::CompactionSettings {
+        threshold_percent: 95.0,
+        enabled: true,
+        reserve_tokens: 0,
+        keep_recent_tokens: 1_000,
+    };
+    assert!(
+        crate::session_engine::compaction::threshold_compaction_due_with_drift(
+            &session_messages,
+            drift,
+            40_000,
+            0,
+            &settings
+        ),
+        "the decision follows the same figure index reports"
+    );
+    assert!(
+        !crate::session_engine::compaction::threshold_compaction_due_with_drift(
+            &session_messages,
+            drift,
+            100_000,
+            0,
+            &settings
+        )
+    );
+    let sent_standard: Vec<pa_agent::types::Message> = state
+        .iter()
+        .filter_map(|message| match message {
+            pa_agent::types::AgentMessage::Standard(inner) => Some(inner.clone()),
+            pa_agent::types::AgentMessage::Custom(_) => None,
+        })
+        .take(calls[1].messages.len())
+        .collect();
+    assert_eq!(
+        sent_standard, calls[1].messages,
+        "the request that was sent is the transcript index measures"
+    );
+}
+
+fn user_texts_sent(messages: &[pa_agent::types::Message]) -> Vec<String> {
+    messages
+        .iter()
+        .filter_map(|message| match message {
+            pa_agent::types::Message::User(user) => Some(match &user.content {
+                pa_agent::types::UserContent::Text(text) => text.clone(),
+                pa_agent::types::UserContent::Parts(parts) => format!("{parts:?}"),
+            }),
+            _ => None,
+        })
+        .collect()
 }

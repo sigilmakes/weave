@@ -1091,7 +1091,11 @@ impl Agent {
     ///
     /// Panics if the `refresh_context` mutex is poisoned.
     pub fn set_refresh_context(&self, hook: Option<crate::agent_loop::RefreshContextFn>) {
-        *self.inner.refresh_context.lock().unwrap() = hook;
+        *self
+            .inner
+            .refresh_context
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = hook;
     }
 
     /// # Panics

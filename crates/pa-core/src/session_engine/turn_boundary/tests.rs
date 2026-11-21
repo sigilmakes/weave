@@ -450,9 +450,9 @@ fn context_usage_anchors_on_the_last_valid_assistant_usage() {
     session
         .append_message(user_entry("a somewhat long trailing message"))
         .unwrap();
-    let entries = session.get_all_entries().to_vec();
-    assert!(context_usage(&entries, None).is_none());
-    let usage = context_usage(&entries, Some(100_000)).unwrap();
+    let context = session.active_context();
+    assert!(context_usage(&context.messages, context.usage_drift, None).is_none());
+    let usage = context_usage(&context.messages, context.usage_drift, Some(100_000)).unwrap();
     // The usage anchor plus the trailing estimate (chars/4).
     let trailing = "a somewhat long trailing message".chars().count() as u64 / 4;
     assert_eq!(usage.tokens, Some(130 + trailing));
@@ -476,8 +476,8 @@ fn context_usage_after_a_compaction_without_post_usage_is_null_tokens() {
             ..Default::default()
         })
         .unwrap();
-    let entries = session.get_all_entries().to_vec();
-    let usage = context_usage(&entries, Some(100_000)).unwrap();
+    let context = session.active_context();
+    let usage = context_usage(&context.messages, context.usage_drift, Some(100_000)).unwrap();
     assert_eq!(usage.tokens, None);
     assert_eq!(usage.percent, None);
     assert_eq!(usage.context_window, 100_000);

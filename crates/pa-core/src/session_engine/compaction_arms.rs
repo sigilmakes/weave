@@ -20,13 +20,12 @@ impl AgentSession {
             .max()
     }
 
-    /// How far the newest provider-reported usage has drifted from the view the
-    /// last assembly built, because context edits changed what came before it.
-    pub fn context_usage_drift(&self) -> crate::session::UsageDrift {
-        *self
-            .live_view_drift
-            .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    /// How far the newest provider-reported usage has drifted from the view
+    /// because context edits changed what came before it. Read from the current
+    /// walk, because a message the loop appended since the last assembly becomes
+    /// the anchor and resets the correction.
+    pub async fn context_usage_drift(&self) -> crate::session::UsageDrift {
+        self.session.lock().await.active_context().usage_drift
     }
 
     /// Whether an automatic threshold compaction is due at a turn boundary:
@@ -45,7 +44,7 @@ impl AgentSession {
             .collect();
         compaction::threshold_compaction_due_with_drift(
             &messages,
-            self.context_usage_drift(),
+            self.context_usage_drift().await,
             model.context_window,
             // The live thinking level decides whether the request folds a
             // thinking budget on top of the base output budget.

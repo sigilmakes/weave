@@ -41,9 +41,9 @@ The next request carries the edit, in the same run, not only after the next prom
 
 Every edit changes text before the end of the context, so the next request re-reads everything after it. Edits near the end are nearly free; edits near the beginning cost a full re-read.
 
-The index figure is a chars/4 estimate whenever the newest provider-reported usage no longer describes the view, as after an edit that removed the turn carrying it.
+The index figure follows the edits: it starts from the newest provider-reported usage and subtracts what an edit dropped above it, and adds what a replacement or an insertion above it contributed. It falls back to a chars/4 count of the whole view only when no observation describes what is sent: the view has no usage at all, an edit removed or replaced the turn that usage was reported on, or an edit removed the archive row that carried it.
 
-A row the provider expands rather than receives, a compaction summary in an archive representation the provider replays, shows the summary text here while the request carries the archive itself.
+A row the provider expands rather than receives, a compaction summary in an archive representation the provider replays, shows the summary text here while the request carries the expanded representation the provider replays.
 
 ## Core tools
 

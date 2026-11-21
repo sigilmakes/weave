@@ -15,8 +15,6 @@ use tokio::sync::Mutex;
 use crate::kernel::shared::{host_handler, HostRequestHandlers};
 use crate::session::manager::SessionManager;
 
-use pa_types::usage::{calculate_context_tokens, estimate_tokens, valid_assistant_usage};
-
 use super::compact_session::{prepare_compaction, CompactSkip};
 use super::engine::SessionEngine;
 
@@ -268,8 +266,17 @@ impl TurnBoundaryRequests {
                     };
                     let usage = match requests.bound() {
                         Some(runtime) => {
-                            let entries = runtime.session.lock().await.retained_entries().to_vec();
-                            context_usage(&entries, runtime.context_window)
+                            let (messages, drift) = if let Ok(live) =
+                                requests.assemble_live_view().await
+                            {
+                                (live.messages, live.drift)
+                            } else {
+                                let entries =
+                                    runtime.session.lock().await.retained_entries().to_vec();
+                                let context = crate::session::build_session_context(&entries, None);
+                                (context.messages, context.usage_drift)
+                            };
+                            context_usage(&messages, drift, runtime.context_window)
                         }
                         None => None,
                     };
@@ -406,30 +413,29 @@ fn compaction_request_skip_reason(
         .map(CompactSkip::request_reason)
 }
 
-/// Estimated context usage: the last valid assistant usage anchors the
-/// estimate; messages after it use the chars/4 heuristic. `None` when
-/// the context window is unknown; `tokens`/`percent` `None` right
-/// after a compaction without a usable post-compaction usage.
-///
-/// # Panics
-///
-/// The `expect` on the anchoring usage cannot fire: the index came from a
-/// search restricted to messages with a valid usage.
-pub fn context_usage(entries: &[FileEntry], context_window: Option<u64>) -> Option<ContextUsage> {
+/// Estimated context usage of one assembled view: the estimate the request
+/// builder uses, corrected by the edits on the path. `None` when the context
+/// window is unknown; `tokens`/`percent` `None` right after a compaction
+/// without a usable post-compaction usage.
+#[must_use]
+pub fn context_usage(
+    messages: &[AgentMessage],
+    drift: crate::session::UsageDrift,
+    context_window: Option<u64>,
+) -> Option<ContextUsage> {
     let context_window = context_window.filter(|window| *window > 0)?;
 
     // Only usage from an assistant that responded after the latest
-    // compaction boundary is trustworthy.
-    if let Some(compaction_index) = entries
-        .iter()
-        .rposition(|entry| matches!(entry, FileEntry::Compaction { .. }))
-    {
-        let post_compaction_usage = entries[compaction_index + 1..]
-            .iter()
-            .filter_map(message_value)
-            .find_map(|message| valid_assistant_usage(&message));
-        let usable =
-            post_compaction_usage.is_some_and(|usage| calculate_context_tokens(&usage) > 0);
+    // compaction boundary is trustworthy; the retained messages a summary
+    // hides are older records that also follow it in the view.
+    if let Some(boundary) = messages.iter().rev().find_map(|message| match message {
+        AgentMessage::CompactionSummary(summary) => Some(summary.timestamp),
+        _ => None,
+    }) {
+        let usable = messages.iter().any(|message| {
+            crate::session_engine::compaction::has_usage(message)
+                && message_timestamp(message) > boundary
+        });
         if !usable {
             return Some(ContextUsage {
                 tokens: None,
@@ -439,24 +445,7 @@ pub fn context_usage(entries: &[FileEntry], context_window: Option<u64>) -> Opti
         }
     }
 
-    let messages: Vec<Value> = entries.iter().filter_map(message_value).collect();
-    let mut tokens = 0u64;
-    match messages
-        .iter()
-        .rposition(|message| valid_assistant_usage(message).is_some())
-    {
-        Some(last_usage_index) => {
-            let usage = valid_assistant_usage(&messages[last_usage_index]).expect("checked");
-            tokens += calculate_context_tokens(&usage);
-            tokens += messages[last_usage_index + 1..]
-                .iter()
-                .map(estimate_tokens)
-                .sum::<u64>();
-        }
-        None => {
-            tokens += messages.iter().map(estimate_tokens).sum::<u64>();
-        }
-    }
+    let tokens = crate::session_engine::compaction::context_tokens_with_drift(messages, drift);
     let percent = tokens as f64 / context_window as f64 * 100.0;
     Some(ContextUsage {
         tokens: Some(tokens),
@@ -465,11 +454,16 @@ pub fn context_usage(entries: &[FileEntry], context_window: Option<u64>) -> Opti
     })
 }
 
-/// A message entry as raw JSON (the shared usage helpers read the wire shape).
-fn message_value(entry: &FileEntry) -> Option<Value> {
-    match entry {
-        FileEntry::Message { message, .. } => serde_json::to_value(message).ok(),
-        _ => None,
+/// A message's timestamp (millis since the epoch; every role carries one).
+fn message_timestamp(message: &AgentMessage) -> u64 {
+    match message {
+        AgentMessage::User(user) => user.timestamp,
+        AgentMessage::Assistant(assistant) => assistant.timestamp,
+        AgentMessage::Custom(custom) => custom.timestamp,
+        AgentMessage::ToolResult(result) => result.timestamp,
+        AgentMessage::BashExecution(bash) => bash.timestamp,
+        AgentMessage::BranchSummary(summary) => summary.timestamp,
+        AgentMessage::CompactionSummary(summary) => summary.timestamp,
     }
 }
 
