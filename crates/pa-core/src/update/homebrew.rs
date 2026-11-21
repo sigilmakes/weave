@@ -11,7 +11,7 @@ use std::path::Path;
 pub enum HomebrewKind {
     /// A formula keg under `Cellar/weave`.
     Formula,
-    /// A cask version under `Caskroom/weave`.
+    /// A cask version under `Caskroom/wv`.
     Cask,
 }
 
@@ -32,14 +32,15 @@ impl HomebrewKind {
 pub fn managed_kind(executable: &Path) -> Option<HomebrewKind> {
     let resolved = executable.canonicalize().ok()?;
     for ancestor in resolved.ancestors() {
-        if ancestor.file_name() != Some(OsStr::new("weave")) {
-            continue;
-        }
         let owner = ancestor.parent().and_then(Path::file_name);
-        if owner == Some(OsStr::new("Cellar")) {
+        if owner == Some(OsStr::new("Cellar"))
+            && ancestor.file_name() == Some(OsStr::new("weave"))
+        {
             return Some(HomebrewKind::Formula);
         }
-        if owner == Some(OsStr::new("Caskroom")) {
+        if owner == Some(OsStr::new("Caskroom"))
+            && ancestor.file_name() == Some(OsStr::new("wv"))
+        {
             return Some(HomebrewKind::Cask);
         }
     }
@@ -50,7 +51,7 @@ pub fn managed_kind(executable: &Path) -> Option<HomebrewKind> {
 #[must_use]
 pub fn upgrade_instruction(kind: HomebrewKind) -> String {
     match kind {
-        HomebrewKind::Formula => "Update with: brew upgrade wv".to_string(),
+        HomebrewKind::Formula => "Update with: brew upgrade weave".to_string(),
         HomebrewKind::Cask => "Update with: brew upgrade --cask wv".to_string(),
     }
 }
@@ -64,7 +65,7 @@ mod tests {
     fn detects_formula_and_cask_layouts() {
         let root = tempfile::tempdir().unwrap();
         let formula = root.path().join("Cellar/weave/1.0.0/libexec/wv");
-        let cask = root.path().join("Caskroom/weave/1.0.0/wv");
+        let cask = root.path().join("Caskroom/wv/1.0.0/wv");
         std::fs::create_dir_all(formula.parent().unwrap()).unwrap();
         std::fs::create_dir_all(cask.parent().unwrap()).unwrap();
         std::fs::write(&formula, b"binary").unwrap();

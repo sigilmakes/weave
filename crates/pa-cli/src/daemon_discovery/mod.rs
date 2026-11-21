@@ -53,9 +53,11 @@ pub(crate) struct DaemonStateRoot {
 /// protection silently disappears at uid 0.
 pub(crate) const NEVER_TOUCH_SOCKET_DIRS: &[&str] = &[
     "/tmp/prime-agent-1000",
+    "/tmp/mission-tmp/prime-agent-1000",
     "/tmp/mission-tmp/wv-1000",
     "/tmp/mission-daemon",
     "/tmp/prime-agent-0",
+    "/tmp/mission-tmp/prime-agent-0",
     "/tmp/mission-tmp/wv-0",
 ];
 
