@@ -575,7 +575,8 @@ async fn json_server(
 #[tokio::test]
 async fn native_archive_restores_raw_prefix_and_appends_only_uncovered_continuation() {
     let envelope = r#"{"id":"response_1","created_at":1,"object":"response.compaction","output":[{"type":"message","id":"kept","role":"user","content":[{"type":"input_text","text":"kept native"}]},{"type":"compaction","id":"cmp","encrypted_content":"opaque-\u0061","future":1.2300}],"usage":{"input_tokens":20,"output_tokens":7,"total_tokens":27}}"#;
-    let (base, mut request, server) = json_server(envelope, 200).await;
+    let envelope = envelope.replace("opaque-", &format!("opaque-{}", "x".repeat(24_000)));
+    let (base, mut request, server) = json_server(&envelope, 200).await;
     let f = Fixture::new(ORDERED, "default_context/rolling", true).await;
     let mut model = f.model.clone();
     model.provider = "local-gateway".into();
@@ -618,6 +619,67 @@ async fn native_archive_restores_raw_prefix_and_appends_only_uncovered_continuat
     assert!(archive.contains("1.2300"));
     assert!(archive.contains("encrypted_content"));
     assert!(f.engine.session.agent().state().await.messages.is_empty());
+    let mut handlers = crate::kernel::shared::HostRequestHandlers::default();
+    super::super::history_host::register_history_handlers(&f.engine.turn_boundary, &mut handlers);
+    let index =
+        handlers.get("history.index").unwrap().clone()(crate::kernel::shared::HostRequestPayload {
+            data: json!({}),
+        })
+        .await
+        .unwrap();
+    let route = pa_ai::compaction::CompactionRoute {
+        provider: model.provider.clone(),
+        endpoint: format!("{}/responses/compact", model.base_url),
+        model: model.id.clone(),
+    };
+    let adapter = pa_ai::compaction::ResponsesCompactor::new(
+        route.clone(),
+        Some(route),
+        pa_ai::compaction::CompactionLimits::default(),
+    )
+    .unwrap();
+    let cancel = CancellationToken::new();
+    let replayed = pa_ai::compaction::CompactionCandidate::restore(archive, &adapter, &cancel)
+        .unwrap()
+        .replay(&adapter, &cancel)
+        .unwrap();
+    let expected = super::super::compaction::estimate_tokens(&user(replayed.input_json()));
+    assert_eq!(index["live_tokens"], expected);
+    assert!(!f.engine.session.auto_compaction_due(&model).await.unwrap());
+    let mut small_window = model.clone();
+    small_window.context_window = 22_000;
+    assert!(f
+        .engine
+        .session
+        .auto_compaction_due(&small_window)
+        .await
+        .unwrap());
+    f.engine
+        .turn_boundary
+        .register_compact_handlers(&mut handlers, 0);
+    let status = handlers.get("compact.status").unwrap().clone()(
+        crate::kernel::shared::HostRequestPayload { data: json!({}) },
+    )
+    .await
+    .unwrap();
+    assert_eq!(status["tokens"], expected);
+    let mut incompatible = model.clone();
+    incompatible.id = "different-model".into();
+    let check_error = f
+        .engine
+        .session
+        .auto_compaction_due(&incompatible)
+        .await
+        .unwrap_err();
+    assert!(check_error.to_string().contains("route"), "{check_error:#}");
+    let mut no_window = incompatible;
+    no_window.context_window = 0;
+    assert!(!f
+        .engine
+        .session
+        .auto_compaction_due(&no_window)
+        .await
+        .unwrap());
     f.engine
         .session
         .shared_persistence()
@@ -688,9 +750,27 @@ async fn native_archive_restores_raw_prefix_and_appends_only_uncovered_continuat
         outbound.starts_with(native_prefix),
         "native ordered item bytes changed: {outbound}"
     );
+    let live = restored.turn_boundary.assemble_live_view().await.unwrap();
+    assert_eq!(
+        live.tokens, 32,
+        "fresh inference usage describes the native input"
+    );
+    assert!(!restored
+        .session
+        .auto_compaction_due(&small_window)
+        .await
+        .unwrap());
     let mut incompatible = model.clone();
     incompatible.id = "different-model".into();
     let before = observed.lock().unwrap().len();
+    assert!(
+        !restored
+            .session
+            .auto_compaction_due(&incompatible)
+            .await
+            .unwrap(),
+        "fresh usage avoids native replay, even when replay would reject the route"
+    );
     // The switch itself refuses: installing a model that cannot read this
     // provider-native archive would leave the session unreadable.
     let mismatch = restored

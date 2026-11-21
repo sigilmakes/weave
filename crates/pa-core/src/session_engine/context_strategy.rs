@@ -328,9 +328,8 @@ pub(crate) async fn assemble_session_view(
     session: &std::sync::Arc<tokio::sync::Mutex<crate::session::manager::SessionManager>>,
     model: Option<&pa_types::ai::Model>,
 ) -> anyhow::Result<(
-    Vec<AgentMessage>,
+    super::turn_boundary::LiveViewSnapshot,
     Option<ContextArchive>,
-    crate::session::UsageDrift,
 )> {
     let (context, leaf) = if let Some(plugins) = plugins {
         let snapshot = {
@@ -369,7 +368,38 @@ pub(crate) async fn assemble_session_view(
         }
         None => Ok(context.messages),
     }?;
-    Ok((messages, archive, drift))
+    let native_input = if let Some(archive) = archive.as_ref().filter(|archive| {
+        matches!(
+            archive.representation,
+            ContextRepresentation::Responses { .. }
+        )
+    }) {
+        let plugins = plugins.context("native context archive needs an active context strategy")?;
+        let model = model.context("native context archive needs a resolved model")?;
+        let fresh = super::messages::convert_to_llm(&messages)
+            .iter()
+            .map(|message| {
+                super::provider_adapter::json_round_trip(message)
+                    .context("invalid continuation message")
+            })
+            .collect::<anyhow::Result<Vec<pa_types::ai::Message>>>()?;
+        Some(
+            native::native_input(plugins, archive, model, &fresh, &CancellationToken::new())
+                .await?,
+        )
+    } else {
+        None
+    };
+    let tokens =
+        super::compaction::context_tokens_for_request(&messages, drift, native_input.as_ref());
+    Ok((
+        super::turn_boundary::LiveViewSnapshot {
+            messages,
+            drift,
+            tokens,
+        },
+        archive,
+    ))
 }
 
 impl AgentSession {
@@ -393,9 +423,9 @@ impl AgentSession {
         &self,
         model: Option<&pa_types::ai::Model>,
     ) -> anyhow::Result<(Vec<AgentMessage>, Option<ContextArchive>)> {
-        let (messages, archive, _) =
+        let (view, archive) =
             assemble_session_view(self.plugins.as_ref(), &self.session, model).await?;
-        Ok((messages, archive))
+        Ok((view.messages, archive))
     }
 
     /// Re-assemble and publish the non-canonical loop view for a model switch.

@@ -256,6 +256,17 @@ fn usage_covers_view(
     !drift.anchor_lost && boundary.is_none_or(|boundary| message_timestamp(message) > boundary)
 }
 
+pub(crate) fn usage_covers_request(
+    messages: &[AgentMessage],
+    drift: crate::session::UsageDrift,
+) -> bool {
+    estimate_context_tokens(messages)
+        .last_usage_index
+        .is_some_and(|index| {
+            usage_covers_view(&messages[index], drift, usage_boundary(messages, drift))
+        })
+}
+
 /// The token figure for one view: [`estimate_context_tokens`], corrected for
 /// context edits that changed the messages before the newest usage anchor.
 ///
@@ -270,12 +281,26 @@ pub fn context_tokens_with_drift(
     messages: &[AgentMessage],
     drift: crate::session::UsageDrift,
 ) -> u64 {
+    context_tokens_for_request(messages, drift, None)
+}
+
+pub(crate) fn context_tokens_for_request(
+    messages: &[AgentMessage],
+    drift: crate::session::UsageDrift,
+    native_input: Option<&pa_ai::compaction::NativeResponsesInput>,
+) -> u64 {
     let estimate = estimate_context_tokens(messages);
+    let unanchored = || {
+        native_input.map_or_else(
+            || messages.iter().map(estimate_tokens).sum(),
+            |input| div4(input.input_json().chars().count() as u64),
+        )
+    };
     let Some(index) = estimate.last_usage_index else {
-        return estimate.tokens;
+        return unanchored();
     };
     if !usage_covers_view(&messages[index], drift, usage_boundary(messages, drift)) {
-        return messages.iter().map(estimate_tokens).sum();
+        return unanchored();
     }
     let corrected = i128::from(estimate.tokens) + i128::from(drift.tokens);
     u64::try_from(corrected.max(0)).unwrap_or(u64::MAX)
@@ -355,14 +380,28 @@ pub fn threshold_compaction_due_with_drift(
     max_output_tokens: u64,
     settings: &CompactionSettings,
 ) -> bool {
+    threshold_compaction_due_with_figure(
+        messages,
+        drift,
+        context_tokens_with_drift(messages, drift),
+        context_window,
+        max_output_tokens,
+        settings,
+    )
+}
+
+pub(crate) fn threshold_compaction_due_with_figure(
+    messages: &[AgentMessage],
+    drift: crate::session::UsageDrift,
+    tokens: u64,
+    context_window: u64,
+    max_output_tokens: u64,
+    settings: &CompactionSettings,
+) -> bool {
     if !settings.enabled || context_window == 0 {
         return false;
     }
-    let estimate = estimate_context_tokens(messages);
-    let boundary = usage_boundary(messages, drift);
-    let covers = estimate
-        .last_usage_index
-        .is_some_and(|index| usage_covers_view(&messages[index], drift, boundary));
+    let covers = usage_covers_request(messages, drift);
     if !covers {
         // The view's own chars/4 count decides. Error turns never trigger.
         let Some(AgentMessage::Assistant(assistant)) = messages
@@ -370,23 +409,13 @@ pub fn threshold_compaction_due_with_drift(
             .rev()
             .find(|message| matches!(message, AgentMessage::Assistant(_)))
         else {
-            return should_compact(
-                context_tokens_with_drift(messages, drift),
-                context_window,
-                max_output_tokens,
-                settings,
-            );
+            return should_compact(tokens, context_window, max_output_tokens, settings);
         };
         if assistant.stop_reason == pa_types::ai::StopReason::Error {
             return false;
         }
     }
-    should_compact(
-        context_tokens_with_drift(messages, drift),
-        context_window,
-        max_output_tokens,
-        settings,
-    )
+    should_compact(tokens, context_window, max_output_tokens, settings)
 }
 
 /// Valid cut point indices: user/assistant/custom/branch/compaction-summary

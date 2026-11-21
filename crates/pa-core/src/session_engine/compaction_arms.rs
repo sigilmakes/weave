@@ -31,29 +31,66 @@ impl AgentSession {
     /// Whether an automatic threshold compaction is due at a turn boundary:
     /// the live loop context over the model's context window against the
     /// effective threshold; usage before the latest compaction never re-triggers.
-    pub async fn auto_compaction_due(&self, model: &pa_types::ai::Model) -> bool {
+    ///
+    /// # Errors
+    ///
+    /// Returns native archive assembly or replay failures when no usage anchor
+    /// describes the current request.
+    pub async fn auto_compaction_due(&self, model: &pa_types::ai::Model) -> anyhow::Result<bool> {
         let model = self.configure_ollama_model(model);
+        let settings = self.compaction_settings();
+        if !settings.enabled || model.context_window == 0 {
+            return Ok(false);
+        }
         let state = self.agent.state().await;
-        // The live loop context is the agent's message list (the same
-        // JSON round-trip `compact` uses).
-        let messages: Vec<SessionAgentMessage> = state
+        let thinking = self
+            .agent
+            .model_override()
+            .map_or(state.thinking_level, |route| route.thinking_level);
+        let context = self.session.lock().await.active_context();
+        let messages = state
             .messages
             .iter()
             .filter_map(|message| serde_json::to_value(message).ok())
             .filter_map(|value| serde_json::from_value(value).ok())
-            .collect();
-        compaction::threshold_compaction_due_with_drift(
-            &messages,
-            self.context_usage_drift().await,
+            .collect::<Vec<SessionAgentMessage>>();
+        let native = self
+            .context_archive
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .as_ref()
+            .is_some_and(|archive| {
+                matches!(
+                    archive.representation,
+                    pa_types::session::ContextRepresentation::Responses { .. }
+                )
+            });
+        let view = if native && !compaction::usage_covers_request(&messages, context.usage_drift) {
+            super::context_strategy::assemble_session_view(
+                self.plugins.as_ref(),
+                &self.session,
+                Some(&model),
+            )
+            .await?
+            .0
+        } else {
+            super::turn_boundary::LiveViewSnapshot {
+                tokens: compaction::context_tokens_with_drift(&messages, context.usage_drift),
+                messages,
+                drift: context.usage_drift,
+            }
+        };
+        Ok(compaction::threshold_compaction_due_with_figure(
+            &view.messages,
+            view.drift,
+            view.tokens,
             model.context_window,
-            // The live thinking level decides whether the request folds a
-            // thinking budget on top of the base output budget.
             compaction::request_output_budget(
                 &model,
-                provider_adapter::model_thinking_level(state.thinking_level),
+                provider_adapter::model_thinking_level(thinking),
             ),
-            &self.compaction_settings(),
-        )
+            &settings,
+        ))
     }
 
     /// Remove the trailing assistant message from the loop context, so a

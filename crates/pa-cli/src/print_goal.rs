@@ -75,7 +75,7 @@ pub(crate) fn wire_goal_continuation_hook(
             };
             match goal
                 .natural_continuation(&engine, &model, unsettled_rlm_work)
-                .await
+                .await?
             {
                 NaturalContinuation::GoalRow(row) => Ok(vec![*row]),
                 NaturalContinuation::QueuedInput
@@ -537,14 +537,14 @@ impl PrintGoalSurface {
         engine: &Arc<SessionEngine>,
         model: &pa_types::ai::Model,
         unsettled_rlm_work: bool,
-    ) -> NaturalContinuation {
+    ) -> anyhow::Result<NaturalContinuation> {
         // Queued session input owns the boundary before any goal work — the armed budget steer ends
         // the run so the queue drains it.
         if self.queued.lock().await.is_some() {
-            return NaturalContinuation::QueuedInput;
+            return Ok(NaturalContinuation::QueuedInput);
         }
         if engine.turn_boundary.compaction_scheduled().await {
-            return NaturalContinuation::RequestedCompaction;
+            return Ok(NaturalContinuation::RequestedCompaction);
         }
         // The daemon's consult order: a goal that does not own the
         // wake-up drops any armed RLM deferral (the deferral dies with
@@ -555,31 +555,31 @@ impl PrintGoalSurface {
             engine.drop_owed_goal_continuation().await;
         } else if unsettled_rlm_work {
             engine.mark_goal_continuation_owed().await;
-            return NaturalContinuation::HeldForRlmWork;
+            return Ok(NaturalContinuation::HeldForRlmWork);
         }
         // The threshold arm: the crossing turn mints BEFORE the loop stops; the
         // boundary compacts, and the driver runs the held turn post-compaction.
-        if engine.session.auto_compaction_due(model).await {
+        if engine.session.auto_compaction_due(model).await? {
             if let Some(message) = engine.mint_goal_continuation().await {
                 self.publish_goal_update(engine).await;
                 self.hold_threshold_continuation(message).await;
             }
-            return NaturalContinuation::ThresholdDue;
+            return Ok(NaturalContinuation::ThresholdDue);
         }
         if !owns_wakeup {
-            return NaturalContinuation::FallThrough;
+            return Ok(NaturalContinuation::FallThrough);
         }
         // The natural continuation mint: the goal's context turn runs as the next
         // turn of the same run; a row that cannot convert drops the mint.
         if let Some(message) = engine.mint_goal_continuation().await {
             self.publish_goal_update(engine).await;
             engine.clear_pending_goal_continuation().await;
-            return match custom_message_to_loop_row(&message) {
+            return Ok(match custom_message_to_loop_row(&message) {
                 Some(row) => NaturalContinuation::GoalRow(Box::new(row)),
                 None => NaturalContinuation::FallThrough,
-            };
+            });
         }
-        NaturalContinuation::FallThrough
+        Ok(NaturalContinuation::FallThrough)
     }
 
     /// The settled boundary's goal drain: the held continuation and the armed

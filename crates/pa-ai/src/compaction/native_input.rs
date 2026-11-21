@@ -29,7 +29,9 @@ impl std::fmt::Debug for NativeResponsesInput {
 }
 
 impl NativeResponsesInput {
-    pub(crate) fn input_json(&self) -> &str {
+    /// Exact ordered input sent to the Responses transport.
+    #[must_use]
+    pub fn input_json(&self) -> &str {
         &self.input_json
     }
 

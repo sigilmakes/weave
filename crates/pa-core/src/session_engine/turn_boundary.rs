@@ -56,12 +56,13 @@ pub struct ContextUsage {
     pub percent: Option<f64>,
 }
 
-/// One assembled live view: the messages a request is built from, and the
-/// correction the newest usage anchor needs for the edits on that path.
+/// One assembled live view and its request token figure, including native
+/// archive input when no provider usage describes the current request.
 #[derive(Debug, Clone)]
 pub struct LiveViewSnapshot {
     pub messages: Vec<AgentMessage>,
     pub drift: crate::session::UsageDrift,
+    pub tokens: u64,
 }
 
 /// Assembles the live view from the canonical session, through the same path a
@@ -266,17 +267,28 @@ impl TurnBoundaryRequests {
                     };
                     let usage = match requests.bound() {
                         Some(runtime) => {
-                            let (messages, drift) = if let Ok(live) =
-                                requests.assemble_live_view().await
-                            {
-                                (live.messages, live.drift)
+                            let tokens = if requests.live_view().is_some() {
+                                requests.assemble_live_view().await?.tokens
                             } else {
                                 let entries =
                                     runtime.session.lock().await.retained_entries().to_vec();
                                 let context = crate::session::build_session_context(&entries, None);
-                                (context.messages, context.usage_drift)
+                                if context.archive.as_ref().is_some_and(|archive| {
+                                    matches!(
+                                        archive.representation,
+                                        pa_types::session::ContextRepresentation::Responses { .. }
+                                    )
+                                }) {
+                                    anyhow::bail!(
+                                        "native context archive needs live-view assembly"
+                                    );
+                                }
+                                crate::session_engine::compaction::context_tokens_with_drift(
+                                    &context.messages,
+                                    context.usage_drift,
+                                )
                             };
-                            context_usage(&messages, drift, runtime.context_window)
+                            context_usage_for_tokens(tokens, runtime.context_window)
                         }
                         None => None,
                     };
@@ -422,8 +434,12 @@ pub fn context_usage(
     drift: crate::session::UsageDrift,
     context_window: Option<u64>,
 ) -> Option<ContextUsage> {
-    let context_window = context_window.filter(|window| *window > 0)?;
     let tokens = crate::session_engine::compaction::context_tokens_with_drift(messages, drift);
+    context_usage_for_tokens(tokens, context_window)
+}
+
+fn context_usage_for_tokens(tokens: u64, context_window: Option<u64>) -> Option<ContextUsage> {
+    let context_window = context_window.filter(|window| *window > 0)?;
     let percent = tokens as f64 / context_window as f64 * 100.0;
     Some(ContextUsage {
         tokens: Some(tokens),
