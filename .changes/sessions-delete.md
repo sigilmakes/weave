@@ -1,0 +1,2 @@
+- `prime-agent sessions delete [--dry-run] <id>...` removes a saved session's artifacts, kernel state, log, and info cache, refuses any live session, and removes nothing if any id in the list is live or unknown.
+- `prime-agent sessions -a` shows each session's file-backed id, log size, and artifact directory size beside the existing status columns.
