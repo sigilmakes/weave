@@ -814,7 +814,7 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
     // The running loop streams from a private copy of the view, so a mid-run
     // `history.edit` re-reads the assembled view here before the next request.
     agent.set_refresh_context(Some(super::history_host::refresh_hook(
-        Arc::clone(&turn_boundary),
+        Arc::downgrade(&turn_boundary),
         Arc::downgrade(&agent),
     )));
     let services = Arc::new(super::plugin_services::PluginServices::new(

@@ -413,10 +413,9 @@ fn compaction_request_skip_reason(
         .map(CompactSkip::request_reason)
 }
 
-/// Estimated context usage of one assembled view: the estimate the request
-/// builder uses, corrected by the edits on the path. `None` when the context
-/// window is unknown; `tokens`/`percent` `None` right after a compaction
-/// without a usable post-compaction usage.
+/// Estimated context usage of one assembled view: [`context_tokens_with_drift`],
+/// the figure the request builder and `history.index` use. `None` when the
+/// context window is unknown.
 #[must_use]
 pub fn context_usage(
     messages: &[AgentMessage],
@@ -424,27 +423,6 @@ pub fn context_usage(
     context_window: Option<u64>,
 ) -> Option<ContextUsage> {
     let context_window = context_window.filter(|window| *window > 0)?;
-
-    // Only usage from an assistant that responded after the latest
-    // compaction boundary is trustworthy; the retained messages a summary
-    // hides are older records that also follow it in the view.
-    if let Some(boundary) = messages.iter().rev().find_map(|message| match message {
-        AgentMessage::CompactionSummary(summary) => Some(summary.timestamp),
-        _ => None,
-    }) {
-        let usable = messages.iter().any(|message| {
-            crate::session_engine::compaction::has_usage(message)
-                && message_timestamp(message) > boundary
-        });
-        if !usable {
-            return Some(ContextUsage {
-                tokens: None,
-                context_window,
-                percent: None,
-            });
-        }
-    }
-
     let tokens = crate::session_engine::compaction::context_tokens_with_drift(messages, drift);
     let percent = tokens as f64 / context_window as f64 * 100.0;
     Some(ContextUsage {
@@ -452,19 +430,6 @@ pub fn context_usage(
         context_window,
         percent: Some(percent),
     })
-}
-
-/// A message's timestamp (millis since the epoch; every role carries one).
-fn message_timestamp(message: &AgentMessage) -> u64 {
-    match message {
-        AgentMessage::User(user) => user.timestamp,
-        AgentMessage::Assistant(assistant) => assistant.timestamp,
-        AgentMessage::Custom(custom) => custom.timestamp,
-        AgentMessage::ToolResult(result) => result.timestamp,
-        AgentMessage::BashExecution(bash) => bash.timestamp,
-        AgentMessage::BranchSummary(summary) => summary.timestamp,
-        AgentMessage::CompactionSummary(summary) => summary.timestamp,
-    }
 }
 
 #[cfg(test)]

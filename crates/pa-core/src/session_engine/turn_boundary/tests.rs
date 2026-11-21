@@ -3,6 +3,7 @@
 use super::*;
 use crate::kernel::shared::{HostRequestHandlers, HostRequestPayload};
 use crate::session::manager::SessionManager;
+use crate::session_engine::compaction::estimate_tokens;
 use crate::session_engine::tool_bridge::bridge_tool;
 use crate::tools::tool_definition::ToolDefinition;
 use pa_agent::agent::{Agent, AgentInitialState, AgentOptions};
@@ -462,7 +463,7 @@ fn context_usage_anchors_on_the_last_valid_assistant_usage() {
 }
 
 #[test]
-fn context_usage_after_a_compaction_without_post_usage_is_null_tokens() {
+fn context_usage_after_a_compaction_falls_back_to_the_view_estimate() {
     let (_session_dir, mut session) = session_with_history(false);
     let first_kept = session.get_all_entries()[1]
         .id()
@@ -478,9 +479,66 @@ fn context_usage_after_a_compaction_without_post_usage_is_null_tokens() {
         .unwrap();
     let context = session.active_context();
     let usage = context_usage(&context.messages, context.usage_drift, Some(100_000)).unwrap();
-    assert_eq!(usage.tokens, None);
-    assert_eq!(usage.percent, None);
+    let chars: u64 = context.messages.iter().map(estimate_tokens).sum();
+    assert_eq!(usage.tokens, Some(chars), "no observation covers the view");
+    assert_eq!(usage.percent, Some(chars as f64 / 100_000.0 * 100.0));
     assert_eq!(usage.context_window, 100_000);
+}
+
+#[tokio::test]
+async fn a_failing_live_view_falls_back_to_the_edit_aware_walk() {
+    let requests = Arc::new(TurnBoundaryRequests::new());
+    let handlers = registered(&requests);
+    let dir = tempfile::TempDir::new().unwrap();
+    let mut session = SessionManager::in_memory(dir.path());
+    session
+        .materialize_session_file(Some(dir.path().join("session")))
+        .unwrap();
+    session
+        .append_message(user_entry(&"x".repeat(40_000)))
+        .unwrap();
+    session.append_message(user_entry("kept")).unwrap();
+    let mut assistant = assistant_entry("ok");
+    if let SessionMessage::Assistant(message) = &mut assistant {
+        message.usage.total_tokens = 70_000;
+    }
+    session.append_message(assistant).unwrap();
+    session
+        .append_context_edit(pa_types::session::ContextEditEntry {
+            by: "agent".to_string(),
+            changes: vec![pa_types::session::ContextChange::Drop {
+                at: pa_types::session::ContextTarget::Point(
+                    pa_types::session::ContextSelector::Position(0),
+                ),
+            }],
+        })
+        .unwrap();
+    let session = Arc::new(tokio::sync::Mutex::new(session));
+    requests.set_live_view(Arc::new(|| {
+        Box::pin(async { Err(anyhow::anyhow!("assembly failed")) })
+    }));
+    requests.bind(TurnBoundaryRuntime {
+        agent: Arc::new(Agent::new(AgentOptions {
+            initial_state: AgentInitialState {
+                system_prompt: Some("s".to_string()),
+                model: Some(agent_model()),
+                thinking_level: Some(ThinkingLevel::Off),
+                tools: None,
+                messages: None,
+            },
+            ..Default::default()
+        })),
+        session: Arc::clone(&session),
+        context_window: Some(100_000),
+        model_info: model_info(),
+    });
+    let status = handler(&handlers, "compact.status")(payload(json!({})))
+        .await
+        .unwrap();
+    assert_eq!(
+        status["tokens"], 60_000,
+        "the anchor's 70_000 minus the 10_000-token row the edit dropped"
+    );
 }
 
 /// One scripted probe: a tool whose execution calls a registered host handler with `data` (the

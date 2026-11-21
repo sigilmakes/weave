@@ -233,25 +233,48 @@ pub(crate) fn has_usage(message: &AgentMessage) -> bool {
     assistant_usage(message).is_some()
 }
 
+/// The newest point after which a usage observation describes this request:
+/// the later of the newest compaction message in the view and the compaction
+/// the walk recorded (a native archive leaves no message behind).
+fn usage_boundary(messages: &[AgentMessage], drift: crate::session::UsageDrift) -> Option<u64> {
+    let summary = messages.iter().rev().find_map(|message| match message {
+        AgentMessage::CompactionSummary(summary) => Some(summary.timestamp),
+        _ => None,
+    });
+    match (summary, drift.boundary) {
+        (Some(message), Some(walk)) => Some(message.max(walk)),
+        (message, walk) => message.or(walk),
+    }
+}
+
+/// Whether the usage on this message describes the request as it stands.
+fn usage_covers_view(
+    message: &AgentMessage,
+    drift: crate::session::UsageDrift,
+    boundary: Option<u64>,
+) -> bool {
+    !drift.anchor_lost && boundary.is_none_or(|boundary| message_timestamp(message) > boundary)
+}
+
 /// The token figure for one view: [`estimate_context_tokens`], corrected for
 /// context edits that changed the messages before the newest usage anchor.
 ///
 /// A dropped row was counted by the provider when the anchor was reported, so
 /// its own chars/4 estimate is subtracted; a replacement contributes its new
-/// estimate and an insertion its own. When the anchor itself stopped being
-/// sent — dropped, replaced, or the compaction row that carried it — no
-/// observation covers the view and the estimate falls back to the whole-view
-/// char count, which is also the figure for a view that never had an anchor.
+/// estimate and an insertion its own. When no observation covers the view —
+/// the anchor stopped being sent, or the newest usage predates the latest
+/// compaction — the figure is the whole-view char count, which is also the
+/// estimate for a view that never had an anchor.
 #[must_use]
 pub fn context_tokens_with_drift(
     messages: &[AgentMessage],
     drift: crate::session::UsageDrift,
 ) -> u64 {
     let estimate = estimate_context_tokens(messages);
-    if estimate.last_usage_index.is_none() {
+    let Some(index) = estimate.last_usage_index else {
         return estimate.tokens;
-    }
-    if drift.anchor_lost {
+    };
+    if !usage_covers_view(&messages[index], drift, usage_boundary(messages, drift)) {
         return messages.iter().map(estimate_tokens).sum();
     }
     let corrected = i128::from(estimate.tokens) + i128::from(drift.tokens);
@@ -300,7 +323,8 @@ fn message_timestamp(message: &AgentMessage) -> u64 {
 
 /// Whether the live context crossed the effective threshold
 /// ([`compaction_threshold`]) and an automatic compaction should run. Usage
-/// from before the newest `CompactionSummary` never re-triggers.
+/// from before the newest compaction never re-triggers: the view it described
+/// is no longer what is sent, so the whole-view char count decides instead.
 #[must_use]
 pub fn threshold_compaction_due(
     messages: &[AgentMessage],
@@ -330,22 +354,13 @@ pub fn threshold_compaction_due_with_drift(
     if !settings.enabled || context_window == 0 {
         return false;
     }
-    let compaction_timestamp = messages.iter().rev().find_map(|message| match message {
-        AgentMessage::CompactionSummary(summary) => Some(summary.timestamp),
-        _ => None,
-    });
     let estimate = estimate_context_tokens(messages);
-    let context_tokens = if let Some(index) = estimate.last_usage_index {
-        // The usage anchor must postdate the latest compaction.
-        if compaction_timestamp
-            .is_some_and(|timestamp| message_timestamp(&messages[index]) <= timestamp)
-        {
-            return false;
-        }
-        context_tokens_with_drift(messages, drift)
-    } else {
-        // No valid usage anywhere: the view's own chars/4 count decides.
-        // Error turns never trigger.
+    let boundary = usage_boundary(messages, drift);
+    let covers = estimate
+        .last_usage_index
+        .is_some_and(|index| usage_covers_view(&messages[index], drift, boundary));
+    if !covers {
+        // The view's own chars/4 count decides. Error turns never trigger.
         let Some(AgentMessage::Assistant(assistant)) = messages
             .iter()
             .rev()
@@ -361,12 +376,13 @@ pub fn threshold_compaction_due_with_drift(
         if assistant.stop_reason == pa_types::ai::StopReason::Error {
             return false;
         }
-        if compaction_timestamp.is_some_and(|timestamp| assistant.timestamp <= timestamp) {
-            return false;
-        }
-        context_tokens_with_drift(messages, drift)
-    };
-    should_compact(context_tokens, context_window, max_output_tokens, settings)
+    }
+    should_compact(
+        context_tokens_with_drift(messages, drift),
+        context_window,
+        max_output_tokens,
+        settings,
+    )
 }
 
 /// Valid cut point indices: user/assistant/custom/branch/compaction-summary

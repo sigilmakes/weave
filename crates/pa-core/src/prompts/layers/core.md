@@ -10,11 +10,11 @@ The kernel is your workspace. Assignments persist across restarts when the snaps
 
 ## History
 
-Your context is a session tree. Every turn is an entry, and the request you receive is the path from the root to the newest entry.
+Your context is a session tree. Every turn is an entry, and the request you receive is the view assembled from the path between the root and the newest entry.
 
 All four methods are coroutines: await them, or nothing happens.
 
-- `history.index(order="tokens", *, limit=20, role=None, query=None, include_hidden=False)`: the token figure of the request about to be sent, the window, the entries that use it, and how many edits no longer applied; each row carries id, turn, role, tokens, share of the total, and a preview
+- `history.index(order="tokens", *, limit=20, role=None, query=None, include_hidden=False)`: the token figure for the request the next turn would send, the window, the entries that use it, and how many edits no longer applied; each row carries turn, role, tokens, share of the total, and a preview, plus an id when the entry has one
 - `history.path(*, limit=500)`: the live view in order, with the number of entries it holds, how many were shown, and how many edits no longer applied; each entry previews its text and says whether it was cut, so use get for one entry in full
 - `history.get(selector, *, limit=200)`: one entry by id or position, or a region; -1 is the newest entry, slice(12, 41) is positions 12 through 40, slice(-20, None) is the last twenty. A region longer than limit returns the first limit entries and reports the remainder as total, shown, and remainder
 - `history.edit(changes)`: drop, replace, or insert entries, then report what changed and the new live figure
@@ -39,9 +39,9 @@ All changes in one call resolve against the path as it stood before the call, so
 
 The next request carries the edit, in the same run, not only after the next prompt.
 
-Every edit changes text before the end of the context, so the next request re-reads everything after it. Edits near the end are nearly free; edits near the beginning cost a full re-read.
+An edit that changes or removes a turn also changes everything after it, so the next request re-reads from there. Edits near the end are nearly free; edits near the beginning cost a full re-read, and an insert at the end costs only the inserted turn.
 
-The index figure follows the edits: it starts from the newest provider-reported usage and subtracts what an edit dropped above it, and adds what a replacement or an insertion above it contributed. It falls back to a chars/4 count of the whole view only when no observation describes what is sent: the view has no usage at all, an edit removed or replaced the turn that usage was reported on, or an edit removed the archive row that carried it.
+The index figure follows the edits: it starts from the newest provider-reported usage and subtracts what an edit dropped above it, and adds what a sent replacement or insertion above it contributed. It falls back to a chars/4 count of the whole view whenever no observation describes what is sent: the view has no usage at all, an edit removed or replaced the turn that usage was reported on, a replacement or a compaction happened after that usage, or an edit removed or replaced the archive row that carried it. The same figure is what `compact.status` reports and what decides auto-compaction.
 
 A row the provider expands rather than receives, a compaction summary in an archive representation the provider replays, shows the summary text here while the request carries the expanded representation the provider replays.
 

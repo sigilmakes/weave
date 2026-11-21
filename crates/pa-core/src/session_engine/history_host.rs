@@ -113,13 +113,16 @@ pub fn register_history_handlers(
 /// being assembled, and hand the loop the transcript it must send.
 #[must_use]
 pub fn refresh_hook(
-    requests: Arc<TurnBoundaryRequests>,
+    requests: std::sync::Weak<TurnBoundaryRequests>,
     agent: std::sync::Weak<pa_agent::agent::Agent>,
 ) -> pa_agent::agent_loop::RefreshContextFn {
     Arc::new(move || {
-        let requests = Arc::clone(&requests);
+        let requests = requests.clone();
         let agent = agent.clone();
         Box::pin(async move {
+            let Some(requests) = requests.upgrade() else {
+                return Ok(None);
+            };
             if !requests.take_refresh() {
                 return Ok(None);
             }
@@ -793,7 +796,7 @@ mod tests {
             })
             .await;
         agent.set_refresh_context(Some(refresh_hook(
-            Arc::clone(&requests),
+            Arc::downgrade(&requests),
             Arc::downgrade(&agent),
         )));
         agent.prompt("go").await.unwrap();
@@ -955,7 +958,7 @@ mod tests {
                 })
             }
         }));
-        let hook = refresh_hook(Arc::clone(&requests), Arc::downgrade(&agent));
+        let hook = refresh_hook(Arc::downgrade(&requests), Arc::downgrade(&agent));
         assert!(
             (hook)().await.unwrap().is_none(),
             "no edit is pending, so the loop keeps its transcript"
@@ -1001,7 +1004,7 @@ mod tests {
             },
             ..Default::default()
         }));
-        let hook = refresh_hook(Arc::clone(&requests), Arc::downgrade(&agent));
+        let hook = refresh_hook(Arc::downgrade(&requests), Arc::downgrade(&agent));
         let edit = handler(&handlers, "history.edit");
 
         edit(payload(json!({
@@ -1065,7 +1068,7 @@ mod tests {
             },
             ..Default::default()
         }));
-        let hook = refresh_hook(Arc::clone(&requests), Arc::downgrade(&agent));
+        let hook = refresh_hook(Arc::downgrade(&requests), Arc::downgrade(&agent));
         requests.set_live_view(Arc::new(|| {
             Box::pin(async { Err(anyhow::anyhow!("assembly failed")) })
         }));
@@ -1074,6 +1077,47 @@ mod tests {
         assert!(
             requests.take_refresh(),
             "the next request must still rebuild the view"
+        );
+    }
+
+    #[tokio::test]
+    async fn the_refresh_hook_does_not_keep_its_agent_alive() {
+        let (_dir, session) = session_with(1);
+        let requests = Arc::new(TurnBoundaryRequests::new());
+        let agent = Arc::new(Agent::new(AgentOptions {
+            initial_state: AgentInitialState {
+                system_prompt: Some("s".to_string()),
+                model: Some(agent_model()),
+                thinking_level: Some(ThinkingLevel::Off),
+                tools: None,
+                messages: None,
+            },
+            ..Default::default()
+        }));
+        requests.bind(TurnBoundaryRuntime {
+            agent: Arc::clone(&agent),
+            session: Arc::new(Mutex::new(session)),
+            context_window: Some(200_000),
+            model_info: ModelInfo {
+                id: "faux-1".to_string(),
+                provider: "faux".to_string(),
+                input: Vec::new(),
+            },
+        });
+        agent.set_refresh_context(Some(refresh_hook(
+            Arc::downgrade(&requests),
+            Arc::downgrade(&agent),
+        )));
+        let weak = Arc::downgrade(&agent);
+        drop(agent);
+        assert!(
+            weak.upgrade().is_some(),
+            "the bound runtime still holds its agent"
+        );
+        drop(requests);
+        assert!(
+            weak.upgrade().is_none(),
+            "the hook must not close a cycle back to its agent: a live kernel would outlive the session"
         );
     }
 

@@ -57,12 +57,16 @@ pub struct UsageDrift {
     /// Set when the anchor itself stopped being sent, so no observed usage
     /// describes this view any more.
     pub anchor_lost: bool,
+    /// Timestamp of the newest compaction on the path. Usage reported at or
+    /// before it describes a view this request no longer sends, and neither
+    /// does any correction computed above it.
+    pub boundary: Option<u64>,
 }
 
 impl UsageDrift {
     #[must_use]
     pub fn is_clean(self) -> bool {
-        self == Self::default()
+        self.tokens == 0 && !self.anchor_lost
     }
 }
 
@@ -232,7 +236,12 @@ impl HistoryWalk {
         if crate::session_engine::compaction::has_usage(&message) {
             // A fresh observation describes the view as it stands now, edits and
             // all, so the correction the previous anchor needed no longer applies.
-            self.usage_drift = UsageDrift::default();
+            // The compaction boundary stays: usage reported before it is still
+            // not about this request.
+            self.usage_drift = UsageDrift {
+                boundary: self.usage_drift.boundary,
+                ..UsageDrift::default()
+            };
         }
         let role = role_of(&message);
         let turn = self.advance_turn(role);
@@ -343,6 +352,12 @@ impl HistoryWalk {
             let turn = self.advance_turn(entry.role);
             self.entries.push(HistoryEntry { turn, ..entry });
         }
+        // Every usage observation and every edit correction so far is about the
+        // prefix this compaction just replaced.
+        self.usage_drift = UsageDrift {
+            boundary: Some(timestamp_to_millis(entries[index].timestamp())),
+            ..UsageDrift::default()
+        };
     }
 
     /// Apply one edit to the live view. Every selector resolves against the
@@ -489,6 +504,7 @@ impl HistoryWalk {
         self.usage_drift = UsageDrift {
             tokens: if anchor_lost { 0 } else { drift.tokens },
             anchor_lost,
+            boundary: self.usage_drift.boundary,
         };
         if archive_touched {
             self.archive = None;
@@ -1316,6 +1332,173 @@ mod tests {
     }
 
     #[test]
+    fn edit_then_a_portable_compaction_retires_the_usage_and_the_drift() {
+        let big = "x".repeat(200_000);
+        let lines = [
+            header(),
+            user_row("u0", "", &big),
+            assistant_row_with_usage("a0", "u0", 90_000),
+            edit_row("e0", "a0", &serde_json::json!([{"op": "drop", "at": 0}])),
+            compaction_row("c0", "e0", Some("a0")),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        assert!(
+            walk.usage_drift.is_clean(),
+            "the compaction replaced the prefix the drop corrected"
+        );
+        assert!(
+            walk.usage_drift.boundary.is_some(),
+            "a boundary was recorded"
+        );
+        let messages = walk.messages();
+        let chars: u64 = messages.iter().map(estimate_tokens).sum();
+        let figure = crate::session_engine::compaction::context_tokens_with_drift(
+            &messages,
+            walk.usage_drift,
+        );
+        assert_eq!(figure, chars, "the summary and its retained turn only");
+        assert!(figure < 100, "{figure}");
+        assert_eq!(
+            crate::session_engine::turn_boundary::context_usage(
+                &messages,
+                walk.usage_drift,
+                Some(200_000)
+            )
+            .unwrap()
+            .tokens,
+            Some(chars),
+            "the status reader reports the figure index reports"
+        );
+        assert!(
+            !crate::session_engine::compaction::threshold_compaction_due_with_drift(
+                &messages,
+                walk.usage_drift,
+                200_000,
+                0,
+                &crate::session_engine::compaction::CompactionSettings {
+                    threshold_percent: 50.0,
+                    enabled: true,
+                    reserve_tokens: 0,
+                    keep_recent_tokens: 1_000,
+                }
+            ),
+            "a retired 90_000-token anchor does not decide"
+        );
+    }
+
+    #[test]
+    fn a_native_compaction_retires_the_usage_behind_it() {
+        let big = "x".repeat(200_000);
+        let kept = "k".repeat(4_000);
+        let lines = [
+            header(),
+            user_row("u0", "", &big),
+            assistant_row_with_usage("a0", "u0", 90_000),
+            user_row("u1", "a0", &kept),
+            compaction_row_with_archive("c0", "u1", "responses"),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        assert!(walk.usage_drift.boundary.is_some());
+        let messages = walk.messages();
+        assert_eq!(messages.len(), 2, "the native summary is not a message");
+        let figure = crate::session_engine::compaction::context_tokens_with_drift(
+            &messages,
+            walk.usage_drift,
+        );
+        assert_eq!(figure, 1_001, "the retained 4_000-char row only");
+        assert_eq!(
+            crate::session_engine::turn_boundary::context_usage(
+                &messages,
+                walk.usage_drift,
+                Some(200_000)
+            )
+            .unwrap()
+            .tokens,
+            Some(1_001),
+            "a pre-compaction anchor does not measure the request"
+        );
+        assert!(
+            !crate::session_engine::compaction::threshold_compaction_due_with_drift(
+                &messages,
+                walk.usage_drift,
+                200_000,
+                0,
+                &crate::session_engine::compaction::CompactionSettings {
+                    threshold_percent: 50.0,
+                    enabled: true,
+                    reserve_tokens: 0,
+                    keep_recent_tokens: 1_000,
+                }
+            )
+        );
+    }
+
+    #[test]
+    fn an_edit_after_a_compaction_does_not_revive_the_retired_usage() {
+        let lines = [
+            header(),
+            user_row("u0", "", "old"),
+            user_row("u1", "u0", "kept"),
+            assistant_row_with_usage("a0", "u1", 90_000),
+            compaction_row("c0", "a0", Some("u1")),
+            edit_row(
+                "e0",
+                "c0",
+                &serde_json::json!([{"op": "replace", "at": "u1", "text": "y".repeat(100_000)}]),
+            ),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        let messages = walk.messages();
+        let chars: u64 = messages.iter().map(estimate_tokens).sum();
+        let figure = crate::session_engine::compaction::context_tokens_with_drift(
+            &messages,
+            walk.usage_drift,
+        );
+        assert_eq!(figure, chars, "the view, not the retired anchor");
+        assert!(figure < 90_000, "{figure}");
+        assert!(
+            walk.usage_drift.boundary.is_some(),
+            "the edit keeps the compaction boundary"
+        );
+    }
+
+    #[test]
+    fn replacing_the_compaction_row_retires_the_usage_it_carried() {
+        let big = "x".repeat(40_000);
+        let lines = [
+            header(),
+            user_row("u0", "", &big),
+            assistant_row_with_usage("a0", "u0", 80_000),
+            archived_compaction_row("c0", "a0"),
+            edit_row(
+                "e0",
+                "c0",
+                &serde_json::json!([{"op": "replace", "at": "c0", "text": "rewritten summary"}]),
+            ),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        assert!(
+            walk.archive.is_none(),
+            "replacing the archive row stops its expansion"
+        );
+        assert!(walk.usage_drift.anchor_lost);
+        let messages = walk.messages();
+        let chars: u64 = messages.iter().map(estimate_tokens).sum();
+        assert_eq!(
+            crate::session_engine::compaction::context_tokens_with_drift(
+                &messages,
+                walk.usage_drift
+            ),
+            chars,
+            "the summary is replaced, so no observation describes the view"
+        );
+    }
+
+    #[test]
     fn dropping_the_compaction_row_clears_its_archive() {
         let lines = [
             header(),
@@ -1635,20 +1818,32 @@ mod tests {
             user_row("u0", "", &big),
             user_row("u1", "u0", "kept"),
             assistant_row_with_usage("a0", "u1", 90_000),
-            edit_row("e0", "a0", &serde_json::json!([{"op": "drop", "at": 0}])),
+            edit_row("e0", "a0", &serde_json::json!([{"op": "drop", "at": 2}])),
             assistant_row_with_usage("a1", "e0", 40_000),
             user_row("u2", "a1", "after"),
             edit_row("e1", "u2", &serde_json::json!([{"op": "drop", "at": "u1"}])),
         ];
-        let entries = parse_session_entries(&lines.join("\n"));
-        let walk = walk_history(&entries, None);
+        let lost = walk_history(&parse_session_entries(&lines[..5].join("\n")), None);
+        assert!(
+            lost.usage_drift.anchor_lost,
+            "dropping a0 leaves no observation that covers the view"
+        );
+        let lost_figure = crate::session_engine::compaction::context_tokens_with_drift(
+            &lost.messages(),
+            lost.usage_drift,
+        );
+        let lost_chars: u64 = lost.messages().iter().map(estimate_tokens).sum();
+        assert_eq!(lost_figure, lost_chars);
+        assert!(lost_figure > 50_000, "{lost_figure}");
+
+        let walk = walk_history(&parse_session_entries(&lines.join("\n")), None);
         let settings = crate::session_engine::compaction::CompactionSettings {
-            threshold_percent: 50.0,
+            threshold_percent: 1.0,
             enabled: true,
             reserve_tokens: 0,
             keep_recent_tokens: 1_000,
         };
-        let before_second_edit = crate::session_engine::compaction::context_tokens_with_drift(
+        let after_second_edit = crate::session_engine::compaction::context_tokens_with_drift(
             &walk.messages(),
             walk.usage_drift,
         );
@@ -1664,7 +1859,7 @@ mod tests {
         );
         let trailing = estimate_tokens(walk.messages().last().unwrap());
         assert_eq!(
-            before_second_edit,
+            after_second_edit,
             40_001 + trailing - dropped.tokens,
             "the anchor reports the edited view, without the 50_000-token drop"
         );
@@ -1673,12 +1868,12 @@ mod tests {
             "the first edit's lost anchor is forgotten once a new one reports"
         );
         assert!(
-            !crate::session_engine::compaction::threshold_compaction_due_with_drift(
+            crate::session_engine::compaction::threshold_compaction_due_with_drift(
                 &walk.messages(),
                 walk.usage_drift,
                 200_000,
                 0,
-                &settings
+                &settings,
             ),
             "a fresh 40_000-token observation is not the 0 the stale drift claimed"
         );
@@ -1706,7 +1901,7 @@ mod tests {
             edit_row(
                 "e3",
                 "e2",
-                &serde_json::json!([{"op": "replace", "at": 1, "text": note}]),
+                &serde_json::json!([{"op": "replace", "at": 1, "text": "z".repeat(100_000)}]),
             ),
         ];
         let entries = parse_session_entries(&lines.join("\n"));
