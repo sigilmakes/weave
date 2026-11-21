@@ -82,6 +82,12 @@ if _prime_agent_plugin_session:
     elif _prime_agent_plugin_namespace.session != _prime_agent_plugin_session:
         raise RuntimeError("plugin namespace belongs to another session")
     plugin = _prime_agent_plugin_namespace
+    from rlm.history import HistoryNamespace as _PrimeAgentHistoryNamespace
+    if "_prime_agent_history_namespace" not in globals():
+        _prime_agent_history_namespace = _PrimeAgentHistoryNamespace(_prime_agent_plugin_session)
+    elif _prime_agent_history_namespace.session != _prime_agent_plugin_session:
+        raise RuntimeError("history namespace belongs to another session")
+    history = _prime_agent_history_namespace
 "#;
 
 /// The code the session injects right after kernel start/restore: binds the `rlm`, `bash`, plugin,
@@ -194,6 +200,8 @@ mod tests {
     fn bootstrap_code_without_skills_binds_rlm() {
         let code = build_rlm_bootstrap_code(&[]);
         assert!(code.contains("import rlm as _prime_agent_rlm_module"));
+        assert!(code.contains("from rlm.history import HistoryNamespace"));
+        assert!(code.contains("history = _prime_agent_history_namespace"));
         assert!(!code.contains("_PrimeAgentUnavailableSkill"));
     }
 

@@ -3,10 +3,12 @@
 //! `compact.run` only SCHEDULES: executing inside the active turn
 //! would abort the requesting run, so the pending request is stored here.
 
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use pa_agent::agent::Agent;
-use pa_types::session::FileEntry;
+use pa_types::session::{AgentMessage, FileEntry};
 use serde_json::{json, Value};
 use tokio::sync::Mutex;
 
@@ -56,6 +58,15 @@ pub struct ContextUsage {
     pub percent: Option<f64>,
 }
 
+/// Rebuilds the loop's model-facing messages from the canonical session after a
+/// history edit: the same assembly a rebuild uses, so a pinned context strategy
+/// still shapes the view.
+pub type LiveContextRebuild = Arc<
+    dyn Fn() -> Pin<Box<dyn Future<Output = anyhow::Result<Vec<AgentMessage>>> + Send>>
+        + Send
+        + Sync,
+>;
+
 /// The turn-boundary state: pending requests plus the late-bound runtime,
 /// shared between the host bridge and the turn loop; build it in `Arc` form.
 #[derive(Default)]
@@ -64,6 +75,7 @@ pub struct TurnBoundaryRequests {
     /// swaps the model facts after a live model switch.
     runtime: std::sync::RwLock<Option<Arc<TurnBoundaryRuntime>>>,
     compaction: Mutex<Option<PendingCompaction>>,
+    context_rebuild: std::sync::RwLock<Option<LiveContextRebuild>>,
 }
 
 impl TurnBoundaryRequests {
@@ -130,6 +142,23 @@ impl TurnBoundaryRequests {
     /// Whether a compaction is scheduled (TS `compact.status` `scheduled`).
     pub async fn compaction_scheduled(&self) -> bool {
         self.compaction.lock().await.is_some()
+    }
+
+    /// Install the live-view rebuild a canonical-history write uses.
+    pub fn set_context_rebuild(&self, rebuild: LiveContextRebuild) {
+        *self
+            .context_rebuild
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(rebuild);
+    }
+
+    /// The installed live-view rebuild, when the embedding supplied one.
+    #[must_use]
+    pub fn context_rebuild(&self) -> Option<LiveContextRebuild> {
+        self.context_rebuild
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 
     /// The scheduled compaction without consuming it (the consumer

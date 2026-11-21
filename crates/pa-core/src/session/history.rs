@@ -1,0 +1,1125 @@
+//! The history view: one ordered walk from the root to the leaf that applies
+//! every substitution on the way — compaction summaries and model-authored
+//! context edits — and yields the entries the request is built from.
+
+use std::collections::{HashMap, HashSet};
+
+use pa_types::ai::{
+    AssistantContentBlock, AssistantMessage, TextContent, ToolResultMessage, UserContent,
+    UserMessage,
+};
+use pa_types::session::{
+    AgentMessage, BranchSummaryMessage, CompactionEntry, CompactionSummaryMessage, ContextAnchor,
+    ContextArchive, ContextChange, ContextEditEntry, ContextRange, ContextRangeEnd, ContextRole,
+    ContextSelector, ContextTarget, FileEntry,
+};
+
+use super::{create_custom_message, timestamp_to_millis};
+use crate::session_engine::compaction::estimate_tokens;
+
+/// One entry of the model-facing history view.
+#[derive(Debug, Clone)]
+pub struct HistoryEntry {
+    /// Source entry id; `None` for an inserted entry, which lives inside the
+    /// edit row that added it and has no identity of its own.
+    pub id: Option<String>,
+    /// Index into the session entries for a record-backed entry.
+    pub source: Option<usize>,
+    pub role: ContextRole,
+    pub tokens: u64,
+    pub text: String,
+    /// The message this entry contributes to the request; `None` for notes,
+    /// which never reach the provider.
+    pub message: Option<AgentMessage>,
+    /// 1-based user turn the entry belongs to.
+    pub turn: usize,
+    /// Position in the session's recorded order; stable across later edits, so
+    /// a view sort can fall back to it.
+    pub seq: usize,
+}
+
+/// What one applied edit removed, replaced, and inserted.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EditCounts {
+    pub dropped: usize,
+    pub replaced: usize,
+    pub inserted: usize,
+}
+
+/// The state one root-to-leaf walk carries: the live view plus the settings
+/// resolved on the same pass.
+#[derive(Debug, Clone)]
+pub struct HistoryWalk {
+    /// The live view, in request order.
+    pub entries: Vec<HistoryEntry>,
+    /// Record-backed entries the walk stopped showing (dropped by an edit or
+    /// covered by a compaction).
+    pub hidden: Vec<HistoryEntry>,
+    pub thinking_level: String,
+    pub service_tier: Option<pa_types::ai::ServiceTier>,
+    pub model: Option<(String, String)>,
+    pub archive: Option<ContextArchive>,
+    path: Vec<usize>,
+    path_position: HashMap<usize, usize>,
+    path_ids: HashSet<String>,
+    session_ids: HashSet<String>,
+    turn: usize,
+    next_seq: usize,
+}
+
+/// Walk the root-to-leaf path and apply every substitution on it.
+#[must_use]
+pub fn walk_history(entries: &[FileEntry], leaf_id: Option<&str>) -> HistoryWalk {
+    let by_id: HashMap<&str, usize> = entries
+        .iter()
+        .enumerate()
+        .filter_map(|(index, entry)| entry.id().map(|id| (id, index)))
+        .collect();
+    let leaf_index = match leaf_id {
+        Some("") | None => entries.len().checked_sub(1),
+        Some(id) => by_id.get(id).copied(),
+    };
+    let mut walk = HistoryWalk {
+        entries: Vec::new(),
+        hidden: Vec::new(),
+        thinking_level: "off".to_string(),
+        service_tier: None,
+        model: None,
+        archive: None,
+        path: Vec::new(),
+        path_position: HashMap::new(),
+        path_ids: HashSet::new(),
+        session_ids: entries
+            .iter()
+            .filter_map(|entry| entry.id().map(str::to_owned))
+            .collect(),
+        turn: 0,
+        next_seq: 0,
+    };
+    let Some(leaf_index) = leaf_index else {
+        return walk;
+    };
+    let mut visited = HashSet::new();
+    let mut current = Some(leaf_index);
+    while let Some(index) = current {
+        if !visited.insert(index) {
+            break;
+        }
+        walk.path.push(index);
+        current = entries[index]
+            .parent_id()
+            .and_then(|parent_id| by_id.get(parent_id).copied());
+    }
+    walk.path.reverse();
+    walk.path_position = walk
+        .path
+        .iter()
+        .enumerate()
+        .map(|(position, index)| (*index, position))
+        .collect();
+    walk.path_ids = walk
+        .path
+        .iter()
+        .filter_map(|index| entries[*index].id().map(str::to_owned))
+        .collect();
+    let path = walk.path.clone();
+    for index in path {
+        walk.visit(entries, index);
+    }
+    walk
+}
+
+impl HistoryWalk {
+    /// The messages the request is built from: notes never cross to the
+    /// provider.
+    #[must_use]
+    pub fn messages(&self) -> Vec<AgentMessage> {
+        self.entries
+            .iter()
+            .filter_map(|entry| entry.message.clone())
+            .collect()
+    }
+
+    /// A record-backed entry by id, live or dropped from the live view.
+    #[must_use]
+    pub fn entry_by_id(&self, id: &str) -> Option<&HistoryEntry> {
+        self.entries
+            .iter()
+            .chain(self.hidden.iter())
+            .find(|entry| entry.id.as_deref() == Some(id))
+    }
+
+    /// Resolve one target against the live view, returning its positions.
+    ///
+    /// # Errors
+    ///
+    /// Returns the rule and the target that rejected the selector.
+    pub fn resolve(&self, target: &ContextTarget) -> Result<Vec<usize>, String> {
+        self.resolve_target(&self.entries, target)
+    }
+
+    fn visit(&mut self, entries: &[FileEntry], index: usize) {
+        match &entries[index] {
+            FileEntry::ThinkingLevelChange { payload, .. } => {
+                self.thinking_level.clone_from(&payload.thinking_level);
+            }
+            FileEntry::ServiceTierChange { payload, .. } => {
+                self.service_tier = payload.service_tier;
+            }
+            FileEntry::ModelChange { payload, .. } => {
+                self.model = Some((payload.provider.clone(), payload.model_id.clone()));
+            }
+            FileEntry::Message {
+                message: AgentMessage::Assistant(assistant),
+                ..
+            } => {
+                self.model = Some((assistant.provider.clone(), assistant.model.clone()));
+                self.push(entries, index);
+            }
+            FileEntry::Compaction { payload, .. } => {
+                let payload = payload.clone();
+                self.apply_compaction(entries, index, &payload);
+            }
+            FileEntry::ContextEdit { payload, .. } => {
+                let payload = payload.clone();
+                let timestamp = timestamp_to_millis(entries[index].timestamp());
+                let _ = self.apply(&payload, timestamp);
+            }
+            _ => self.push(entries, index),
+        }
+    }
+
+    fn push(&mut self, entries: &[FileEntry], index: usize) {
+        let Some(message) = message_from_entry(&entries[index]) else {
+            return;
+        };
+        let id = entries[index].id().map(str::to_owned);
+        self.push_message(id, Some(index), message);
+    }
+
+    fn push_message(&mut self, id: Option<String>, source: Option<usize>, message: AgentMessage) {
+        let role = role_of(&message);
+        let turn = self.advance_turn(role);
+        let seq = self.next_seq;
+        self.next_seq += 1;
+        self.entries.push(HistoryEntry {
+            id,
+            source,
+            role,
+            tokens: estimate_tokens(&message),
+            text: message_text(&message),
+            message: Some(message),
+            turn,
+            seq,
+        });
+    }
+
+    fn advance_turn(&mut self, role: ContextRole) -> usize {
+        if role == ContextRole::User {
+            self.turn += 1;
+        }
+        self.turn.max(1)
+    }
+
+    fn apply_compaction(&mut self, entries: &[FileEntry], index: usize, payload: &CompactionEntry) {
+        self.archive.clone_from(&payload.context_archive);
+        let portable = self.archive.as_ref().is_none_or(|archive| {
+            matches!(
+                archive.representation,
+                pa_types::session::ContextRepresentation::Standard { .. }
+            )
+        });
+        let covered: Option<HashSet<&str>> = self.archive.as_ref().map(|archive| {
+            archive
+                .covered_entry_ids
+                .iter()
+                .map(String::as_str)
+                .collect()
+        });
+        let first_kept = payload.first_kept_entry_id.as_deref().and_then(|id| {
+            self.path
+                .iter()
+                .position(|other| entries[*other].id() == Some(id))
+        });
+        let mut retained = Vec::new();
+        for entry in std::mem::take(&mut self.entries) {
+            let source = entry.source;
+            let keep = match source {
+                // An inserted note is not a covered record; it survives.
+                None => true,
+                Some(source) => match (&covered, first_kept) {
+                    (Some(covered), _) => {
+                        entry.id.as_deref().is_some_and(|id| !covered.contains(id))
+                    }
+                    (None, Some(first_kept)) => self
+                        .path_position
+                        .get(&source)
+                        .is_some_and(|position| *position >= first_kept),
+                    (None, None) => false,
+                },
+            };
+            if keep {
+                retained.push(entry);
+            } else {
+                self.hidden.push(entry);
+            }
+        }
+        let retained_messages = retained
+            .iter()
+            .filter(|entry| entry.message.is_some())
+            .count();
+        self.turn = 0;
+        self.entries = Vec::new();
+        if portable {
+            let message = AgentMessage::CompactionSummary(CompactionSummaryMessage {
+                rest: pa_types::JsonMap::new(),
+                summary: payload.summary.clone(),
+                tokens_before: payload.tokens_before,
+                retained_message_count: Some(retained_messages as u64),
+                custom_instructions: payload.custom_instructions.clone(),
+                timestamp: timestamp_to_millis(entries[index].timestamp()),
+            });
+            let id = entries[index].id().map(str::to_owned);
+            self.push_message(id, Some(index), message);
+        }
+        for entry in retained {
+            let turn = self.advance_turn(entry.role);
+            self.entries.push(HistoryEntry { turn, ..entry });
+        }
+    }
+
+    /// Apply one edit to the live view. Every selector resolves against the
+    /// view as it stood before this call, so no change can invalidate another.
+    /// Nothing is mutated when the edit is rejected.
+    ///
+    /// # Errors
+    ///
+    /// Returns the rule and the target that rejected the edit: a tool result
+    /// dropped without its call, a changed assistant tool call, a selector off
+    /// the current path, a range spanning branches, an unknown op, or a key the
+    /// op does not use.
+    pub fn apply(&mut self, edit: &ContextEditEntry, timestamp: u64) -> Result<EditCounts, String> {
+        let snapshot = self.entries.clone();
+        let mut dropped: HashSet<usize> = HashSet::new();
+        let mut replaced: HashMap<usize, String> = HashMap::new();
+        let mut inserted: Vec<(usize, HistoryEntry)> = Vec::new();
+        for change in &edit.changes {
+            match change {
+                ContextChange::Drop { at } => {
+                    for position in self.resolve_target(&snapshot, at)? {
+                        dropped.insert(position);
+                    }
+                }
+                ContextChange::Replace { at, text } => {
+                    let position = self.resolve_point(&snapshot, at)?;
+                    let entry = &snapshot[position];
+                    if entry.role == ContextRole::Assistant
+                        && assistant_has_tool_calls(entry.message.as_ref())
+                    {
+                        return Err(format!(
+                            "context_edit replaces the tool calls of assistant entry {}",
+                            entry.id.as_deref().unwrap_or("<inserted>")
+                        ));
+                    }
+                    replaced.insert(position, text.clone());
+                }
+                ContextChange::Insert { text, role, after } => {
+                    if !matches!(role, ContextRole::User | ContextRole::Notes) {
+                        return Err(format!(
+                            "context_edit insert cannot create a '{}' entry; insert user or notes",
+                            role.as_str()
+                        ));
+                    }
+                    let anchor = self.resolve_anchor(&snapshot, after)?;
+                    let entry =
+                        inserted_entry(*role, text, anchor, &snapshot, self.turn.max(1), timestamp);
+                    inserted.push((anchor.map_or(0, |position| position + 1), entry));
+                }
+            }
+        }
+        inserted.sort_by_key(|(position, _)| *position);
+        let mut view = Vec::with_capacity(snapshot.len() + inserted.len());
+        let mut hidden = Vec::new();
+        let mut counts = EditCounts::default();
+        let mut cursor = 0usize;
+        for (position, entry) in snapshot.iter().enumerate() {
+            while cursor < inserted.len() && inserted[cursor].0 == position {
+                view.push(inserted[cursor].1.clone());
+                counts.inserted += 1;
+                cursor += 1;
+            }
+            if dropped.contains(&position) {
+                hidden.push(entry.clone());
+                counts.dropped += 1;
+                continue;
+            }
+            if let Some(text) = replaced.get(&position) {
+                let mut entry = entry.clone();
+                entry.text.clone_from(text);
+                entry.message = replaced_message(entry.role, text, entry.message.as_ref());
+                entry.tokens = entry
+                    .message
+                    .as_ref()
+                    .map_or_else(|| text_tokens(&entry.text), estimate_tokens);
+                counts.replaced += 1;
+                view.push(entry);
+                continue;
+            }
+            view.push(entry.clone());
+        }
+        while cursor < inserted.len() {
+            view.push(inserted[cursor].1.clone());
+            counts.inserted += 1;
+            cursor += 1;
+        }
+        check_tool_calls(&snapshot, &view, &dropped)?;
+        self.hidden.extend(hidden);
+        self.entries = view;
+        Ok(counts)
+    }
+
+    fn resolve_point(
+        &self,
+        snapshot: &[HistoryEntry],
+        selector: &ContextSelector,
+    ) -> Result<usize, String> {
+        match selector {
+            ContextSelector::EntryId(id) => {
+                position_of(snapshot, id).ok_or_else(|| self.off_path(id))
+            }
+            ContextSelector::Position(position) => {
+                normalize(*position, snapshot.len()).ok_or_else(|| {
+                    format!(
+                        "context_edit selector off the current path: position {position} is outside the live view of {} entries",
+                        snapshot.len()
+                    )
+                })
+            }
+        }
+    }
+
+    fn resolve_target(
+        &self,
+        snapshot: &[HistoryEntry],
+        target: &ContextTarget,
+    ) -> Result<Vec<usize>, String> {
+        match target {
+            ContextTarget::Point(selector) => Ok(vec![self.resolve_point(snapshot, selector)?]),
+            ContextTarget::Range(range) => self.resolve_range(snapshot, range),
+        }
+    }
+
+    fn resolve_range(
+        &self,
+        snapshot: &[HistoryEntry],
+        range: &ContextRange,
+    ) -> Result<Vec<usize>, String> {
+        let start = self.resolve_range_end(snapshot, &range.start, 0)?;
+        let end = self.resolve_range_end(snapshot, &range.end, snapshot.len())?;
+        if start > end {
+            return Err(format!(
+                "context_edit range end precedes its start: {start}..{end}"
+            ));
+        }
+        Ok((start..end).collect())
+    }
+
+    fn resolve_range_end(
+        &self,
+        snapshot: &[HistoryEntry],
+        end: &ContextRangeEnd,
+        path_bound: usize,
+    ) -> Result<usize, String> {
+        match end {
+            ContextRangeEnd::PathBound => Ok(path_bound),
+            ContextRangeEnd::EntryId(id) => {
+                if let Some(position) = position_of(snapshot, id) {
+                    return Ok(position);
+                }
+                if self.session_ids.contains(id) {
+                    return Err(format!(
+                        "context_edit range ends are on different branches: {id}"
+                    ));
+                }
+                Err(self.off_path(id))
+            }
+            ContextRangeEnd::Position(position) => {
+                normalize_bound(*position, snapshot.len()).ok_or_else(|| {
+                    format!(
+                        "context_edit selector off the current path: position {position} is outside the live view of {} entries",
+                        snapshot.len()
+                    )
+                })
+            }
+        }
+    }
+
+    fn resolve_anchor(
+        &self,
+        snapshot: &[HistoryEntry],
+        anchor: &ContextAnchor,
+    ) -> Result<Option<usize>, String> {
+        match anchor {
+            ContextAnchor::Position(position) => {
+                if snapshot.is_empty() {
+                    return Ok(None);
+                }
+                let index = normalize(*position, snapshot.len()).ok_or_else(|| {
+                    format!(
+                        "context_edit insert 'after' off the current path: position {position} is outside the live view of {} entries",
+                        snapshot.len()
+                    )
+                })?;
+                Ok(Some(index))
+            }
+            ContextAnchor::EntryId(id) => position_of(snapshot, id)
+                .map(Some)
+                .ok_or_else(|| self.off_path(id)),
+        }
+    }
+
+    fn off_path(&self, id: &str) -> String {
+        if self.path_ids.contains(id) {
+            return format!("context_edit selector off the current path: {id} is no longer live");
+        }
+        if self.session_ids.contains(id) {
+            return format!(
+                "context_edit selector off the current path: {id} is on another branch"
+            );
+        }
+        format!("context_edit selector off the current path: {id} is not in this session")
+    }
+}
+
+fn position_of(snapshot: &[HistoryEntry], id: &str) -> Option<usize> {
+    snapshot
+        .iter()
+        .position(|entry| entry.id.as_deref() == Some(id))
+}
+
+fn assistant_has_tool_calls(message: Option<&AgentMessage>) -> bool {
+    let Some(AgentMessage::Assistant(assistant)) = message else {
+        return false;
+    };
+    assistant
+        .content
+        .iter()
+        .any(|block| matches!(block, AssistantContentBlock::ToolCall(_)))
+}
+
+fn check_tool_calls(
+    snapshot: &[HistoryEntry],
+    view: &[HistoryEntry],
+    dropped: &HashSet<usize>,
+) -> Result<(), String> {
+    let surviving_calls: HashSet<&str> = view
+        .iter()
+        .filter_map(|entry| entry.message.as_ref())
+        .filter_map(|message| match message {
+            AgentMessage::Assistant(assistant) => Some(assistant),
+            _ => None,
+        })
+        .flat_map(|assistant| assistant.content.iter())
+        .filter_map(|block| match block {
+            AssistantContentBlock::ToolCall(call) => Some(call.id.as_str()),
+            _ => None,
+        })
+        .collect();
+    for position in dropped {
+        let entry = &snapshot[*position];
+        let Some(AgentMessage::ToolResult(result)) = &entry.message else {
+            continue;
+        };
+        if surviving_calls.contains(result.tool_call_id.as_str()) {
+            return Err(format!(
+                "context_edit drops tool result {} whose call {} remains in the path",
+                entry.id.as_deref().unwrap_or("<inserted>"),
+                result.tool_call_id
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn inserted_entry(
+    role: ContextRole,
+    text: &str,
+    anchor: Option<usize>,
+    snapshot: &[HistoryEntry],
+    fallback_turn: usize,
+    timestamp: u64,
+) -> HistoryEntry {
+    let neighbour = anchor.and_then(|position| snapshot.get(position));
+    let turn = neighbour.map_or(fallback_turn, |entry| entry.turn);
+    let seq = neighbour.map_or(usize::MAX, |entry| entry.seq);
+    if role == ContextRole::Notes {
+        return HistoryEntry {
+            id: None,
+            source: None,
+            role,
+            tokens: text_tokens(text),
+            text: text.to_string(),
+            message: None,
+            turn,
+            seq,
+        };
+    }
+    let message = AgentMessage::User(UserMessage {
+        content: UserContent::Text(text.to_string()),
+        timestamp,
+        rest: pa_types::JsonMap::new(),
+    });
+    HistoryEntry {
+        id: None,
+        source: None,
+        role,
+        tokens: estimate_tokens(&message),
+        text: text.to_string(),
+        message: Some(message),
+        turn,
+        seq,
+    }
+}
+
+fn normalize(position: i64, len: usize) -> Option<usize> {
+    let len = i64::try_from(len).ok()?;
+    let index = if position < 0 {
+        len + position
+    } else {
+        position
+    };
+    (0..len).contains(&index).then_some(index as usize)
+}
+
+/// A half-open range's end bound may be `len` itself (Python's `a[0:len]`).
+fn normalize_bound(position: i64, len: usize) -> Option<usize> {
+    let len_i64 = i64::try_from(len).ok()?;
+    let index = if position < 0 {
+        len_i64 + position
+    } else {
+        position
+    };
+    (0..=len_i64).contains(&index).then_some(index as usize)
+}
+
+fn text_tokens(text: &str) -> u64 {
+    (text.chars().count() as u64).div_ceil(4)
+}
+
+fn role_of(message: &AgentMessage) -> ContextRole {
+    match message {
+        AgentMessage::User(_)
+        | AgentMessage::BashExecution(_)
+        | AgentMessage::Custom(_)
+        | AgentMessage::BranchSummary(_)
+        | AgentMessage::CompactionSummary(_) => ContextRole::User,
+        AgentMessage::Assistant(_) => ContextRole::Assistant,
+        AgentMessage::ToolResult(_) => ContextRole::Tool,
+    }
+}
+
+fn message_text(message: &AgentMessage) -> String {
+    match message {
+        AgentMessage::User(user) => user.content.text(),
+        AgentMessage::Custom(custom) => custom.content.text(),
+        AgentMessage::ToolResult(result) => content_text(&result.content),
+        AgentMessage::BashExecution(bash) => format!("$ {}", bash.command),
+        AgentMessage::BranchSummary(summary) => summary.summary.clone(),
+        AgentMessage::CompactionSummary(summary) => summary.summary.clone(),
+        AgentMessage::Assistant(assistant) => {
+            let mut parts = Vec::new();
+            for block in &assistant.content {
+                match block {
+                    AssistantContentBlock::Text(text) => parts.push(text.text.clone()),
+                    AssistantContentBlock::Thinking(thinking) => {
+                        parts.push(thinking.thinking.clone());
+                    }
+                    AssistantContentBlock::ToolCall(call) => {
+                        parts.push(format!("[tool call: {}]", call.name));
+                    }
+                }
+            }
+            parts.join("\n")
+        }
+    }
+}
+
+fn content_text(content: &[pa_types::ai::UserContentBlock]) -> String {
+    content
+        .iter()
+        .filter_map(|block| match block {
+            pa_types::ai::UserContentBlock::Text(text) => Some(text.text.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn replaced_message(
+    role: ContextRole,
+    text: &str,
+    original: Option<&AgentMessage>,
+) -> Option<AgentMessage> {
+    match (role, original) {
+        (ContextRole::Tool, Some(AgentMessage::ToolResult(result))) => {
+            Some(AgentMessage::ToolResult(ToolResultMessage {
+                content: vec![text_block(text)],
+                ..result.clone()
+            }))
+        }
+        (ContextRole::Assistant, Some(AgentMessage::Assistant(assistant))) => {
+            let mut assistant: AssistantMessage = assistant.clone();
+            assistant.content = vec![AssistantContentBlock::Text(TextContent {
+                text: text.to_string(),
+                text_signature: None,
+                rest: pa_types::JsonMap::new(),
+            })];
+            Some(AgentMessage::Assistant(assistant))
+        }
+        (ContextRole::Notes, _) => None,
+        _ => Some(AgentMessage::User(UserMessage {
+            content: UserContent::Text(text.to_string()),
+            timestamp: original.map_or(0, |message| match message {
+                AgentMessage::User(user) => user.timestamp,
+                AgentMessage::Assistant(assistant) => assistant.timestamp,
+                AgentMessage::ToolResult(result) => result.timestamp,
+                AgentMessage::BashExecution(bash) => bash.timestamp,
+                AgentMessage::Custom(custom) => custom.timestamp,
+                AgentMessage::BranchSummary(summary) => summary.timestamp,
+                AgentMessage::CompactionSummary(summary) => summary.timestamp,
+            }),
+            rest: pa_types::JsonMap::new(),
+        })),
+    }
+}
+
+fn text_block(text: &str) -> pa_types::ai::UserContentBlock {
+    pa_types::ai::UserContentBlock::Text(TextContent {
+        text: text.to_string(),
+        text_signature: None,
+        rest: pa_types::JsonMap::new(),
+    })
+}
+
+fn message_from_entry(entry: &FileEntry) -> Option<AgentMessage> {
+    match entry {
+        FileEntry::Message { message, .. } => Some(message.clone()),
+        FileEntry::CustomMessage { payload, .. } => {
+            Some(AgentMessage::Custom(create_custom_message(payload, entry)))
+        }
+        FileEntry::BranchSummary { payload, .. } if !payload.summary.is_empty() => {
+            Some(AgentMessage::BranchSummary(BranchSummaryMessage {
+                rest: pa_types::JsonMap::new(),
+                summary: payload.summary.clone(),
+                from_id: payload.from_id.clone(),
+                timestamp: timestamp_to_millis(entry.timestamp()),
+            }))
+        }
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::session::{build_session_context, parse_session_entries};
+    use pa_types::session::{ContextRole, ContextSelector, ContextTarget};
+
+    fn header() -> String {
+        r#"{"type":"session","id":"s","timestamp":"2024-01-01T00:00:00.000Z","cwd":"/w","version":3}"#.to_string()
+    }
+
+    fn user_row(id: &str, parent: &str, text: &str) -> String {
+        serde_json::json!({
+            "type": "message",
+            "id": id,
+            "parentId": if parent.is_empty() { serde_json::Value::Null } else { serde_json::json!(parent) },
+            "timestamp": "2024-01-01T00:00:01.000Z",
+            "message": {"role": "user", "content": text, "timestamp": 0}
+        })
+        .to_string()
+    }
+
+    fn assistant_row(id: &str, parent: &str, content: &serde_json::Value) -> String {
+        serde_json::json!({
+            "type": "message",
+            "id": id,
+            "parentId": parent,
+            "timestamp": "2024-01-01T00:00:02.000Z",
+            "message": {
+                "role": "assistant",
+                "content": content,
+                "api": "test",
+                "provider": "faux",
+                "model": "faux-1",
+                "usage": {"input": 10, "output": 1, "cacheRead": 0, "cacheWrite": 0, "totalTokens": 11,
+                    "cost": {"input": 10, "output": 1, "cacheRead": 0, "cacheWrite": 0, "total": 11}},
+                "stopReason": "stop",
+                "timestamp": 0
+            }
+        })
+        .to_string()
+    }
+
+    fn text_block(text: &str) -> serde_json::Value {
+        serde_json::json!({"type": "text", "text": text})
+    }
+
+    fn edit_row(id: &str, parent: &str, changes: &serde_json::Value) -> String {
+        serde_json::json!({
+            "type": "context_edit",
+            "id": id,
+            "parentId": parent,
+            "timestamp": "2024-01-01T00:00:03.000Z",
+            "by": "agent",
+            "changes": changes,
+        })
+        .to_string()
+    }
+
+    fn chain(len: usize) -> (Vec<FileEntry>, Vec<String>) {
+        let mut lines = vec![header()];
+        let mut ids = Vec::new();
+        for index in 0..len {
+            let id = format!("u{index}");
+            let parent = if index == 0 {
+                String::new()
+            } else {
+                format!("u{}", index - 1)
+            };
+            lines.push(user_row(&id, &parent, &format!("m{index}")));
+            ids.push(id);
+        }
+        (parse_session_entries(&lines.join("\n")), ids)
+    }
+
+    fn edit(changes: Vec<ContextChange>) -> ContextEditEntry {
+        ContextEditEntry {
+            by: "agent".to_string(),
+            changes,
+        }
+    }
+
+    fn point(position: i64) -> ContextTarget {
+        ContextTarget::Point(ContextSelector::Position(position))
+    }
+
+    fn range(start: i64, end: i64) -> ContextTarget {
+        ContextTarget::Range(ContextRange {
+            start: ContextRangeEnd::Position(start),
+            end: ContextRangeEnd::Position(end),
+        })
+    }
+
+    fn texts(messages: &[AgentMessage]) -> Vec<String> {
+        messages.iter().map(message_text).collect()
+    }
+
+    #[test]
+    fn get_last_region_and_id_address_the_same_view() {
+        let (entries, ids) = chain(50);
+        let walk = walk_history(&entries, None);
+        assert_eq!(walk.entries.len(), 50);
+
+        let last = walk.resolve(&point(-1)).unwrap();
+        assert_eq!(last, vec![49]);
+        assert_eq!(walk.entries[last[0]].text, "m49");
+
+        let region = walk.resolve(&range(12, 41)).unwrap();
+        assert_eq!(region.first().copied(), Some(12));
+        assert_eq!(region.last().copied(), Some(40));
+        assert_eq!(region.len(), 29);
+
+        let by_id = walk.entry_by_id(&ids[7]).unwrap();
+        assert_eq!(by_id.text, "m7");
+        assert_eq!(by_id.id.as_deref(), Some("u7"));
+    }
+
+    #[test]
+    fn drop_removes_the_region_from_the_request_and_keeps_the_record() {
+        let (entries, ids) = chain(20);
+        let mut walk = walk_history(&entries, None);
+        let counts = walk
+            .apply(&edit(vec![ContextChange::Drop { at: range(5, 8) }]), 0)
+            .unwrap();
+        assert_eq!(counts.dropped, 3);
+        assert_eq!(walk.entries.len(), 17);
+        assert_eq!(walk.hidden.len(), 3);
+        assert!(walk.entry_by_id(&ids[5]).is_some());
+        assert_eq!(walk.entry_by_id(&ids[5]).unwrap().text, "m5");
+        assert!(!texts(&walk.messages()).contains(&"m5".to_string()));
+        assert!(texts(&walk.messages()).contains(&"m4".to_string()));
+        assert!(texts(&walk.messages()).contains(&"m8".to_string()));
+    }
+
+    #[test]
+    fn inserted_notes_are_visible_but_never_sent() {
+        let (entries, _) = chain(3);
+        let mut walk = walk_history(&entries, None);
+        let before = texts(&walk.messages());
+        let counts = walk
+            .apply(
+                &edit(vec![ContextChange::Insert {
+                    text: "STATE: reading native.rs:417".to_string(),
+                    role: ContextRole::Notes,
+                    after: ContextAnchor::default(),
+                }]),
+                0,
+            )
+            .unwrap();
+        assert_eq!(counts.inserted, 1);
+        assert_eq!(walk.entries.len(), 4);
+        assert_eq!(walk.entries[3].role, ContextRole::Notes);
+        assert_eq!(walk.entries[3].text, "STATE: reading native.rs:417");
+        assert_eq!(texts(&walk.messages()), before);
+    }
+
+    #[test]
+    fn two_changes_resolve_against_the_pre_edit_view() {
+        let (entries, _) = chain(10);
+        let mut walk = walk_history(&entries, None);
+        walk.apply(
+            &edit(vec![
+                ContextChange::Drop { at: range(0, 3) },
+                ContextChange::Replace {
+                    at: ContextSelector::Position(3),
+                    text: "review: 28 frames admitted, 44 affordable".to_string(),
+                },
+            ]),
+            0,
+        )
+        .unwrap();
+        assert_eq!(walk.entries.len(), 7);
+        assert_eq!(
+            walk.entries[0].text,
+            "review: 28 frames admitted, 44 affordable"
+        );
+        assert_eq!(walk.entries[1].text, "m4");
+    }
+
+    #[test]
+    fn dropped_tool_result_cannot_strand_its_call() {
+        let content =
+            serde_json::json!([{"type":"toolCall","id":"call-1","name":"bash","arguments":{}}]);
+        let mut lines = vec![
+            header(),
+            user_row("u0", "", "run it"),
+            assistant_row("a0", "u0", &content),
+            serde_json::json!({
+                "type": "message",
+                "id": "t0",
+                "parentId": "a0",
+                "timestamp": "2024-01-01T00:00:04.000Z",
+                "message": {"role": "toolResult", "toolCallId": "call-1", "toolName": "bash",
+                    "content": [text_block("done")], "isError": false, "timestamp": 4}
+            })
+            .to_string(),
+        ];
+        lines.push(user_row("u1", "t0", "next"));
+        let entries = parse_session_entries(&lines.join("\n"));
+        let mut walk = walk_history(&entries, None);
+        let before: Vec<String> = texts(&walk.messages());
+        let error = walk
+            .apply(
+                &edit(vec![ContextChange::Drop {
+                    at: ContextTarget::Point(ContextSelector::EntryId("t0".to_string())),
+                }]),
+                0,
+            )
+            .unwrap_err();
+        assert!(error.contains("t0"), "{error}");
+        assert!(error.contains("call-1"), "{error}");
+        assert_eq!(texts(&walk.messages()), before);
+        assert_eq!(walk.entries.len(), 4);
+    }
+
+    #[test]
+    fn replacing_an_assistant_tool_call_is_rejected() {
+        let content =
+            serde_json::json!([{"type":"toolCall","id":"call-1","name":"bash","arguments":{}}]);
+        let lines = [
+            header(),
+            user_row("u0", "", "run it"),
+            assistant_row("a0", "u0", &content),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let mut walk = walk_history(&entries, None);
+        let error = walk
+            .apply(
+                &edit(vec![ContextChange::Replace {
+                    at: ContextSelector::EntryId("a0".to_string()),
+                    text: "rewritten".to_string(),
+                }]),
+                0,
+            )
+            .unwrap_err();
+        assert!(error.contains("a0"), "{error}");
+        assert!(error.contains("tool calls"), "{error}");
+    }
+
+    #[test]
+    fn unknown_op_and_unused_keys_are_parse_errors() {
+        let unknown = serde_json::json!({"op": "explode", "at": 1});
+        assert!(ContextChange::parse(&unknown)
+            .unwrap_err()
+            .contains("unknown op"));
+        let unused = serde_json::json!({"op": "drop", "at": 1, "text": "x"});
+        assert!(ContextChange::parse(&unused)
+            .unwrap_err()
+            .contains("does not use key 'text'"));
+        let insert_unused =
+            serde_json::json!({"op": "insert", "text": "x", "role": "notes", "at": 1});
+        assert!(ContextChange::parse(&insert_unused)
+            .unwrap_err()
+            .contains("does not use key 'at'"));
+        let missing = serde_json::json!({"op": "replace", "at": 1});
+        assert!(ContextChange::parse(&missing)
+            .unwrap_err()
+            .contains("needs 'text'"));
+    }
+
+    #[test]
+    fn an_unknown_op_row_degrades_and_round_trips_verbatim() {
+        let line = r#"{"type":"context_edit","id":"e1","parentId":null,"timestamp":"t","by":"agent","changes":[{"op":"explode","at":1}]}"#;
+        let parsed: Vec<FileEntry> = parse_session_entries(line);
+        assert!(matches!(parsed[0], FileEntry::Unknown { .. }));
+        let round_trip = serde_json::to_string(&parsed[0]).unwrap();
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&round_trip).unwrap(),
+            serde_json::from_str::<serde_json::Value>(line).unwrap()
+        );
+    }
+
+    #[test]
+    fn a_session_without_edits_sends_as_before() {
+        let lines = [
+            header(),
+            user_row("u0", "", "one"),
+            assistant_row("a0", "u0", &serde_json::json!([text_block("two")])),
+            user_row("u1", "a0", "three"),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        assert_eq!(texts(&walk.messages()), vec!["one", "two", "three"]);
+        assert_eq!(
+            serde_json::to_value(build_session_context(&entries, None).messages).unwrap(),
+            serde_json::to_value(walk.messages()).unwrap()
+        );
+    }
+
+    fn compaction_row(id: &str, parent: &str, first_kept: Option<&str>) -> String {
+        serde_json::json!({
+            "type": "compaction",
+            "id": id,
+            "parentId": parent,
+            "timestamp": "2024-01-01T00:00:05.000Z",
+            "summary": "the story so far",
+            "firstKeptEntryId": first_kept,
+            "tokensBefore": 1234
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn compaction_then_edit_substitutes_on_the_same_walk() {
+        let lines = [
+            header(),
+            user_row("u0", "", "old"),
+            user_row("u1", "u0", "kept"),
+            compaction_row("c0", "u1", Some("u1")),
+            edit_row(
+                "e0",
+                "c0",
+                &serde_json::json!([{"op": "insert", "text": "STATE", "role": "notes"}]),
+            ),
+            user_row("u2", "e0", "after"),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        let sent = texts(&walk.messages());
+        assert_eq!(sent.len(), 3, "{sent:?}");
+        assert!(sent[0].contains("the story so far"), "{sent:?}");
+        assert_eq!(sent[1], "kept");
+        assert_eq!(sent[2], "after");
+        assert!(walk
+            .entries
+            .iter()
+            .any(|entry| entry.role == ContextRole::Notes));
+        assert!(!sent.contains(&"STATE".to_string()));
+    }
+
+    #[test]
+    fn edit_then_compaction_composes_in_the_other_order() {
+        let lines = [
+            header(),
+            user_row("u0", "", "old"),
+            user_row("u1", "u0", "kept"),
+            edit_row("e0", "u1", &serde_json::json!([{"op": "drop", "at": 0}])),
+            compaction_row("c0", "e0", Some("u1")),
+            user_row("u2", "c0", "after"),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        let sent = texts(&walk.messages());
+        assert_eq!(sent.len(), 3, "{sent:?}");
+        assert!(sent[0].contains("the story so far"), "{sent:?}");
+        assert_eq!(sent[1], "kept");
+        assert_eq!(sent[2], "after");
+    }
+
+    #[test]
+    fn auto_compaction_fires_only_above_the_threshold() {
+        use crate::session_engine::compaction::{
+            estimate_context_tokens, threshold_compaction_due, CompactionSettings,
+        };
+        let assistant = serde_json::json!([text_block("done")]);
+        let mut lines = vec![header(), user_row("u0", "", "work")];
+        lines.push(assistant_row("a0", "u0", &assistant));
+        let entries = parse_session_entries(&lines.join("\n"));
+        // 90k tokens of anchored usage under a 100k window and an 80% threshold.
+        let mut entries = entries;
+        if let Some(FileEntry::Message {
+            message: AgentMessage::Assistant(assistant),
+            ..
+        }) = entries.iter_mut().find(|entry| entry.id() == Some("a0"))
+        {
+            assistant.usage.total_tokens = 90_000;
+        }
+        let full = walk_history(&entries, None).messages();
+        let settings = CompactionSettings::default();
+        assert!(threshold_compaction_due(&full, 100_000, 1_000, &settings));
+        let mut edited = walk_history(&entries, None);
+        edited
+            .apply(&edit(vec![ContextChange::Drop { at: range(0, 2) }]), 0)
+            .unwrap();
+        let trimmed = edited.messages();
+        assert!(!threshold_compaction_due(
+            &trimmed, 100_000, 1_000, &settings
+        ));
+        assert!(estimate_context_tokens(&trimmed).tokens < estimate_context_tokens(&full).tokens);
+    }
+
+    #[test]
+    fn selectors_off_the_path_name_the_rule_and_the_target() {
+        let (entries, _) = chain(3);
+        let mut walk = walk_history(&entries, None);
+        let out_of_range = walk
+            .apply(&edit(vec![ContextChange::Drop { at: point(9) }]), 0)
+            .unwrap_err();
+        assert!(
+            out_of_range.contains("off the current path"),
+            "{out_of_range}"
+        );
+        assert!(out_of_range.contains('9'), "{out_of_range}");
+        let unknown_id = walk
+            .apply(
+                &edit(vec![ContextChange::Drop {
+                    at: ContextTarget::Point(ContextSelector::EntryId("nope".to_string())),
+                }]),
+                0,
+            )
+            .unwrap_err();
+        assert!(unknown_id.contains("nope"), "{unknown_id}");
+        assert!(unknown_id.contains("not in this session"), "{unknown_id}");
+    }
+}

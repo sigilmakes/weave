@@ -288,6 +288,7 @@ fn entry_type(entry: &FileEntry) -> &'static str {
         FileEntry::ServiceTierChange { .. } => "service_tier_change",
         FileEntry::ModelChange { .. } => "model_change",
         FileEntry::Compaction { .. } => "compaction",
+        FileEntry::ContextEdit { .. } => "context_edit",
         FileEntry::BranchSummary { .. } => "branch_summary",
         FileEntry::Custom { .. } => "custom",
         FileEntry::ChildUsageAttributed { .. } => "child_usage_attributed",

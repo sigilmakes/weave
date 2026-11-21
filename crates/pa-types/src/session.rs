@@ -255,6 +255,288 @@ pub struct CompactionEntry {
     pub usage: Option<Usage>,
 }
 
+/// Role an entry plays in the model-facing history view: the four roles a
+/// `context_edit` change can name and an index row can report.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContextRole {
+    User,
+    Assistant,
+    Tool,
+    /// Harness-visible bookkeeping; never sent to the provider.
+    Notes,
+}
+
+impl ContextRole {
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::User => "user",
+            Self::Assistant => "assistant",
+            Self::Tool => "tool",
+            Self::Notes => "notes",
+        }
+    }
+}
+
+/// One address inside a context edit: a view position or an entry id.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContextSelector {
+    Position(i64),
+    EntryId(String),
+}
+
+/// One end of a half-open range. `PathBound` is the wire `null`: the start or
+/// the end of the path, whichever side of the range it appears on.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContextRangeEnd {
+    PathBound,
+    Position(i64),
+    EntryId(String),
+}
+
+/// A half-open range, serialised as a two-element array.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ContextRange {
+    pub start: ContextRangeEnd,
+    pub end: ContextRangeEnd,
+}
+
+/// Where a `drop` applies: one entry or a half-open region.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContextTarget {
+    Point(ContextSelector),
+    Range(ContextRange),
+}
+
+/// Where an inserted entry lands: after a view position or an entry id.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContextAnchor {
+    Position(i64),
+    EntryId(String),
+}
+
+impl Default for ContextAnchor {
+    fn default() -> Self {
+        Self::Position(-1)
+    }
+}
+
+/// One change inside a `context_edit` entry. Unknown `op`s, keys an `op` does
+/// not use, and missing required keys are parse errors.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContextChange {
+    Drop {
+        at: ContextTarget,
+    },
+    Replace {
+        at: ContextSelector,
+        text: String,
+    },
+    Insert {
+        text: String,
+        role: ContextRole,
+        after: ContextAnchor,
+    },
+}
+
+impl ContextChange {
+    const DROP_KEYS: &'static [&'static str] = &["op", "at"];
+    const REPLACE_KEYS: &'static [&'static str] = &["op", "at", "text"];
+    const INSERT_KEYS: &'static [&'static str] = &["op", "text", "role", "after"];
+
+    /// Parse one change, naming the rule and the offending key or value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a message for a non-object change, a missing or unknown `op`, a
+    /// key the `op` does not use, and a missing or mistyped field.
+    pub fn parse(value: &serde_json::Value) -> Result<Self, String> {
+        let object = value
+            .as_object()
+            .ok_or_else(|| "context_edit change must be a JSON object".to_string())?;
+        let op = object
+            .get("op")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "context_edit change needs an 'op' string".to_string())?;
+        let allowed = match op {
+            "drop" => Self::DROP_KEYS,
+            "replace" => Self::REPLACE_KEYS,
+            "insert" => Self::INSERT_KEYS,
+            other => return Err(format!("context_edit unknown op '{other}'")),
+        };
+        if let Some(key) = object.keys().find(|key| !allowed.contains(&key.as_str())) {
+            return Err(format!("context_edit op '{op}' does not use key '{key}'"));
+        }
+        let required = |name: &str| {
+            object
+                .get(name)
+                .ok_or_else(|| format!("context_edit op '{op}' needs '{name}'"))
+        };
+        let text = || -> Result<String, String> {
+            required("text")?
+                .as_str()
+                .map(str::to_owned)
+                .ok_or_else(|| format!("context_edit op '{op}' needs a string 'text'"))
+        };
+        match op {
+            "drop" => Ok(Self::Drop {
+                at: parse_target(required("at")?)?,
+            }),
+            "replace" => Ok(Self::Replace {
+                at: parse_selector(required("at")?)?,
+                text: text()?,
+            }),
+            "insert" => Ok(Self::Insert {
+                text: text()?,
+                role: serde_json::from_value(required("role")?.clone()).map_err(|_| {
+                    "context_edit insert needs a role of user, assistant, tool, or notes"
+                        .to_string()
+                })?,
+                after: match object.get("after") {
+                    None => ContextAnchor::default(),
+                    Some(anchor) => parse_anchor(anchor)?,
+                },
+            }),
+            other => unreachable!("op {other} was validated above"),
+        }
+    }
+
+    /// The wire object for this change.
+    #[must_use]
+    pub fn to_value(&self) -> serde_json::Value {
+        let mut map = serde_json::Map::new();
+        match self {
+            Self::Drop { at } => {
+                map.insert("op".into(), "drop".into());
+                map.insert("at".into(), target_value(at));
+            }
+            Self::Replace { at, text } => {
+                map.insert("op".into(), "replace".into());
+                map.insert("at".into(), selector_value(at));
+                map.insert("text".into(), text.as_str().into());
+            }
+            Self::Insert { text, role, after } => {
+                map.insert("op".into(), "insert".into());
+                map.insert("text".into(), text.as_str().into());
+                map.insert("role".into(), role.as_str().into());
+                if *after != ContextAnchor::default() {
+                    map.insert("after".into(), anchor_value(after));
+                }
+            }
+        }
+        serde_json::Value::Object(map)
+    }
+}
+
+fn selector_value(selector: &ContextSelector) -> serde_json::Value {
+    match selector {
+        ContextSelector::Position(position) => (*position).into(),
+        ContextSelector::EntryId(id) => id.as_str().into(),
+    }
+}
+
+fn range_end_value(end: &ContextRangeEnd) -> serde_json::Value {
+    match end {
+        ContextRangeEnd::PathBound => serde_json::Value::Null,
+        ContextRangeEnd::Position(position) => (*position).into(),
+        ContextRangeEnd::EntryId(id) => id.as_str().into(),
+    }
+}
+
+fn target_value(target: &ContextTarget) -> serde_json::Value {
+    match target {
+        ContextTarget::Point(selector) => selector_value(selector),
+        ContextTarget::Range(range) => serde_json::Value::Array(vec![
+            range_end_value(&range.start),
+            range_end_value(&range.end),
+        ]),
+    }
+}
+
+fn anchor_value(anchor: &ContextAnchor) -> serde_json::Value {
+    match anchor {
+        ContextAnchor::Position(position) => (*position).into(),
+        ContextAnchor::EntryId(id) => id.as_str().into(),
+    }
+}
+
+fn selector_field(value: &serde_json::Value, what: &str) -> Result<ContextSelector, String> {
+    if let Some(position) = value.as_i64() {
+        return Ok(ContextSelector::Position(position));
+    }
+    if let Some(id) = value.as_str() {
+        return Ok(ContextSelector::EntryId(id.to_string()));
+    }
+    Err(format!(
+        "context_edit {what} must be a position or an entry id"
+    ))
+}
+
+fn parse_selector(value: &serde_json::Value) -> Result<ContextSelector, String> {
+    selector_field(value, "selector")
+}
+
+fn parse_anchor(value: &serde_json::Value) -> Result<ContextAnchor, String> {
+    if let Some(position) = value.as_i64() {
+        return Ok(ContextAnchor::Position(position));
+    }
+    if let Some(id) = value.as_str() {
+        return Ok(ContextAnchor::EntryId(id.to_string()));
+    }
+    Err("context_edit insert 'after' must be a position or an entry id".to_string())
+}
+
+fn parse_target(value: &serde_json::Value) -> Result<ContextTarget, String> {
+    let Some(elements) = value.as_array() else {
+        return Ok(ContextTarget::Point(parse_selector(value)?));
+    };
+    let [start, end] = elements.as_slice() else {
+        return Err("context_edit range must be a two-element array".to_string());
+    };
+    let end_of = |value: &serde_json::Value| -> Result<ContextRangeEnd, String> {
+        if value.is_null() {
+            return Ok(ContextRangeEnd::PathBound);
+        }
+        if let Some(position) = value.as_i64() {
+            return Ok(ContextRangeEnd::Position(position));
+        }
+        value
+            .as_str()
+            .map(|id| ContextRangeEnd::EntryId(id.to_string()))
+            .ok_or_else(|| {
+                "context_edit range ends must be positions, entry ids, or null".to_string()
+            })
+    };
+    Ok(ContextTarget::Range(ContextRange {
+        start: end_of(start)?,
+        end: end_of(end)?,
+    }))
+}
+
+impl Serialize for ContextChange {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.to_value().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for ContextChange {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        Self::parse(&value).map_err(serde::de::Error::custom)
+    }
+}
+
+/// `type: "context_edit"`: model-authored substitution at this point in the
+/// tree. Child of the leaf, like a compaction entry; branch-local and a fork
+/// point.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContextEditEntry {
+    pub by: String,
+    pub changes: Vec<ContextChange>,
+}
+
 /// `type: "branch_summary"`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -411,6 +693,12 @@ pub enum FileEntry {
         #[serde(flatten)]
         base: EntryBase,
     },
+    ContextEdit {
+        #[serde(flatten)]
+        payload: ContextEditEntry,
+        #[serde(flatten)]
+        base: EntryBase,
+    },
     BranchSummary {
         #[serde(flatten)]
         payload: BranchSummaryEntry,
@@ -510,6 +798,12 @@ enum KnownFileEntry {
         #[serde(flatten)]
         base: EntryBase,
     },
+    ContextEdit {
+        #[serde(flatten)]
+        payload: ContextEditEntry,
+        #[serde(flatten)]
+        base: EntryBase,
+    },
     BranchSummary {
         #[serde(flatten)]
         payload: BranchSummaryEntry,
@@ -591,6 +885,7 @@ impl From<KnownFileEntry> for FileEntry {
             }
             KnownFileEntry::ModelChange { payload, base } => Self::ModelChange { payload, base },
             KnownFileEntry::Compaction { payload, base } => Self::Compaction { payload, base },
+            KnownFileEntry::ContextEdit { payload, base } => Self::ContextEdit { payload, base },
             KnownFileEntry::BranchSummary { payload, base } => {
                 Self::BranchSummary { payload, base }
             }
@@ -637,6 +932,7 @@ impl FileEntry {
             | FileEntry::ServiceTierChange { base, .. }
             | FileEntry::ModelChange { base, .. }
             | FileEntry::Compaction { base, .. }
+            | FileEntry::ContextEdit { base, .. }
             | FileEntry::BranchSummary { base, .. }
             | FileEntry::Custom { base, .. }
             | FileEntry::ChildUsageAttributed { base, .. }
@@ -662,6 +958,7 @@ impl FileEntry {
             | FileEntry::ServiceTierChange { base, .. }
             | FileEntry::ModelChange { base, .. }
             | FileEntry::Compaction { base, .. }
+            | FileEntry::ContextEdit { base, .. }
             | FileEntry::BranchSummary { base, .. }
             | FileEntry::Custom { base, .. }
             | FileEntry::ChildUsageAttributed { base, .. }
@@ -690,6 +987,7 @@ impl FileEntry {
             | FileEntry::ServiceTierChange { base, .. }
             | FileEntry::ModelChange { base, .. }
             | FileEntry::Compaction { base, .. }
+            | FileEntry::ContextEdit { base, .. }
             | FileEntry::BranchSummary { base, .. }
             | FileEntry::Custom { base, .. }
             | FileEntry::ChildUsageAttributed { base, .. }
@@ -852,6 +1150,49 @@ mod tests {
         assert_eq!(
             standalone.rest.get("id"),
             Some(&serde_json::json!("standalone-unknown"))
+        );
+    }
+
+    #[test]
+    fn context_edit_round_trips_ranges_points_and_notes() {
+        let json = r#"{"type":"context_edit","id":"a1b2c3d4","parentId":"ee71d363","timestamp":"2026-11-21T01:31:02.771Z","by":"agent","changes":[{"op":"drop","at":[12,41]},{"op":"replace","at":41,"text":"review: 28 frames admitted, 44 affordable"},{"op":"insert","text":"STATE: reading native.rs:417","role":"notes"},{"op":"insert","text":"first twenty","role":"user","after":-20},{"op":"drop","at":[null,40]}]}"#;
+        assert_roundtrips(json);
+        let FileEntry::ContextEdit { payload, base } = entry(json) else {
+            panic!("expected a context edit entry");
+        };
+        assert_eq!(base.id.as_deref(), Some("a1b2c3d4"));
+        assert_eq!(base.parent_id.as_deref(), Some("ee71d363"));
+        assert_eq!(payload.by, "agent");
+        assert_eq!(
+            payload.changes,
+            vec![
+                ContextChange::Drop {
+                    at: ContextTarget::Range(ContextRange {
+                        start: ContextRangeEnd::Position(12),
+                        end: ContextRangeEnd::Position(41),
+                    }),
+                },
+                ContextChange::Replace {
+                    at: ContextSelector::Position(41),
+                    text: "review: 28 frames admitted, 44 affordable".to_string(),
+                },
+                ContextChange::Insert {
+                    text: "STATE: reading native.rs:417".to_string(),
+                    role: ContextRole::Notes,
+                    after: ContextAnchor::Position(-1),
+                },
+                ContextChange::Insert {
+                    text: "first twenty".to_string(),
+                    role: ContextRole::User,
+                    after: ContextAnchor::Position(-20),
+                },
+                ContextChange::Drop {
+                    at: ContextTarget::Range(ContextRange {
+                        start: ContextRangeEnd::PathBound,
+                        end: ContextRangeEnd::Position(40),
+                    }),
+                },
+            ]
         );
     }
 

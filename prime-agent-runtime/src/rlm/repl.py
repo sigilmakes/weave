@@ -61,6 +61,7 @@ _ALWAYS_SKIP = {
     "mcp",
     "bash",
     "plugin",
+    "history",
     "vars",
     "asyncio",
     "In",
@@ -71,7 +72,16 @@ _ALWAYS_SKIP = {
     "open",
 }
 # Legacy IPython names and live plugin bindings are never restored from snapshot data.
-_RESTORE_SKIP = {"In", "Out", "get_ipython", "plugin", "vars", "_prime_agent_plugin_namespace"}
+_RESTORE_SKIP = {
+    "In",
+    "Out",
+    "get_ipython",
+    "plugin",
+    "history",
+    "vars",
+    "_prime_agent_plugin_namespace",
+    "_prime_agent_history_namespace",
+}
 # The target of the last successful snapshot, remembered so an EOF shutdown
 # (the host process died without a graceful dispose) can flush the final
 # namespace before exit. `None` until this process has committed a snapshot:
@@ -807,8 +817,11 @@ def _reject_plugin_snapshot_reference(value: Any) -> None:
     let a saved alias smuggle a retired generation into the next kernel.
     """
     cls = value if isinstance(value, type) else type(value)
-    if any(base.__module__ == "rlm.plugins" for base in cls.__mro__):
-        raise pickle.PicklingError("live plugin references are not restored from snapshots")
+    for base in cls.__mro__:
+        if base.__module__ == "rlm.plugins":
+            raise pickle.PicklingError("live plugin references are not restored from snapshots")
+        if base.__module__ == "rlm.history":
+            raise pickle.PicklingError("live history references are not restored from snapshots")
 
 
 def _snapshot_state(

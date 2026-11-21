@@ -1,6 +1,8 @@
 //! Session entry parsing, migration, context reconstruction, and tree.
 pub mod artifacts;
 pub mod discovery;
+mod history;
+pub(crate) use history::{walk_history, HistoryEntry, HistoryWalk};
 pub mod manager;
 pub mod manager_ext;
 pub mod metadata;
@@ -14,8 +16,7 @@ use std::collections::HashMap;
 
 use pa_types::session::EntryBase;
 use pa_types::session::{
-    AgentMessage, CompactionEntry, CompactionSummaryMessage, CustomMessage, CustomMessageEntry,
-    FileEntry,
+    AgentMessage, CompactionEntry, CustomMessage, CustomMessageEntry, FileEntry,
 };
 
 /// Current on-disk session format version.
@@ -232,6 +233,7 @@ fn entry_base_mut(entry: &mut FileEntry) -> Option<&mut EntryBase> {
         | FileEntry::ServiceTierChange { base, .. }
         | FileEntry::ModelChange { base, .. }
         | FileEntry::Compaction { base, .. }
+        | FileEntry::ContextEdit { base, .. }
         | FileEntry::BranchSummary { base, .. }
         | FileEntry::Custom { base, .. }
         | FileEntry::ChildUsageAttributed { base, .. }
@@ -311,146 +313,14 @@ pub struct SessionContext {
 
 #[must_use]
 pub fn build_session_context(entries: &[FileEntry], leaf_id: Option<&str>) -> SessionContext {
-    let by_id: HashMap<String, usize> = entries
-        .iter()
-        .enumerate()
-        .filter_map(|(index, entry)| entry.id().map(|id| (id.to_string(), index)))
-        .collect();
-
-    let leaf_index: Option<usize> = match leaf_id {
-        Some("") | None => entries.len().checked_sub(1),
-        Some(id) => by_id.get(id).copied(),
-    };
-    let Some(leaf_index) = leaf_index else {
-        return empty_context();
-    };
-
-    // Path from root to leaf. A corrupt file can hold a parent cycle;
-    // the walk must terminate anyway.
-    let mut path: Vec<usize> = Vec::new();
-    let mut visited = std::collections::HashSet::new();
-    let mut current = Some(leaf_index);
-    while let Some(index) = current {
-        if !visited.insert(index) {
-            break;
-        }
-        path.push(index);
-        current = entries[index]
-            .parent_id()
-            .and_then(|parent_id| by_id.get(parent_id).copied());
-    }
-    path.reverse();
-
-    let mut thinking_level = "off".to_string();
-    let mut service_tier = None;
-    let mut model: Option<(String, String)> = None;
-    let mut compaction: Option<usize> = None;
-    for &index in &path {
-        match &entries[index] {
-            FileEntry::ThinkingLevelChange { payload, .. } => {
-                thinking_level.clone_from(&payload.thinking_level);
-            }
-            FileEntry::ServiceTierChange { payload, .. } => {
-                service_tier = payload.service_tier;
-            }
-            FileEntry::ModelChange { payload, .. } => {
-                model = Some((payload.provider.clone(), payload.model_id.clone()));
-            }
-            FileEntry::Message {
-                message: AgentMessage::Assistant(assistant),
-                ..
-            } => {
-                model = Some((assistant.provider.clone(), assistant.model.clone()));
-            }
-            FileEntry::Compaction { .. } => compaction = Some(index),
-            _ => {}
-        }
-    }
-
-    let mut archive = None;
-    let mut messages: Vec<AgentMessage> = Vec::new();
-    let append_message = |entry: &FileEntry, target: &mut Vec<AgentMessage>| match entry {
-        FileEntry::Message { message, .. } => target.push(message.clone()),
-        FileEntry::CustomMessage { payload, .. } => {
-            target.push(AgentMessage::Custom(create_custom_message(payload, entry)));
-        }
-        FileEntry::BranchSummary { payload, .. } if !payload.summary.is_empty() => {
-            target.push(AgentMessage::BranchSummary(
-                pa_types::session::BranchSummaryMessage {
-                    rest: pa_types::JsonMap::new(),
-                    summary: payload.summary.clone(),
-                    from_id: payload.from_id.clone(),
-                    timestamp: timestamp_to_millis(entry.timestamp()),
-                },
-            ));
-        }
-        _ => {}
-    };
-
-    if let Some(compaction_index) = compaction {
-        let payload = match &entries[compaction_index] {
-            FileEntry::Compaction { payload, .. } => payload.clone(),
-            _ => unreachable!("compaction index checked above"),
-        };
-        archive.clone_from(&payload.context_archive);
-        let portable = archive.as_ref().is_none_or(|archive| {
-            matches!(
-                archive.representation,
-                pa_types::session::ContextRepresentation::Standard { .. }
-            )
-        });
-        let covered = archive.as_ref().map(|archive| {
-            archive
-                .covered_entry_ids
-                .iter()
-                .map(String::as_str)
-                .collect::<std::collections::HashSet<_>>()
-        });
-        let first_kept_id = payload.first_kept_entry_id.clone();
-        let mut retained: Vec<AgentMessage> = Vec::new();
-        let mut found_first_kept = false;
-        for &index in &path[..path.partition_point(|&i| i < compaction_index)] {
-            if first_kept_id
-                .as_deref()
-                .is_some_and(|id| entries[index].id() == Some(id))
-            {
-                found_first_kept = true;
-            }
-            let retain = if let Some(covered) = &covered {
-                entries[index].id().is_some_and(|id| !covered.contains(id))
-            } else {
-                found_first_kept
-            };
-            if retain {
-                append_message(&entries[index], &mut retained);
-            }
-        }
-        if portable {
-            messages.push(AgentMessage::CompactionSummary(CompactionSummaryMessage {
-                rest: pa_types::JsonMap::new(),
-                summary: payload.summary,
-                tokens_before: payload.tokens_before,
-                retained_message_count: Some(retained.len() as u64),
-                custom_instructions: payload.custom_instructions,
-                timestamp: timestamp_to_millis(entries[compaction_index].timestamp()),
-            }));
-        }
-        messages.extend(retained);
-        for &index in &path[path.partition_point(|&i| i <= compaction_index)..] {
-            append_message(&entries[index], &mut messages);
-        }
-    } else {
-        for &index in &path {
-            append_message(&entries[index], &mut messages);
-        }
-    }
-
+    let mut walk = walk_history(entries, leaf_id);
+    let messages = walk.messages();
     SessionContext {
-        archive,
+        archive: walk.archive.take(),
         messages,
-        thinking_level,
-        service_tier,
-        model,
+        thinking_level: walk.thinking_level,
+        service_tier: walk.service_tier,
+        model: walk.model,
     }
 }
 
@@ -465,16 +335,6 @@ pub(crate) fn create_custom_message(
         details: payload.details.clone(),
         timestamp: timestamp_to_millis(entry.timestamp()),
         rest: payload.rest.clone(),
-    }
-}
-
-fn empty_context() -> SessionContext {
-    SessionContext {
-        archive: None,
-        messages: Vec::new(),
-        thinking_level: "off".to_string(),
-        service_tier: None,
-        model: None,
     }
 }
 

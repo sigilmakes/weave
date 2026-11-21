@@ -203,6 +203,19 @@ impl SessionManager {
         Ok(id)
     }
 
+    /// Append one model-authored `context_edit` row as a child of the leaf.
+    ///
+    /// # Errors
+    ///
+    /// Returns the underlying I/O error when the durable append fails.
+    pub fn append_context_edit(
+        &mut self,
+        payload: pa_types::session::ContextEditEntry,
+    ) -> std::io::Result<String> {
+        let base = self.next_base()?;
+        self.append_entry(FileEntry::ContextEdit { payload, base })
+    }
+
     /// `appendCompaction`: persist the compaction record with the full typed
     /// payload (later compactions and branch summarization read `usage` back
     /// from the durable row).

@@ -8,6 +8,19 @@ The harness often sends messages to the agent. These are user messages starting 
 
 The kernel is your workspace. Assignments persist across restarts when the snapshot can save them; `vars()` lists each name with its size and whether it was saved, and the harness never deletes anything for you. Use it before you add something large, and `del` the names you no longer need. Keep large data in files.
 
+## History
+
+Your context is a session tree. Every turn is an entry, and the request you receive is the path from the root to the newest entry.
+
+- `history.index()`: how full the context is and which entries use it
+- `history.path()`: the live view in order, with ids
+- `history.get(selector)`: entries; `-1` is the newest, `slice(12, 41)` is a region
+- `history.edit(changes)`: drop, replace, or insert entries
+
+An edit removes a turn from what you see, never from the record: `history.get` still returns it.
+
+Every edit changes text before the end of the context, so the next request re-reads everything after it. Edits near the end are nearly free; edits near the beginning cost a full re-read.
+
 ## Core tools
 
 - `bash(command: str) -> BashHandle`: synchronous, returns immediately and runs the command in the background; when a command is finished outside the calling `python_repl` block, a notification is sent to the agent; each `bash()` call is its own process, so shell state does not persist between calls

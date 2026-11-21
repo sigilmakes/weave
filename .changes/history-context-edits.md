@@ -1,0 +1,3 @@
+- A session now records model-authored `context_edit` entries, and the kernel binds a `history` namespace: `index()`, `path()`, `get(selector)` and `edit(changes)` read and change the view a request is built from without touching the transcript.
+- The system prompt gains a `## History` section that explains the session tree, the selectors, and what an edit costs.
+- The TUI session tree shows a `context_edit` row as the number of changes it makes and includes the change text in search.

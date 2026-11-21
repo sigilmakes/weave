@@ -16,6 +16,7 @@ pub use context_strategy::ContextStartupBoundary;
 pub mod goal_boundary;
 pub mod goal_driver;
 pub mod headless;
+mod history_host;
 pub mod host_requests;
 pub mod image_model_routing;
 pub(crate) mod inference_capabilities;

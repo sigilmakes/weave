@@ -422,6 +422,7 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
     crate::mcp::McpManager::register_host_handlers(&mcp_manager, &mut handlers);
     let turn_boundary = Arc::new(super::turn_boundary::TurnBoundaryRequests::new());
     turn_boundary.register_model_info_handler(&mut handlers, model_info.clone());
+    super::history_host::register_history_handlers(&turn_boundary, &mut handlers);
     let keep_recent_tokens = compaction_settings
         .keep_recent_tokens
         .unwrap_or(super::compaction::DEFAULT_KEEP_RECENT_TOKENS);
@@ -637,6 +638,37 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
         .or_else(|| super::provider_adapter::native_model(&model).ok());
     let context_archive_state = Arc::new(std::sync::RwLock::new(context_archive.clone()));
     let bootstrap_model = (model.provider.clone(), model.id.clone());
+    // A `history.edit` writes canonical history mid-turn; the loop's view is
+    // rebuilt through the same assembly a resume uses, so a pinned context
+    // strategy still shapes it.
+    let context_rebuild: super::turn_boundary::LiveContextRebuild = {
+        let plugins = Arc::clone(&plugins);
+        let session = wiring.session.clone();
+        let model = full_model.clone();
+        Arc::new(move || {
+            let plugins = Arc::clone(&plugins);
+            let session = session.clone();
+            let model = model.clone();
+            Box::pin(async move {
+                let (context, leaf) = {
+                    let session = session.lock().await;
+                    (
+                        session.active_context(),
+                        session.get_leaf_id().map(str::to_owned),
+                    )
+                };
+                super::context_strategy::assemble_at(
+                    &plugins,
+                    context.messages,
+                    context.archive.as_ref(),
+                    model.as_ref(),
+                    leaf.as_deref(),
+                )
+                .await
+            })
+        })
+    };
+    turn_boundary.set_context_rebuild(context_rebuild);
 
     let thinking_level = config.thinking_level.unwrap_or(ThinkingLevel::Off);
     let initial_context_empty = existing_messages.is_empty();

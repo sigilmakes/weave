@@ -243,6 +243,10 @@ pub fn entry_display_text<S: std::hash::BuildHasher + Default>(
             ThemeColor::BorderAccent,
             format!("[compaction: {}k tokens]", payload.tokens_before / 1000),
         )],
+        FileEntry::ContextEdit { payload, .. } => vec![color(
+            ThemeColor::BorderAccent,
+            format!("[context edit: {} changes]", payload.changes.len()),
+        )],
         FileEntry::BranchSummary { payload, .. } => vec![
             color(ThemeColor::Warning, "[branch summary]: ".to_string()),
             plain(normalize(&payload.summary)),
@@ -347,6 +351,15 @@ pub fn searchable_text(node: &TreeNodeData) -> String {
             parts.push(extract_content(&payload.content));
         }
         FileEntry::Compaction { .. } => parts.push("compaction".to_string()),
+        FileEntry::ContextEdit { payload, .. } => {
+            parts.push("context edit".to_string());
+            parts.extend(
+                payload
+                    .changes
+                    .iter()
+                    .map(|change| change.to_value().to_string()),
+            );
+        }
         FileEntry::BranchSummary { payload, .. } => {
             parts.push("branch summary".to_string());
             parts.push(payload.summary.clone());
