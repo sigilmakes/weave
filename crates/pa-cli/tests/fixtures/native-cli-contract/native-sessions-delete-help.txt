@@ -1,5 +1,5 @@
 Usage:
-  prime-agent sessions delete [--dry-run] <id>...
+  wv sessions delete [--dry-run] <id>...
 
 Delete saved sessions.
 
@@ -9,4 +9,4 @@ Options:
   --dry-run  Show what would be removed without deleting
 
 Examples:
-  prime-agent sessions delete 01a1fb6b-cd31-7694-a622-8cbd0fa54d8d
+  wv sessions delete 01a1fb6b-cd31-7694-a622-8cbd0fa54d8d

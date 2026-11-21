@@ -1,5 +1,5 @@
 Usage:
-  prime-agent list [--all] [--json] | list --check
+  wv list [--all] [--json] | list --check
 
 List agents.
 
