@@ -519,6 +519,11 @@ impl Supervisor {
                 Ok(mut new_child) => {
                     // This watcher already owns the resident; the replacement is published.
                     new_child.release_admission();
+                    self.log_line(&format!(
+                        "session worker {} replay ready (pid {})",
+                        resident.worker_id,
+                        new_child.id().unwrap_or(0)
+                    ));
                     // No counter reset on a successful relaunch: a spawn that dies fast must
                     // accumulate toward the give-up cap (the reset comes only from a stable
                     // lifetime on the crash path).

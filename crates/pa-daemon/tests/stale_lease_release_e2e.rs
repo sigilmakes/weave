@@ -284,24 +284,38 @@ fn session_file_of(agent_dir: &Path, socket: &Path, session_id: &str) -> PathBuf
     )
 }
 
-/// Every relaunched epoch of one id binds the same path.
-fn worker_socket_of(agent_dir: &Path, socket: &Path, session_id: &str) -> PathBuf {
-    let descriptor = std::fs::read_to_string(descriptor_path(agent_dir, socket, session_id))
-        .expect("descriptor");
-    let descriptor: Value = serde_json::from_str(&descriptor).expect("parse descriptor");
-    PathBuf::from(
-        descriptor
-            .get("socketPath")
-            .and_then(Value::as_str)
-            .expect("the descriptor names its worker socket"),
-    )
-}
-
-/// A relaunched worker counts as up only once its endpoint accepts
-/// connections. A kill fired mid-boot would burn the daemon's whole 30s
-/// connect budget per cycle, so the crash loop paces its kills on this probe.
-fn worker_serving(socket_path: &Path) -> bool {
-    UnixStream::connect(socket_path).is_ok()
+fn crash_until_give_up(socket: &Path, agent_dir: &Path, session_id: &str, worker_pid: u32) {
+    let give_up = format!("session worker {session_id} failed after 6 consecutive failures");
+    let ready_prefix = format!("session worker {session_id} replay ready (pid ");
+    let mut killed = std::collections::HashSet::new();
+    kill_hard(worker_pid);
+    killed.insert(worker_pid);
+    let deadline = Instant::now() + Duration::from_mins(3);
+    loop {
+        let log = std::fs::read_to_string(daemon_log(socket, agent_dir)).expect("daemon log");
+        if log.contains(&give_up) {
+            return;
+        }
+        for line in log.lines() {
+            let Some((_, suffix)) = line.split_once(&ready_prefix) else {
+                continue;
+            };
+            let pid: u32 = suffix
+                .split_once(')')
+                .expect("ready pid terminator")
+                .0
+                .parse()
+                .expect("ready worker pid");
+            if killed.insert(pid) {
+                kill_hard(pid);
+            }
+        }
+        assert!(
+            Instant::now() < deadline,
+            "the supervisor never gave up on the crash loop"
+        );
+        std::thread::sleep(Duration::from_millis(50));
+    }
 }
 
 fn open_session_command(
@@ -407,41 +421,11 @@ fn a_worker_that_fails_to_death_releases_the_session_hold() {
     let daemon = spawn_supervisor(&socket, &agent_dir);
     let supervisor_pid = daemon.child.id();
     let mut client = Client::connect(&socket);
-    let (session_id, _worker_pid) =
+    let (session_id, worker_pid) =
         create_session(&mut client, dir.path(), &sessions_dir, supervisor_pid);
     let session_file = session_file_of(&agent_dir, &socket, &session_id);
 
-    // Kill the worker each time it comes back up until the cap gives up.
-    // A kill must land AFTER the relaunch's create replay settles (~1s
-    // after the socket binds): a worker dying mid-replay parks the
-    // relaunch on the create route's 600s budget instead of the backoff ladder.
-    let worker_socket = worker_socket_of(&agent_dir, &socket, &session_id);
-    let give_up = format!("session worker {session_id} failed after 6 consecutive failures");
-    let replay_grace = Duration::from_secs(4);
-    let mut serving_since: Option<Instant> = None;
-    let deadline = Instant::now() + Duration::from_mins(3);
-    while !log_contains(&socket, &agent_dir, &give_up) {
-        let alive = child_pids_of(supervisor_pid)
-            .into_iter()
-            .filter(|pid| process_alive(*pid))
-            .collect::<Vec<_>>();
-        if worker_serving(&worker_socket) {
-            let ready = serving_since.get_or_insert(Instant::now()).elapsed() >= replay_grace;
-            if let (Some(worker), true) = (alive.first(), ready) {
-                kill_hard(*worker);
-            }
-        } else {
-            serving_since = None;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "the supervisor never gave up on the crash loop"
-        );
-        std::thread::sleep(Duration::from_millis(200));
-    }
-
-    // Let the give-up settle (nothing live left of the id) before the reopen.
-    std::thread::sleep(Duration::from_secs(2));
+    crash_until_give_up(&socket, &agent_dir, &session_id, worker_pid);
 
     // No resident serves the file (the id was abandoned): the dead holder's
     // lease self-heals through the stale-owner reclaim.
@@ -529,33 +513,7 @@ fn the_give_up_sweep_reaps_a_live_leftover_of_the_abandoned_id() {
         "the leftover must not be a child the supervisor watches"
     );
 
-    // The crash loop to the give-up cap: kills pace on a serving grace
-    // past the replay window (see the fails-to-death test).
-    let worker_socket = worker_socket_of(&agent_dir, &socket, &session_id);
-    kill_hard(worker_pid);
-    let give_up = format!("session worker {session_id} failed after 6 consecutive failures");
-    let replay_grace = Duration::from_secs(4);
-    let mut serving_since: Option<Instant> = None;
-    let deadline = Instant::now() + Duration::from_mins(3);
-    while !log_contains(&socket, &agent_dir, &give_up) {
-        let alive = child_pids_of(supervisor_pid)
-            .into_iter()
-            .filter(|pid| process_alive(*pid))
-            .collect::<Vec<_>>();
-        if worker_serving(&worker_socket) {
-            let ready = serving_since.get_or_insert(Instant::now()).elapsed() >= replay_grace;
-            if let (Some(worker), true) = (alive.first(), ready) {
-                kill_hard(*worker);
-            }
-        } else {
-            serving_since = None;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "the supervisor never gave up on the crash loop"
-        );
-        std::thread::sleep(Duration::from_millis(200));
-    }
+    crash_until_give_up(&socket, &agent_dir, &session_id, worker_pid);
     await_log_line(
         &socket,
         &agent_dir,
