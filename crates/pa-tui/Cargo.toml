@@ -31,7 +31,7 @@ tokio-util = { version = "0.7", default-features = false, features = ["rt"] }
 mmdflux = { version = "2.6", default-features = false }
 
 [dev-dependencies]
-pa-test-scratch = { path = "../pa-test-scratch" }
+pa-test-scratch = { path = "../pa-test-scratch", version = "0.10.0" }
 tempfile = "3"
 proptest = { workspace = true }
 
