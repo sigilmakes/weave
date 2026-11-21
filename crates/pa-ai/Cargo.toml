@@ -6,7 +6,7 @@ license.workspace = true
 description = "Provider APIs, model registry, and streaming for Weave."
 
 [dependencies]
-pa-types = { path = "../pa-types", version = "0.1.0" }
+pa-types = { path = "../pa-types", version = "0.10.0" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
