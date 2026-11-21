@@ -20,7 +20,8 @@ pub(super) static SUPERVISOR_LISTENING: LazyLock<Regex> = LazyLock::new(|| {
 });
 
 pub(super) static WORKER_LISTENING: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^(?:Prime Agent|Weave) daemon listening on \S+$").expect("valid worker listening pattern")
+    Regex::new(r"^(?:Prime Agent|Weave) daemon listening on \S+$")
+        .expect("valid worker listening pattern")
 });
 
 pub(super) static CRASH_LINE: LazyLock<Regex> = LazyLock::new(|| {

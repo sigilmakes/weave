@@ -33,14 +33,11 @@ pub fn managed_kind(executable: &Path) -> Option<HomebrewKind> {
     let resolved = executable.canonicalize().ok()?;
     for ancestor in resolved.ancestors() {
         let owner = ancestor.parent().and_then(Path::file_name);
-        if owner == Some(OsStr::new("Cellar"))
-            && ancestor.file_name() == Some(OsStr::new("weave"))
+        if owner == Some(OsStr::new("Cellar")) && ancestor.file_name() == Some(OsStr::new("weave"))
         {
             return Some(HomebrewKind::Formula);
         }
-        if owner == Some(OsStr::new("Caskroom"))
-            && ancestor.file_name() == Some(OsStr::new("wv"))
-        {
+        if owner == Some(OsStr::new("Caskroom")) && ancestor.file_name() == Some(OsStr::new("wv")) {
             return Some(HomebrewKind::Cask);
         }
     }
