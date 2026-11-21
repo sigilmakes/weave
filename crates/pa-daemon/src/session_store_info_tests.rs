@@ -2,6 +2,10 @@
 use super::*;
 use std::io::Write;
 
+#[path = "../tests/support/session_fixture.rs"]
+mod session_fixture;
+use session_fixture::BulkSessionFixture;
+
 fn legacy_read_session_info(path: &Path) -> Option<SessionInfo> {
     let content = fs::read_to_string(path).ok()?;
     let mut header: Option<SessionHeader> = None;
@@ -215,45 +219,51 @@ fn reencode(content: &str) -> String {
     fs::read_to_string(path).unwrap()
 }
 
+#[test]
+#[ignore = "writes fixtures through the durable append path for byte-equivalence evidence"]
+fn bulk_large_session_fixture_matches_durable_appends() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("session.jsonl");
+    bulk_large_session_fixture(&path);
+    session_fixture::assert_durable_equivalent(&path);
+}
+
+#[test]
+#[ignore = "writes fixtures through the durable append path for byte-equivalence evidence"]
+fn bulk_zero_usage_session_fixtures_match_durable_appends() {
+    let dir = tempfile::tempdir().unwrap();
+    for index in 0..(SESSION_SCAN_MAX_CACHED_STATES + 8) {
+        let path = dir.path().join(format!("zero-{index}.jsonl"));
+        bulk_zero_usage_session_fixture(&path, index);
+        session_fixture::assert_durable_equivalent(&path);
+    }
+}
+
 fn assert_fold_matches(path: &Path) {
     assert_eq!(read_session_info(path), legacy_read_session_info(path));
+}
+
+fn bulk_large_session_fixture(path: &Path) {
+    let mut fixture = BulkSessionFixture::new(path);
+    fixture.push(&json!({"type":"session","id":"s","timestamp":"2026-09-23T00:00:00.000Z","cwd":"/test","parentSession":"/parent", "rlmDepth":2}));
+    for index in 0..2_000 {
+        let text = format!("{index}:{}", "世界🚀".repeat(200));
+        fixture.push(&json!({"type":"message","id":format!("m{index}"),"timestamp":"2026-09-23T00:00:00.000Z","message":{"role": if index % 2 == 0 { "user" } else { "assistant" },"content":text,"timestamp":1_790_110_000_000_u64,"provider":"p","model":"a"}}));
+        if index == 500 {
+            fixture.push(&json!({"type":"session_info","id":"n","timestamp":"2026-09-23T00:00:00.000Z","name":" mid-file "}));
+        }
+    }
+    fixture.push(&json!({"type":"model_change","id":"mc","timestamp":"2026-09-23T00:00:00.000Z","provider":"p2","modelId":"m2"}));
+    fixture.push(&json!({"type":"session_state","id":"st","timestamp":"2026-09-23T00:00:00.000Z","state":{"status":"sleep"}}));
+    fixture.push(&json!({"type":"thinking_level_change","id":"tl","timestamp":"2026-09-23T00:00:00.000Z","thinkingLevel":"high"}));
+    assert_eq!(fixture.finish(), 2_005);
 }
 
 #[test]
 fn streaming_fold_matches_legacy_across_large_file_and_appends() {
     let dir = test_dir();
     let path = dir.join("session.jsonl");
-    append_rows(
-        &path,
-        &[
-            json!({"type":"session","id":"s","timestamp":"2026-09-23T00:00:00.000Z","cwd":"/test","parentSession":"/parent", "rlmDepth":2}),
-        ],
-    );
-    for index in 0..2_000 {
-        let text = format!("{index}:{}", "世界🚀".repeat(200));
-        append_rows(
-            &path,
-            &[
-                json!({"type":"message","id":format!("m{index}"),"timestamp":"2026-09-23T00:00:00.000Z","message":{"role": if index % 2 == 0 { "user" } else { "assistant" },"content":text,"timestamp":1_790_110_000_000_u64,"provider":"p","model":"a"}}),
-            ],
-        );
-        if index == 500 {
-            append_rows(
-                &path,
-                &[
-                    json!({"type":"session_info","id":"n","timestamp":"2026-09-23T00:00:00.000Z","name":" mid-file "}),
-                ],
-            );
-        }
-    }
-    append_rows(
-        &path,
-        &[
-            json!({"type":"model_change","id":"mc","timestamp":"2026-09-23T00:00:00.000Z","provider":"p2","modelId":"m2"}),
-            json!({"type":"session_state","id":"st","timestamp":"2026-09-23T00:00:00.000Z","state":{"status":"sleep"}}),
-            json!({"type":"thinking_level_change","id":"tl","timestamp":"2026-09-23T00:00:00.000Z","thinkingLevel":"high"}),
-        ],
-    );
+    bulk_large_session_fixture(&path);
     assert_fold_matches(&path);
     let before = read_session_info(&path).unwrap();
     assert_eq!(read_session_info(&path), Some(before.clone()));
@@ -660,6 +670,13 @@ fn a_valid_unterminated_final_line_folds_only_after_its_newline() {
     );
 }
 
+fn bulk_zero_usage_session_fixture(path: &Path, index: usize) {
+    let mut fixture = BulkSessionFixture::new(path);
+    fixture.push(&json!({"type":"session","id":format!("z{index}"),"timestamp":"2026-09-23T00:00:00.000Z","cwd":"/test"}));
+    fixture.push(&json!({"type":"message","id":format!("zm{index}"),"timestamp":"2026-09-23T00:00:00.000Z","message":{"role":"user","content":"n","timestamp":1_790_110_000_000_u64}}));
+    assert_eq!(fixture.finish(), 2);
+}
+
 #[test]
 fn zero_usage_states_are_capped_by_count_not_only_the_usage_budget() {
     let dir = test_dir();
@@ -667,13 +684,7 @@ fn zero_usage_states_are_capped_by_count_not_only_the_usage_budget() {
     // only the count cap can evict; the message also passes the modified_ms > 0 store guard).
     for index in 0..(SESSION_SCAN_MAX_CACHED_STATES + 8) {
         let path = dir.join(format!("zero-{index}.jsonl"));
-        append_rows(
-            &path,
-            &[
-                json!({"type":"session","id":format!("z{index}"),"timestamp":"2026-09-23T00:00:00.000Z","cwd":"/test"}),
-                json!({"type":"message","id":format!("zm{index}"),"timestamp":"2026-09-23T00:00:00.000Z","message":{"role":"user","content":"n","timestamp":1_790_110_000_000_u64}}),
-            ],
-        );
+        bulk_zero_usage_session_fixture(&path, index);
         let info = read_session_info(&path).unwrap();
         assert_eq!(info.message_count, 1);
     }
