@@ -2,6 +2,46 @@
 
 use super::*;
 
+#[test]
+#[pa_test_scratch::pa_test]
+fn new_session_preserves_the_callers_persistence_mode() {
+    let tmp = tempfile::tempdir().unwrap();
+    let sessions = tmp.path().join("sessions");
+    let mut scratch = SessionManager::in_memory_in_session_dir(tmp.path(), &sessions);
+    let mut persisted = SessionManager::persisted(tmp.path(), &sessions);
+    let previous_scratch = scratch.get_session_id().to_string();
+    let previous_persisted = persisted.get_session_id().to_string();
+
+    assert!(scratch.new_session(&NewSessionOptions::default()).is_none());
+    let saved_path = persisted
+        .new_session(&NewSessionOptions::default())
+        .unwrap();
+    assert_ne!(scratch.get_session_id(), previous_scratch);
+    assert_ne!(persisted.get_session_id(), previous_persisted);
+    assert!(scratch.get_session_file().is_none());
+    assert_eq!(persisted.get_session_file(), Some(saved_path.as_path()));
+
+    for manager in [&mut scratch, &mut persisted] {
+        manager
+            .append_message(AgentMessage::User(pa_types::ai::UserMessage {
+                content: pa_types::ai::UserContent::Text("after new_session".into()),
+                timestamp: 0,
+                rest: pa_types::JsonMap::new(),
+            }))
+            .unwrap();
+        manager.flush_now().unwrap();
+    }
+    let saved_sessions: Vec<_> = std::fs::read_dir(&sessions)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .filter(|path| {
+            path.extension()
+                .is_some_and(|extension| extension == "jsonl")
+        })
+        .collect();
+    assert_eq!(saved_sessions, vec![saved_path]);
+}
+
 fn canonical_in_memory_header_fixture() -> SessionHeader {
     serde_json::from_value(serde_json::json!({
         "version": 17,
