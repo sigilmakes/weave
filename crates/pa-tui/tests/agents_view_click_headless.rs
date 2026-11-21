@@ -68,7 +68,7 @@ impl MockSupervisor {
     }
 
     /// Serve the view connection: hello, then the command loop until EOF.
-    fn serve(self, connected: std::sync::mpsc::Sender<UnixStream>) {
+    fn serve(self, connected: &std::sync::mpsc::Sender<UnixStream>) {
         let (stream, _) = self.listener.accept().expect("accept view connection");
         *self.last_observed.lock().expect("mock observation") = "accepted connection".to_string();
         connected
@@ -215,7 +215,7 @@ async fn run_plan(steps: Vec<AgentsStep>) -> pa_tui::agents_view::AgentsViewOutc
     let (connected_tx, connected_rx) = std::sync::mpsc::channel();
     let (closed_tx, closed_rx) = std::sync::mpsc::channel();
     let server = std::thread::spawn(move || {
-        mock.serve(connected_tx);
+        mock.serve(&connected_tx);
         closed_tx.send(()).expect("acknowledge mock EOF");
     });
     let plan = AgentsHeadlessPlan {
@@ -304,23 +304,39 @@ async fn a_dragged_release_never_opens_the_row() {
 
 #[tokio::test]
 async fn settle_reports_the_unfinished_catalog_instead_of_releasing_the_plan() {
+    assert_unfinished_catalog_fails_settle(vec![AgentsStep::WaitSettle { timeout_ms: 0 }]).await;
+}
+
+#[tokio::test]
+async fn settle_after_a_satisfied_render_still_waits_for_the_catalog() {
+    assert_unfinished_catalog_fails_settle(vec![
+        AgentsStep::WaitRender {
+            needle: "first one".to_string(),
+            timeout_ms: 0,
+        },
+        AgentsStep::WaitSettle { timeout_ms: 0 },
+    ])
+    .await;
+}
+
+async fn assert_unfinished_catalog_fails_settle(steps: Vec<AgentsStep>) {
     let _guard = RUN_LOCK.lock().await;
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");
     let mut mock = MockSupervisor::bind(&socket);
     mock.hold_catalog_response = true;
-    let scenario = "withheld saved catalog";
+    let scenario = format!("withheld saved catalog: {steps:?}");
     let last_observed = mock.last_observed.clone();
     let (connected_tx, connected_rx) = std::sync::mpsc::channel();
     let (closed_tx, closed_rx) = std::sync::mpsc::channel();
     let server = std::thread::spawn(move || {
-        mock.serve(connected_tx);
+        mock.serve(&connected_tx);
         closed_tx.send(()).expect("acknowledge mock EOF");
     });
     let result = run_agents_view(
         view_options(&socket),
         AgentsViewUiMode::Headless(AgentsHeadlessPlan {
-            steps: vec![AgentsStep::WaitSettle { timeout_ms: 0 }],
+            steps,
             width: 120,
             height: 36,
         }),

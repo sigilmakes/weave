@@ -96,7 +96,7 @@ impl MockSupervisor {
         }
     }
 
-    fn serve(self, connected: std::sync::mpsc::Sender<UnixStream>) {
+    fn serve(self, connected: &std::sync::mpsc::Sender<UnixStream>) {
         let (stream, _) = self.listener.accept().expect("accept view connection");
         *self.last_observed.lock().expect("mock observation") = "accepted connection".to_string();
         connected
@@ -242,7 +242,7 @@ async fn run_plan(steps: Vec<AgentsStep>) -> pa_tui::agents_view::AgentsViewOutc
     let (connected_tx, connected_rx) = std::sync::mpsc::channel();
     let (closed_tx, closed_rx) = std::sync::mpsc::channel();
     let server = std::thread::spawn(move || {
-        mock.serve(connected_tx);
+        mock.serve(&connected_tx);
         closed_tx.send(()).expect("acknowledge mock EOF");
     });
     let plan = AgentsHeadlessPlan {

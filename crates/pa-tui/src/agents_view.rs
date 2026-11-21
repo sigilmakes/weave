@@ -780,68 +780,77 @@ async fn run_agents_view_surface(
                 pending.insert(0, input);
             }
         }
-        while let Some(UiInput::WaitSettle { timeout_ms }) = pending.first() {
-            if catalog_request.is_none() && saved_flush.is_none() && outstanding_actions == 0 {
-                wait_settle_deadline = None;
-                pending.remove(0);
-                continue;
-            }
-            let deadline = *wait_settle_deadline.get_or_insert_with(|| {
-                tokio::time::Instant::now() + Duration::from_millis(*timeout_ms)
-            });
-            if tokio::time::Instant::now() >= deadline {
-                headless_failure = Some(format!(
-                    "WaitSettle timed out waiting for the rendered saved catalog and preceding actions: catalog_request={catalog_request:?}, saved_flush={saved_flush:?}, unfinished_actions={outstanding_actions}, last_frame={:?}",
-                    renderer.headless_frames().and_then(|frames| frames.last()),
-                ));
-                mode.running = false;
+        loop {
+            let previous_pending = pending.len();
+            while let Some(UiInput::WaitSettle { timeout_ms }) = pending.first() {
+                if catalog_request.is_none() && saved_flush.is_none() && outstanding_actions == 0 {
+                    wait_settle_deadline = None;
+                    pending.remove(0);
+                    continue;
+                }
+                let deadline = *wait_settle_deadline.get_or_insert_with(|| {
+                    tokio::time::Instant::now() + Duration::from_millis(*timeout_ms)
+                });
+                if tokio::time::Instant::now() >= deadline {
+                    headless_failure = Some(format!(
+                        "WaitSettle timed out waiting for the rendered saved catalog and preceding actions: catalog_request={catalog_request:?}, saved_flush={saved_flush:?}, unfinished_actions={outstanding_actions}, last_frame={:?}",
+                        renderer.headless_frames().and_then(|frames| frames.last()),
+                    ));
+                    mode.running = false;
+                    break;
+                }
+                barrier_holds = true;
                 break;
             }
-            barrier_holds = true;
-            break;
+            if !mode.running {
+                break;
+            }
+            while let Some(UiInput::WaitRender { needle, timeout_ms }) = pending.first() {
+                let needle = needle.clone();
+                let timeout_ms = *timeout_ms;
+                let frames = renderer.headless_frames();
+                if let Some(deadline) = wait_render_deadline {
+                    let satisfied = frames.is_some_and(|frames| {
+                        frames
+                            .get(wait_render_baseline..)
+                            .unwrap_or_default()
+                            .iter()
+                            .any(|frame| frame.contains(&needle))
+                    });
+                    if satisfied {
+                        wait_render_deadline = None;
+                        pending.remove(0);
+                        continue;
+                    }
+                    if tokio::time::Instant::now() > deadline {
+                        wait_render_deadline = None;
+                        pending.remove(0);
+                        // The deadline pops the hold and the plan proceeds; the status note reports the
+                        // wait, never the needle — quoting it would satisfy the failed condition.
+                        mode.set_status("timed out waiting for the headless render condition");
+                        redraw = true;
+                        continue;
+                    }
+                } else {
+                    let holds_now = frames.is_some_and(|frames| {
+                        frames.last().is_some_and(|frame| frame.contains(&needle))
+                    });
+                    if holds_now {
+                        pending.remove(0);
+                        continue;
+                    }
+                    wait_render_baseline = frames.map_or(0, <[String]>::len);
+                    wait_render_deadline =
+                        Some(tokio::time::Instant::now() + Duration::from_millis(timeout_ms));
+                }
+                barrier_holds = true;
+                break;
+            }
+            if barrier_holds || pending.len() == previous_pending {
+                break;
+            }
         }
         if !mode.running {
-            break;
-        }
-        while let Some(UiInput::WaitRender { needle, timeout_ms }) = pending.first() {
-            let needle = needle.clone();
-            let timeout_ms = *timeout_ms;
-            let frames = renderer.headless_frames();
-            if let Some(deadline) = wait_render_deadline {
-                let satisfied = frames.is_some_and(|frames| {
-                    frames
-                        .get(wait_render_baseline..)
-                        .unwrap_or_default()
-                        .iter()
-                        .any(|frame| frame.contains(&needle))
-                });
-                if satisfied {
-                    wait_render_deadline = None;
-                    pending.remove(0);
-                    continue;
-                }
-                if tokio::time::Instant::now() > deadline {
-                    wait_render_deadline = None;
-                    pending.remove(0);
-                    // The deadline pops the hold and the plan proceeds; the status note reports the
-                    // wait, never the needle — quoting it would satisfy the failed condition.
-                    mode.set_status("timed out waiting for the headless render condition");
-                    redraw = true;
-                    continue;
-                }
-            } else {
-                let holds_now = frames.is_some_and(|frames| {
-                    frames.last().is_some_and(|frame| frame.contains(&needle))
-                });
-                if holds_now {
-                    pending.remove(0);
-                    continue;
-                }
-                wait_render_baseline = frames.map_or(0, <[String]>::len);
-                wait_render_deadline =
-                    Some(tokio::time::Instant::now() + Duration::from_millis(timeout_ms));
-            }
-            barrier_holds = true;
             break;
         }
         let popped = if barrier_holds {
@@ -918,7 +927,21 @@ async fn run_agents_view_surface(
                     mode.handle_paste(&text);
                 }
                 UiInput::Notify(notify) => notify.notify_one(),
-                UiInput::Resize | UiInput::WaitSettle { .. } | UiInput::WaitRender { .. } => {}
+                UiInput::Resize => {}
+                UiInput::WaitSettle { timeout_ms } => {
+                    headless_failure = Some(format!(
+                        "WaitSettle reached ordinary input dispatch without evaluation: timeout_ms={timeout_ms}, last_frame={:?}",
+                        renderer.headless_frames().and_then(|frames| frames.last()),
+                    ));
+                    mode.running = false;
+                }
+                UiInput::WaitRender { needle, timeout_ms } => {
+                    headless_failure = Some(format!(
+                        "WaitRender reached ordinary input dispatch without evaluation: needle={needle:?}, timeout_ms={timeout_ms}, last_frame={:?}",
+                        renderer.headless_frames().and_then(|frames| frames.last()),
+                    ));
+                    mode.running = false;
+                }
                 UiInput::DeleteResult {
                     message,
                     tone,
