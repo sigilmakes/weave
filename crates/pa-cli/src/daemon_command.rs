@@ -38,6 +38,12 @@ pub(crate) fn run_daemon_command(command: &str, args: &[String]) -> Result<()> {
         if parsed.json {
             bail!("--check prints a text report; it is not a JSON command");
         }
+        if !parsed.positionals.is_empty() {
+            bail!(
+                "--check takes no other arguments: {}",
+                parsed.positionals.join(" ")
+            );
+        }
         run_artifacts_check()?;
         return Ok(());
     }
