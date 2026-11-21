@@ -1,0 +1,11 @@
+Usage:
+  prime-agent sessions [--all] [--json]
+
+Show agent status, activity, and usage.
+
+Commands:
+  delete  Delete saved sessions
+
+Options:
+  -a, --all  Include saved agents
+  --json      Print JSON

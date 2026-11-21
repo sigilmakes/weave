@@ -587,8 +587,8 @@ fn rust_daemon_cli_commands_end_to_end() {
         assert!(row.get(key).is_some(), "summary row must carry {key}");
     }
 
-    // Golden: the sessions operator table over the live session (TS binary
-    // shape): the last-heard, activity, error, and usage cells stay empty for
+    // The sessions operator table adds the file-backed id and the size
+    // columns; the last-heard, activity, error, and usage cells stay empty for
     // a healthy idle session.
     let sessions_table = run_cli(
         &cli,
@@ -602,11 +602,27 @@ fn rust_daemon_cli_commands_end_to_end() {
         "{}",
         stderr(&sessions_table)
     );
+    let sessions_text = stdout(&sessions_table);
+    let sessions_header = sessions_text.lines().next().expect("header");
     assert_eq!(
-        normalize(&stdout(&sessions_table)),
-        "name status activity last heard error usage\nparity idle\n",
-        "sessions table shape must match the TS golden"
+        sessions_header.split_whitespace().collect::<Vec<_>>(),
+        [
+            "name",
+            "id",
+            "status",
+            "activity",
+            "last",
+            "heard",
+            "error",
+            "usage",
+            "size",
+            "artifacts"
+        ],
+        "{sessions_text}"
     );
+    let sessions_row = sessions_text.lines().nth(1).expect("live row");
+    assert!(sessions_row.starts_with("parity"), "{sessions_text}");
+    assert!(sessions_row.contains("idle"), "{sessions_text}");
 
     // The sessions --json dump is the same list RPC data (the sessions
     // command reuses it).
@@ -692,6 +708,203 @@ fn rust_daemon_cli_commands_end_to_end() {
     );
     assert_eq!(send_wake.status.code(), Some(0), "{}", stderr(&send_wake));
     assert_eq!(stdout(&send_wake), "Sent to renamed\n");
+}
+
+/// The full session id behind one saved or live listing row.
+fn session_file_stem(row: &Value) -> String {
+    Path::new(row["sessionFile"].as_str().expect("sessionFile"))
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .expect("session file stem")
+        .to_string()
+}
+
+#[test]
+fn sessions_delete_is_all_or_nothing_and_reports_the_freed_bytes() {
+    let dir = tempfile::TempDir::new().expect("temp dir");
+    let agent_dir = dir.path().join("agent");
+    let sessions = agent_dir.join("sessions");
+    std::fs::create_dir_all(&sessions).expect("sessions dir");
+    let socket = dir.path().join("daemon.sock");
+    let cli = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
+    let daemon = spawn_daemon(&daemon_binary(), &socket, &agent_dir);
+    let socket_str = socket.to_string_lossy().to_string();
+
+    let script = dir.path().join("delete-script.json");
+    std::fs::write(&script, json!({ "responses": [] }).to_string()).expect("write script");
+    let (mut wire, _hello) = Wire::connect(&daemon.socket);
+    let keeper = create_session(
+        &mut wire,
+        "c-keeper",
+        "keeper",
+        dir.path(),
+        &sessions,
+        Some(&script),
+    );
+    let doomed = create_session(
+        &mut wire,
+        "c-doomed",
+        "doomed",
+        dir.path(),
+        &sessions,
+        Some(&script),
+    );
+    drop(wire);
+
+    let sessions_json = || -> Value {
+        let output = run_cli(
+            &cli,
+            dir.path(),
+            &agent_dir,
+            &list_args(&socket_str, &["sessions", "--all", "--json"]),
+        );
+        assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+        serde_json::from_str(&stdout(&output)).expect("valid sessions json")
+    };
+    let rows = sessions_json();
+    let rows = rows["sessions"].as_array().expect("session rows");
+    let keeper_row = rows
+        .iter()
+        .find(|row| row["sessionName"] == "keeper")
+        .expect("keeper row");
+    let doomed_row = rows
+        .iter()
+        .find(|row| row["sessionName"] == "doomed")
+        .expect("doomed row");
+    let keeper_id = session_file_stem(keeper_row);
+    let doomed_id = session_file_stem(doomed_row);
+    let live_pid = keeper_row["workerPid"].as_u64().expect("live worker pid");
+    let doomed_log = sessions.join(format!("{doomed_id}.jsonl"));
+    assert!(doomed_log.exists(), "created session log");
+
+    let stop = run_cli(
+        &cli,
+        dir.path(),
+        &agent_dir,
+        &list_args(&socket_str, &["stop", doomed.as_str()]),
+    );
+    assert_eq!(stop.status.code(), Some(0), "{}", stderr(&stop));
+
+    let artifacts = agent_dir.join("session-artifacts").join(&doomed_id);
+    let _ = std::fs::remove_dir_all(&artifacts);
+    std::fs::create_dir_all(&artifacts).expect("artifact partition");
+    std::fs::write(artifacts.join("data.bin"), [0_u8; 1]).expect("artifact file");
+    std::fs::write(artifacts.join("kernel-state.dill"), [0_u8; 2]).expect("kernel state");
+    std::fs::write(artifacts.join("kernel-state.json"), [0_u8; 1]).expect("kernel manifest");
+    let cache = sessions.join(format!("{doomed_id}.info-cache.json"));
+
+    let dry_run = run_cli(
+        &cli,
+        dir.path(),
+        &agent_dir,
+        &list_args(
+            &socket_str,
+            &["sessions", "delete", "--dry-run", doomed_id.as_str()],
+        ),
+    );
+    assert_eq!(dry_run.status.code(), Some(0), "{}", stderr(&dry_run));
+    let dry_text = stdout(&dry_run);
+    assert!(
+        dry_text.starts_with("would delete: artifacts 1 B, kernel 3 B, log "),
+        "{dry_text}"
+    );
+    assert!(dry_text.contains(", cache "), "{dry_text}");
+    assert!(doomed_log.exists(), "dry run removes nothing");
+    assert!(artifacts.exists(), "dry run removes nothing");
+
+    let live = run_cli(
+        &cli,
+        dir.path(),
+        &agent_dir,
+        &list_args(&socket_str, &["sessions", "delete", keeper_id.as_str()]),
+    );
+    assert_eq!(live.status.code(), Some(1));
+    assert_eq!(
+        stderr(&live),
+        format!(
+            "Error: Session {keeper_id} is live in daemon pid {live_pid}; nothing was deleted\n"
+        )
+    );
+
+    let mixed = run_cli(
+        &cli,
+        dir.path(),
+        &agent_dir,
+        &list_args(
+            &socket_str,
+            &["sessions", "delete", doomed_id.as_str(), keeper_id.as_str()],
+        ),
+    );
+    assert_eq!(mixed.status.code(), Some(1));
+    assert!(
+        stderr(&mixed).contains("is live in daemon pid"),
+        "{}",
+        stderr(&mixed)
+    );
+    assert!(doomed_log.exists(), "a live id in the list removes nothing");
+    assert!(artifacts.exists(), "a live id in the list removes nothing");
+
+    let unknown = run_cli(
+        &cli,
+        dir.path(),
+        &agent_dir,
+        &list_args(
+            &socket_str,
+            &[
+                "sessions",
+                "delete",
+                doomed_id.as_str(),
+                "01a1fb6b-0000-0000-0000-000000000000",
+            ],
+        ),
+    );
+    assert_eq!(unknown.status.code(), Some(1));
+    assert_eq!(
+        stderr(&unknown),
+        "Error: Session 01a1fb6b-0000-0000-0000-000000000000 does not exist\n"
+    );
+    assert!(doomed_log.exists(), "an unknown id removes nothing");
+    assert!(artifacts.exists(), "an unknown id removes nothing");
+
+    let delete = run_cli(
+        &cli,
+        dir.path(),
+        &agent_dir,
+        &list_args(&socket_str, &["sessions", "delete", doomed_id.as_str()]),
+    );
+    assert_eq!(delete.status.code(), Some(0), "{}", stderr(&delete));
+    let delete_text = stdout(&delete);
+    assert!(
+        delete_text.starts_with(&format!("deleted {} \u{2014} log ", &doomed_id[..8])),
+        "{delete_text}"
+    );
+    assert!(delete_text.ends_with(" freed\n"), "{delete_text}");
+    assert!(!doomed_log.exists(), "log removed");
+    assert!(!artifacts.exists(), "artifact partition removed");
+    assert!(!cache.exists(), "info cache removed");
+    assert!(
+        sessions.join(format!("{keeper_id}.jsonl")).exists(),
+        "the live session is untouched"
+    );
+    let dry_total = dry_text
+        .trim()
+        .rsplit(" \u{2014} ")
+        .next()
+        .expect("dry total");
+    let delete_total = delete_text
+        .trim()
+        .strip_suffix(" freed")
+        .and_then(|line| line.rsplit(", ").next())
+        .expect("real total");
+    assert_eq!(dry_total, delete_total, "dry run reports the real total");
+
+    let stop = run_cli(
+        &cli,
+        dir.path(),
+        &agent_dir,
+        &list_args(&socket_str, &["stop", keeper.as_str()]),
+    );
+    assert_eq!(stop.status.code(), Some(0), "{}", stderr(&stop));
 }
 
 #[test]

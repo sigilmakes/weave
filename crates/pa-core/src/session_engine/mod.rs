@@ -818,9 +818,8 @@ pub(crate) fn session_message_to_loop(message: &SessionAgentMessage) -> Option<A
 /// (`dirname(dirname(file))/session-artifacts/<id>`).
 #[must_use]
 pub fn session_artifact_dir_for_log(log: &std::path::Path) -> Option<std::path::PathBuf> {
-    let id = log.file_stem()?.to_string_lossy().to_string();
-    let artifacts_root = log.parent()?.parent()?.join("session-artifacts");
-    Some(artifacts_root.join(id))
+    crate::session::storage::SessionStorage::for_log(log)
+        .map(|storage| storage.artifacts_dir().to_path_buf())
 }
 
 /// Rows that fail the conversion drop.

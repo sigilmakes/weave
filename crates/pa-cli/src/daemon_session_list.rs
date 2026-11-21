@@ -6,6 +6,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 const DISPLAY_ID_LENGTH: usize = 12;
 
+/// The byte units [`format_bytes`] scales through.
+const BYTE_UNITS: [&str; 4] = ["KB", "MB", "GB", "TB"];
+
 /// Display order for the status column.
 const LIST_STATUS_ORDER: [&str; 3] = ["working", "idle", "archived"];
 
@@ -231,6 +234,26 @@ fn tail(value: &str, length: usize) -> String {
     } else {
         value.to_string()
     }
+}
+
+/// A byte count at the listing's scale: whole bytes below 1 KiB, then one
+/// decimal below ten units and whole units above it.
+#[must_use]
+pub(crate) fn format_bytes(bytes: u64) -> String {
+    if bytes < 1024 {
+        return format!("{bytes} B");
+    }
+    let mut value = bytes as f64 / 1024.0;
+    let mut unit = 0;
+    while value >= 1024.0 && unit + 1 < BYTE_UNITS.len() {
+        value /= 1024.0;
+        unit += 1;
+    }
+    let whole = value.round();
+    if value >= 10.0 || (value - whole).abs() < 0.05 {
+        return format!("{whole:.0} {}", BYTE_UNITS[unit]);
+    }
+    format!("{value:.1} {}", BYTE_UNITS[unit])
 }
 
 /// `<n>s|m|h|d|w|y` bucketing from the modified timestamp.

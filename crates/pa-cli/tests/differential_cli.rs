@@ -33,6 +33,7 @@ const CORPUS: &[&[&str]] = &[
     &["help", "agents"],
     &["help", "list"],
     &["help", "sessions"],
+    &["help", "sessions", "delete"],
     &["help", "attach"],
     &["help", "stop"],
     &["help", "rename"],
@@ -515,6 +516,22 @@ fn declared_native_contract(
             ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-update-help.txt"), "", roots))
                 && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-update-help.txt"), "", roots),
         ),
+        // A fork-only child: the TS sessions help has no `delete` command, so
+        // only the native side has a declared shape to pin.
+        ["help", "sessions"] => Some(declared_output_matches(
+            native,
+            0,
+            include_str!("fixtures/native-cli-contract/native-sessions-help.txt"),
+            "",
+            roots,
+        )),
+        ["help", "sessions", "delete"] => Some(declared_output_matches(
+            native,
+            0,
+            include_str!("fixtures/native-cli-contract/native-sessions-delete-help.txt"),
+            "",
+            roots,
+        )),
         ["--mode", "rpc" | "daemon", "@file.txt"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 1, "", "Error: @file arguments are not supported in RPC or daemon mode\n", roots))
                 && declared_output_matches(native, 1, "", "Error: @file arguments are not supported in RPC, daemon, or ACP mode\n", roots),
@@ -579,6 +596,8 @@ fn native_cli_contract_fixtures() {
         &["help"],
         &["help", "package"],
         &["help", "update"],
+        &["help", "sessions"],
+        &["help", "sessions", "delete"],
         &["--mode", "rpc", "@file.txt"],
         &["--mode", "daemon", "@file.txt"],
         &["model", "list", "--json"],

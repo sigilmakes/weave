@@ -67,6 +67,17 @@ pub const COMMAND_SPECS: &[CommandSpec] = &[
         "--json      Print JSON",
     ]),
     CommandSpec::new(
+        &["sessions", "delete"],
+        "sessions delete [--dry-run] <id>...",
+        "Delete saved sessions",
+    )
+    .description(
+        "Removes each session's artifacts, kernel state, log, and info cache. A live session is \
+         refused, and a list with any unknown or live id removes nothing.",
+    )
+    .options(&["--dry-run  Show what would be removed without deleting"])
+    .examples(&["sessions delete 01a1fb6b-cd31-7694-a622-8cbd0fa54d8d"]),
+    CommandSpec::new(
         &["attach"],
         "attach <agent>",
         "Attach the interactive UI to an agent",

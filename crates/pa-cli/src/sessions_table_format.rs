@@ -1,8 +1,11 @@
-//! The `prime-agent sessions` operator table: one line per agent — name,
-//! status, activity, staleness, last error, usage — from the same daemon
-//! `list` summaries, with the activity wording from the shared roster
-//! branch table (color-free, like TS piped output).
+//! The `prime-agent sessions` operator table: one line per agent — name, id,
+//! status, activity, staleness, last error, usage, log size, artifact size —
+//! from the same daemon `list` summaries, with the activity wording from the
+//! shared roster branch table (color-free, like TS piped output).
 
+use std::path::Path;
+
+use pa_core::session::storage::{SessionStorage, SessionStorageSizes};
 use pa_tui::ansi::strip_ansi;
 use pa_tui::info_commands::js_to_fixed;
 use pa_tui::width::truncate_to_width;
@@ -12,7 +15,7 @@ use pa_types::daemon::agent_roster::{
 use serde_json::Value;
 
 use crate::daemon_session_list::{
-    format_session_age, format_session_display_id, format_table, string_field,
+    format_bytes, format_session_age, format_session_display_id, format_table, string_field,
 };
 
 /// Display-width cap for free-text cells so one long line never stretches the row; wide glyphs
@@ -20,17 +23,29 @@ use crate::daemon_session_list::{
 const MAX_CELL_CHARS: usize = 60;
 
 /// The sessions table's columns.
-const SESSIONS_HEADERS: [&str; 6] = ["name", "status", "activity", "last heard", "error", "usage"];
+const SESSIONS_HEADERS: [&str; 9] = [
+    "name",
+    "id",
+    "status",
+    "activity",
+    "last heard",
+    "error",
+    "usage",
+    "size",
+    "artifacts",
+];
 
 /// One-line-per-agent operator table for `prime-agent sessions`.
 pub(crate) fn format_sessions_table(sessions: &[&Value], now_ms: u64) -> String {
     let mut sorted = sessions.to_vec();
     sorted.sort_by_key(|summary| sessions_sort_key(summary));
-    let rows: Vec<[String; 6]> = sorted
+    let rows: Vec<[String; 9]> = sorted
         .iter()
         .map(|summary| {
+            let storage_sizes = session_storage_sizes(summary);
             [
                 truncate_cell(&session_name_cell(summary)),
+                session_id_cell(summary),
                 sessions_status_label(summary).to_string(),
                 truncate_cell(&session_activity_cell(summary)),
                 // lastHeardFromAt is the supervisor's staleness mark, served only when a worker's
@@ -38,6 +53,9 @@ pub(crate) fn format_sessions_table(sessions: &[&Value], now_ms: u64) -> String 
                 format_session_age(string_field(summary, "lastHeardFromAt"), now_ms),
                 truncate_cell(&session_error_cell(summary).unwrap_or_default()),
                 format_usage_cell(summary.get("usage")),
+                storage_sizes.map_or_else(String::new, |sizes| format_bytes(sizes.log)),
+                storage_sizes
+                    .map_or_else(String::new, |sizes| format_bytes(sizes.artifact_directory)),
             ]
         })
         .collect();
@@ -100,6 +118,23 @@ fn session_activity_cell(summary: &Value) -> String {
         .flatten()
         .collect::<Vec<_>>()
         .join(" \u{b7} ")
+}
+
+/// The id cell: the conversation log's stem. Only a file-backed row has an
+/// id, and that full id is what `sessions delete` accepts.
+fn session_id_cell(summary: &Value) -> String {
+    string_field(summary, "sessionFile")
+        .and_then(|path| Path::new(path).file_stem())
+        .and_then(|stem| stem.to_str())
+        .unwrap_or_default()
+        .to_string()
+}
+
+/// The size cells: the log file and the whole artifact partition, the same
+/// figures the delete surface reports.
+fn session_storage_sizes(summary: &Value) -> Option<SessionStorageSizes> {
+    let path = string_field(summary, "sessionFile")?;
+    SessionStorage::for_log(path).map(|storage| storage.sizes())
 }
 
 /// The name cell: names are user-provided; sanitize them and fall back
@@ -247,9 +282,13 @@ mod tests {
     /// The exact-row harness (TS `expectTable`): the rendered table must be the expected rows
     /// padded to their own widest cell.
     fn expect_table(case: &str, sessions: &[Value], expected_rows: &[[&str; 6]]) {
+        let expected_rows: Vec<[&str; 9]> = expected_rows
+            .iter()
+            .map(|row| [row[0], "", row[1], row[2], row[3], row[4], row[5], "", ""])
+            .collect();
         let rows: Vec<&Value> = sessions.iter().collect();
         let table = format_sessions_table(&rows, NOW_MS);
-        let widths: [usize; 6] = std::array::from_fn(|column| {
+        let widths: [usize; 9] = std::array::from_fn(|column| {
             str_width(SESSIONS_HEADERS[column]).max(
                 expected_rows
                     .iter()
@@ -258,7 +297,7 @@ mod tests {
                     .unwrap_or(0),
             )
         });
-        let pad = |row: [&str; 6]| {
+        let pad = |row: [&str; 9]| {
             row.iter()
                 .enumerate()
                 .map(|(column, cell)| {
@@ -456,6 +495,41 @@ mod tests {
     }
 
     #[test]
+    fn byte_sizes_use_the_listing_scale() {
+        assert_eq!(format_bytes(0), "0 B");
+        assert_eq!(format_bytes(1023), "1023 B");
+        assert_eq!(format_bytes(1024), "1 KB");
+        assert_eq!(format_bytes(5 * 1024), "5 KB");
+        assert_eq!(format_bytes(2_200_000), "2.1 MB");
+        assert_eq!(format_bytes(60 * 1024 * 1024), "60 MB");
+        assert_eq!(format_bytes(3 * 1024 * 1024 * 1024), "3 GB");
+    }
+
+    #[test]
+    fn id_size_and_artifacts_cells_read_the_session_storage() {
+        let root = tempfile::tempdir().unwrap();
+        let sessions = root.path().join("sessions");
+        std::fs::create_dir_all(&sessions).unwrap();
+        let id = "01a1fb6b-cd31-7694-a622-8cbd0fa54d8d";
+        let log = sessions.join(format!("{id}.jsonl"));
+        std::fs::write(&log, vec![0_u8; 2048]).unwrap();
+        let artifacts = root.path().join("session-artifacts").join(id);
+        std::fs::create_dir_all(&artifacts).unwrap();
+        std::fs::write(artifacts.join("kernel-state.dill"), vec![0_u8; 1024]).unwrap();
+        std::fs::write(artifacts.join("data.bin"), vec![0_u8; 4096]).unwrap();
+
+        let summary = make_summary(json!({ "sessionFile": log.to_string_lossy() }));
+        let rows: Vec<&Value> = vec![&summary];
+        let table = format_sessions_table(&rows, NOW_MS);
+        let lines: Vec<&str> = table.lines().collect();
+        assert!(lines[0].contains("size"), "{lines:?}");
+        assert!(lines[0].contains("artifacts"), "{lines:?}");
+        assert!(lines[1].contains(id), "{lines:?}");
+        assert!(lines[1].contains("2 KB"), "{lines:?}");
+        assert!(lines[1].contains("5 KB"), "{lines:?}");
+    }
+
+    #[test]
     fn measures_wide_glyph_cells_by_display_width() {
         let sessions = [
             make_summary(json!({ "sessionName": "中文" })),
@@ -469,7 +543,7 @@ mod tests {
         let lines: Vec<&str> = table.lines().collect();
         // Scalar-length padding would misalign the CJK name; the recap cap counts display columns,
         // pair-safe.
-        assert!(lines[1].starts_with("中文   idle"), "{lines:?}");
+        assert!(lines[1].starts_with("中文       idle"), "{lines:?}");
         assert!(
             lines[2].contains(&format!("{}…", "\u{1f680}".repeat(29))),
             "{lines:?}"
