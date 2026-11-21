@@ -844,7 +844,7 @@ fn sessions_delete_is_all_or_nothing_and_reports_the_freed_bytes() {
     let sessions = agent_dir.join("sessions");
     std::fs::create_dir_all(&sessions).expect("sessions dir");
     let socket = dir.path().join("daemon.sock");
-    let cli = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
+    let cli = PathBuf::from(env!("CARGO_BIN_EXE_wv"));
     let daemon = spawn_daemon(&daemon_binary(), &socket, &agent_dir);
     let socket_str = socket.to_string_lossy().to_string();
 
