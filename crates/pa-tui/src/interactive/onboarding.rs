@@ -747,7 +747,8 @@ mod tests {
     async fn a_barrier_the_first_paint_satisfies_releases_the_queued_batch() {
         let error = marker_consumed_behind(UiInput::WaitRender {
             needle: "Welcome to Weave".to_string(),
-            timeout_ms: 5_000,
+            // The pane must release on paint, before the helper's 5-second timeout.
+            timeout_ms: 60_000,
         })
         .await;
         assert_eq!(error, "headless timing markers require an attached session");
