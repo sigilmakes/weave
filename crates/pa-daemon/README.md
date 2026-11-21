@@ -153,7 +153,10 @@ compaction outcome, so an idle session is never left deaf to later input
 stale gate, and under a hold that has parked work it parks behind the hold
 and answers `queued` with `queuedReason: "input_admission_suspended"` rather
 than the admission error (divergence from TS `acceptAgentMessagePrompt`'s
-`resumeIfIdle: false`, operator ruling 2026-10-29). A family broadcast runs
+`resumeIfIdle: false`, operator ruling 2026-10-29). The hold rides the receipt
+whether or not the target is mid-turn at delivery, because it outlives that
+turn; a compaction window outranks it as `compaction_in_progress`, the state
+that holds the row first (issue #32). A family broadcast runs
 the same per-member `send_agent_message` path, so it inherits these semantics
 exactly; per-member failures stay receipt-level entries.
 The compact-with-active-goal resume is also the TS post-compaction

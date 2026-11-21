@@ -691,3 +691,148 @@ async fn agent_rows_never_protect_a_hold() {
     );
     assert!(worker.core.lock().unwrap().queued_input_suspended);
 }
+
+/// The ticket's receiver-state matrix (issue #32): the receipt must name the
+/// hold that keeps a delivery parked no matter whether the target is mid-turn
+/// when the delivery lands. A busy target under a hold that has user work
+/// parked keeps the row parked after the turn settles, so `queued` alone would
+/// tell the caller it will deliver at the turn boundary when it will not.
+#[tokio::test]
+async fn a_busy_target_under_a_protected_hold_reports_the_hold() {
+    let worker = created_worker().await;
+    crate::worker::tests::park_steering_row(&worker, "held user row");
+    {
+        let mut core = worker.core.lock().unwrap();
+        core.busy = true;
+        core.queued_input_suspended = true;
+    }
+    let response = worker
+        .dispatch(
+            "worker_deliver_message",
+            &json!({
+                "targetActiveSessionId": "target-session",
+                "message": "parked behind a busy turn and a hold",
+                "sender": { "activeSessionId": "source-session" },
+            }),
+        )
+        .await;
+    assert!(response.success, "the delivery was refused: {response:?}");
+    let data = response.data.expect("receipt data");
+    assert_eq!(data["deliveryStatus"], "queued");
+    assert_eq!(
+        data["queuedReason"], "input_admission_suspended",
+        "a hold over user work outlives the turn and must ride the receipt: {data}"
+    );
+    assert!(data["queuedAt"].as_str().is_some(), "queuedAt: {data}");
+    {
+        let core = worker.core.lock().unwrap();
+        assert!(
+            core.queued_input_suspended,
+            "the delivery released a hold that had parked work to protect"
+        );
+        assert_eq!(
+            core.steering.len(),
+            2,
+            "the delivery parked behind the hold"
+        );
+    }
+}
+
+/// The complement: a busy target whose gate holds nothing (no parked user
+/// row, no compaction window) is queued behind the turn alone. The turn
+/// boundary releases that gate, so the receipt must not claim a hold.
+#[tokio::test]
+async fn a_busy_target_under_an_unprotected_hold_reports_a_plain_park() {
+    let worker = created_worker().await;
+    {
+        let mut core = worker.core.lock().unwrap();
+        core.busy = true;
+        core.queued_input_suspended = true;
+    }
+    let response = worker
+        .dispatch(
+            "worker_deliver_message",
+            &json!({
+                "targetActiveSessionId": "target-session",
+                "message": "parked behind the running turn",
+                "sender": { "activeSessionId": "source-session" },
+            }),
+        )
+        .await;
+    assert!(response.success, "the delivery was refused: {response:?}");
+    let data = response.data.expect("receipt data");
+    assert_eq!(data["deliveryStatus"], "queued");
+    assert!(
+        data.get("queuedReason").is_none(),
+        "the turn boundary releases a hold with nothing parked: {data}"
+    );
+    assert!(
+        worker.core.lock().unwrap().queued_input_suspended,
+        "a busy target's gate is the settling turn's to release, not the delivery's"
+    );
+}
+
+/// A compaction window outranks a standing hold in the receipt: the delivery
+/// cannot run until the compaction ends, whatever the hold does afterwards.
+#[tokio::test]
+async fn the_compaction_window_outranks_the_hold_reason() {
+    let worker = created_worker().await;
+    crate::worker::tests::park_steering_row(&worker, "held user row");
+    {
+        let mut core = worker.core.lock().unwrap();
+        core.busy = true;
+        core.compacting = true;
+        core.queued_input_suspended = true;
+    }
+    let response = worker
+        .dispatch(
+            "worker_deliver_message",
+            &json!({
+                "targetActiveSessionId": "target-session",
+                "message": "parked across a compaction",
+                "sender": { "activeSessionId": "source-session" },
+            }),
+        )
+        .await;
+    assert!(response.success, "the delivery was refused: {response:?}");
+    let data = response.data.expect("receipt data");
+    assert_eq!(data["deliveryStatus"], "queued");
+    assert_eq!(data["queuedReason"], "compaction_in_progress");
+}
+
+/// One receiver state, two callers: the client prompt is refused with the TS
+/// admission error while agent traffic parks and answers a receipt. The
+/// distinction is deterministic - a caller learns deliverability from its own
+/// answer instead of retrying blind (issue #32).
+#[tokio::test]
+async fn an_idle_hold_refuses_a_plain_prompt_and_parks_an_agent_message() {
+    let worker = created_worker().await;
+    crate::worker::tests::park_steering_row(&worker, "held user row");
+    worker.core.lock().unwrap().queued_input_suspended = true;
+    let refused = worker
+        .dispatch("prompt", &json!({ "message": "a plain prompt" }))
+        .await;
+    assert!(
+        !refused.success,
+        "the idle hold admitted a plain prompt: {refused:?}"
+    );
+    assert_eq!(
+        refused.error.as_deref(),
+        Some(crate::worker::QUEUED_INPUT_SUSPENDED)
+    );
+    let parked = worker
+        .dispatch(
+            "worker_deliver_message",
+            &json!({
+                "targetActiveSessionId": "target-session",
+                "message": "an agent message",
+                "sender": { "activeSessionId": "source-session" },
+            }),
+        )
+        .await;
+    assert!(parked.success, "the delivery was refused: {parked:?}");
+    let data = parked.data.expect("receipt data");
+    assert_eq!(data["deliveryStatus"], "queued");
+    assert_eq!(data["queuedReason"], "input_admission_suspended");
+    assert_eq!(worker.core.lock().unwrap().steering.len(), 2);
+}
