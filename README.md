@@ -9,7 +9,7 @@ source of truth and GitHub is a mirror.
 
 - Repository: <https://mnemosyne.sigilzero.dev/sigilzero/weave>
 - Issues: <https://mnemosyne.sigilzero.dev/sigilzero/weave/issues>
-- Version: 0.1.0
+- Version: 0.10.0
 - License: MIT
 
 ## Build
