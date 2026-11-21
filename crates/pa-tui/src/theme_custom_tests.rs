@@ -149,6 +149,7 @@ fn custom_product_path_settings_preview_and_frame_use_native_colors() {
             command.env_clear()
                 .args(["--exact", "theme::custom_tests::custom_product_path_settings_preview_and_frame_use_native_colors", "--nocapture"])
                 .env(CHILD, "1")
+                .env("PA_TEST_PRIVATE_HOME_ROOT", dir.path())
                 .env("HOME", &home)
                 .env("XDG_CONFIG_HOME", dir.path().join("xdg-config"))
                 .env("XDG_CACHE_HOME", dir.path().join("xdg-cache"))

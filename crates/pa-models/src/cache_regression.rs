@@ -173,6 +173,7 @@ fn child(path: &Path, url: &str, scope: &str, action: &str) {
     let environment = tempfile::tempdir().unwrap();
     let output = std::process::Command::new(std::env::current_exe().unwrap())
         .env_clear()
+        .env("PA_TEST_PRIVATE_HOME_ROOT", environment.path())
         .env("HOME", environment.path())
         .env("XDG_CACHE_HOME", environment.path().join("cache"))
         .env("XDG_CONFIG_HOME", environment.path().join("config"))

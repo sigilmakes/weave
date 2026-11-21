@@ -76,6 +76,7 @@ fn rust_kernel_namespaces_preserve_legacy_fixtures_and_private_overrides() {
         command
             .args(["--exact", &test_name, "--nocapture"])
             .env_clear()
+            .env("PA_TEST_PRIVATE_HOME_ROOT", &root)
             .env(CASE_ENV, case)
             .env("HOME", &home)
             .env("USERPROFILE", &home)

@@ -248,6 +248,43 @@ mod tests {
     }
 
     #[test]
+    fn startup_keeps_env_cleared_fixture_paths() {
+        const PROBE: &str = "PA_TEST_CLEARED_ENV_PROBE";
+        if let Some(root) = std::env::var_os(PROBE) {
+            for &(variable, _, relative) in DIRECTORIES {
+                if variable != "PRIME_AGENT_CODING_AGENT_DIR" {
+                    assert_eq!(
+                        std::env::var_os(variable).map(std::path::PathBuf::from),
+                        Some(Path::new(&root).join(relative))
+                    );
+                }
+            }
+            assert!(std::env::var_os("PRIME_AGENT_CODING_AGENT_DIR").is_none());
+            assert!(std::env::var_os("PI_PACKAGE_DIR").is_none());
+            return;
+        }
+        let root = std::env::temp_dir().join("env-cleared-fixture");
+        let mut child = std::process::Command::new(std::env::current_exe().unwrap());
+        child
+            .env_clear()
+            .args([
+                "--exact",
+                "private_home::tests::startup_keeps_env_cleared_fixture_paths",
+            ])
+            .env(ROOT_MARKER, &root)
+            .env(PROBE, &root)
+            .env("TMPDIR", &root);
+        for &(variable, _, relative) in DIRECTORIES {
+            if variable != "PRIME_AGENT_CODING_AGENT_DIR" {
+                let directory = root.join(relative);
+                std::fs::create_dir_all(&directory).unwrap();
+                child.env(variable, directory);
+            }
+        }
+        assert!(child.status().unwrap().success());
+    }
+
+    #[test]
     fn startup_keeps_explicit_child_overrides() {
         const CHILD_HOME: &str = "PA_TEST_CHILD_HOME";
         if let Some(expected) = std::env::var_os(CHILD_HOME) {

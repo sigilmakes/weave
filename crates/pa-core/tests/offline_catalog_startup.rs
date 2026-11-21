@@ -329,6 +329,7 @@ async fn run_child(action: &str, root: &Path, url: &str, endpoint: &str) -> std:
     let mut child = tokio::process::Command::new(std::env::current_exe().unwrap());
     child
         .env_clear()
+        .env("PA_TEST_PRIVATE_HOME_ROOT", root)
         .kill_on_drop(true)
         .args(["--exact", "startup_child", "--nocapture"])
         .env(CHILD, action)
