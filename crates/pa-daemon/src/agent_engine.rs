@@ -116,6 +116,8 @@ enum PromptContextBoundary {
 pub(crate) type TestStreamDecorator =
     std::sync::Arc<dyn Fn(pa_agent::stream::StreamFn) -> pa_agent::stream::StreamFn + Send + Sync>;
 
+pub(crate) type SessionBuildError = std::sync::Arc<dyn std::error::Error + Send + Sync>;
+
 /// A [`SessionEngine`] running real agent turns.
 pub struct AgentSessionEngine {
     /// Whether the current SDK writes exact rows through the serving log sink.
@@ -218,7 +220,7 @@ pub struct AgentSessionEngine {
     threshold_checks_enabled: Arc<std::sync::atomic::AtomicBool>,
     /// The build gate: at most one `build_session` in flight; the eager build
     /// and the first demand seam meet at one build.
-    pub(crate) session_build: tokio::sync::Mutex<Option<String>>,
+    pub(crate) session_build: tokio::sync::Mutex<Option<SessionBuildError>>,
     /// A branch move that landed before the first turn: consumed at build so
     /// the session starts on the moved branch.
     pending_branch: std::sync::Mutex<Option<Vec<pa_types::session::FileEntry>>>,

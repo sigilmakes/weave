@@ -515,15 +515,22 @@ impl SessionEngine for AgentSessionEngine {
 
     /// The built session's live tool registry mapped to the export's tools
     /// section (TS `state.tools`).
-    fn export_tools(
-        &self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<Vec<Value>>> + Send + '_>> {
+    fn export_tools(&self) -> futures::future::BoxFuture<'_, anyhow::Result<Option<Vec<Value>>>> {
         Box::pin(async move {
-            let model = self.resolve_model().ok()?;
-            self.ensure_core_session_async(&model).await.ok()?;
-            let session = self.session.try_lock().ok()?;
-            let state = session.as_deref()?.session.agent().state().await;
-            Some(pa_core::export_html::tools_section(&state.tools))
+            let model = self.resolve_model()?;
+            self.ensure_core_session_async(&model).await?;
+            let session = self
+                .session
+                .try_lock()
+                .map_err(|_| anyhow::anyhow!("session state lock is busy"))?;
+            let state = session
+                .as_deref()
+                .ok_or_else(|| anyhow::anyhow!("session is not built"))?
+                .session
+                .agent()
+                .state()
+                .await;
+            Ok(Some(pa_core::export_html::tools_section(&state.tools)))
         })
     }
 
@@ -531,17 +538,28 @@ impl SessionEngine for AgentSessionEngine {
     fn export_rendered_tools(
         &self,
         entries: &[Value],
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<Value>> + Send + '_>> {
+    ) -> futures::future::BoxFuture<'_, anyhow::Result<Option<Value>>> {
         let entries = entries.to_vec();
         Box::pin(async move {
-            let model = self.resolve_model().ok()?;
-            self.ensure_core_session_async(&model).await.ok()?;
-            let session = self.session.try_lock().ok()?;
-            let state = session.as_deref()?.session.agent().state().await;
+            let model = self.resolve_model()?;
+            self.ensure_core_session_async(&model).await?;
+            let session = self
+                .session
+                .try_lock()
+                .map_err(|_| anyhow::anyhow!("session state lock is busy"))?;
+            let state = session
+                .as_deref()
+                .ok_or_else(|| anyhow::anyhow!("session is not built"))?
+                .session
+                .agent()
+                .state()
+                .await;
             let renderer = crate::session_export::ExportToolRenderer {
                 tools: &state.tools,
             };
-            pa_core::export_html::pre_render_custom_tools(&entries, &renderer)
+            Ok(pa_core::export_html::pre_render_custom_tools(
+                &entries, &renderer,
+            ))
         })
     }
 
@@ -620,7 +638,7 @@ impl SessionEngine for AgentSessionEngine {
         };
         if let Err(error) = self.session_agent(&model) {
             return CompactionOutcome::Failed {
-                error: error.to_string(),
+                error: format!("{error:#}"),
             };
         }
         let custom_instructions = request.custom_instructions;
@@ -705,7 +723,7 @@ impl SessionEngine for AgentSessionEngine {
         };
         if let Err(error) = self.ensure_core_session(&model) {
             return BranchSummaryOutcome::Failed {
-                error: error.to_string(),
+                error: format!("{error:#}"),
             };
         }
         let api_key = self.resolve_request_api_key(&model);
@@ -961,7 +979,7 @@ impl SessionEngine for AgentSessionEngine {
             Err(error) => {
                 return SideQuestionOutcome::Failed {
                     answer: String::new(),
-                    error: error.to_string(),
+                    error: format!("{error:#}"),
                 };
             }
         };
@@ -1406,7 +1424,7 @@ impl SessionEngine for AgentSessionEngine {
         let acceptance_guard = match self.runtime.block_on(self.prompt_acceptance_build_guard()) {
             Ok(build) => build,
             Err(error) => {
-                emit(EngineEvent::Done(Err(error.to_string())));
+                emit(EngineEvent::Done(Err(format!("{error:#}"))));
                 return;
             }
         };

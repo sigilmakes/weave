@@ -43,7 +43,13 @@ impl ExportCommands {
             .map(str::to_string);
         match self.export_html_impl(output_path.as_deref()).await {
             Ok(path) => response_success(None, "export_html", Some(json!({ "path": path }))),
-            Err(error) => response_failure(None, "export_html", &format!("{error:#}"), None),
+            Err(error) => {
+                let message = match error.source() {
+                    Some(_) => format!("{error}: {}", error.root_cause()),
+                    None => error.to_string(),
+                };
+                response_failure(None, "export_html", &message, None)
+            }
         }
     }
 
@@ -87,8 +93,16 @@ impl ExportCommands {
         };
         // The tools read comes first: an absent session builds here (the TS state
         // exists from create), so the best-effort prompt read below then sees it too.
-        let tools = self.engine.export_tools().await;
-        let rendered_tools = self.engine.export_rendered_tools(&entries).await;
+        let tools = self
+            .engine
+            .export_tools()
+            .await
+            .context("export tools unavailable")?;
+        let rendered_tools = self
+            .engine
+            .export_rendered_tools(&entries)
+            .await
+            .context("export rendered tools unavailable")?;
         let data = pa_core::export_html::SessionExportData {
             header,
             entries,

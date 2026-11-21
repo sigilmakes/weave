@@ -321,11 +321,9 @@ pub trait SessionEngine: Send + Sync {
     }
 
     /// The session's registered tools for the export's tools section: built
-    /// now when not yet built; `None` mid-turn.
-    fn export_tools(
-        &self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<Vec<Value>>> + Send + '_>> {
-        Box::pin(async { None })
+    /// now when not yet built; failures must abort the export.
+    fn export_tools(&self) -> futures::future::BoxFuture<'_, anyhow::Result<Option<Vec<Value>>>> {
+        Box::pin(async { Ok(None) })
     }
 
     /// Pre-rendered HTML for custom-tool calls/results, keyed by tool-call
@@ -333,8 +331,8 @@ pub trait SessionEngine: Send + Sync {
     fn export_rendered_tools(
         &self,
         _entries: &[Value],
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<Value>> + Send + '_>> {
-        Box::pin(async { None })
+    ) -> futures::future::BoxFuture<'_, anyhow::Result<Option<Value>>> {
+        Box::pin(async { Ok(None) })
     }
 
     /// The cheap model-selection key used to validate metadata resolved outside

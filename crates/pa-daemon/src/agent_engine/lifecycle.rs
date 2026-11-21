@@ -9,8 +9,8 @@ use super::{
     switchable_stream_fn, AgentEngineConfig, AgentSessionEngine, Arc, CoreSessionEngine,
     EngineModelSelection, HostRequestHandlers, LinkAgentMessageController,
     LinkAgentObserveController, Model, OverflowRecovery, ProducerUsageSink, PromptContextBoundary,
-    ProviderTarget, QuotaParkState, SessionCommandExecution, SessionCommandParams,
-    SessionEngineConfig, SupervisorChildSessions, Value,
+    ProviderTarget, QuotaParkState, SessionBuildError, SessionCommandExecution,
+    SessionCommandParams, SessionEngineConfig, SupervisorChildSessions, Value,
 };
 
 impl AgentSessionEngine {
@@ -212,18 +212,24 @@ impl AgentSessionEngine {
             Ok(())
         }
         .await;
-        match &result {
-            Ok(()) => *completion_state = None,
-            Err(error) => *completion_state = Some(format!("{error:#}")),
+        match result {
+            Ok(()) => {
+                *completion_state = None;
+                Ok(())
+            }
+            Err(error) => {
+                let error: SessionBuildError = error.into_boxed_dyn_error().into();
+                *completion_state = Some(error.clone());
+                Err(anyhow::anyhow!(error))
+            }
         }
-        result
     }
 
     /// Serialize accepted rows behind any active build/adoption without starting
     /// a lazy build. A failed build must not rerun its callbacks on this path.
     pub(crate) async fn prompt_acceptance_build_guard(
         &self,
-    ) -> anyhow::Result<tokio::sync::MutexGuard<'_, Option<String>>> {
+    ) -> anyhow::Result<tokio::sync::MutexGuard<'_, Option<SessionBuildError>>> {
         let completion_state = self.session_build.lock().await;
         if let Some(error) = completion_state.as_ref() {
             anyhow::bail!(error.clone());
@@ -234,7 +240,7 @@ impl AgentSessionEngine {
     /// Order a blocking model command behind construction without building a lazy session.
     pub(crate) fn model_mutation_build_guard(
         &self,
-    ) -> anyhow::Result<tokio::sync::MutexGuard<'_, Option<String>>> {
+    ) -> anyhow::Result<tokio::sync::MutexGuard<'_, Option<SessionBuildError>>> {
         self.runtime.block_on(self.prompt_acceptance_build_guard())
     }
 
