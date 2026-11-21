@@ -50,7 +50,7 @@ struct RawArtifact {
 #[must_use]
 pub fn update_user_agent(version: &str) -> String {
     format!(
-        "weave/{version} ({}; rust/{}; {})",
+        "prime-agent/{version} ({}; rust/{}; {})",
         std::env::consts::OS,
         env!("CARGO_PKG_VERSION"),
         std::env::consts::ARCH
@@ -249,7 +249,7 @@ mod tests {
     #[test]
     fn user_agent_keeps_the_ts_shape() {
         let agent = update_user_agent("1.2.3");
-        assert!(agent.starts_with("weave/1.2.3 ("));
+        assert!(agent.starts_with("prime-agent/1.2.3 ("));
         assert!(agent.contains("; rust/"));
     }
 

@@ -154,6 +154,7 @@ them on both sides of the wire:
   `PI_PACKAGE_DIR` and `PI_SKIP_VERSION_CHECK`)
 - config and state directory `~/.prime/agent`
 - Python package `prime-agent-runtime`
+- values another process or server reads: ACP `prime-agent-bash` IDs, outbound User-Agent values, and the `~/prime-agent` reference-checkout fallback
 - external Herdr agent identity `HERDR_AGENT = "prime-agent"`
 - daemon protocol identifier `prime-agent.daemon` and Windows named-pipe addresses/prefixes
 - ACP `_meta` namespace `ai.primeintellect.prime-agent`
