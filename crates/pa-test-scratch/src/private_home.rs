@@ -116,6 +116,23 @@ mod tests {
 
     #[test]
     fn startup_owns_home_and_xdg_directories() {
+        const PROBE: &str = "PA_TEST_OWNED_HOME_PROBE";
+        if std::env::var_os(PROBE).is_none() {
+            let root = std::env::temp_dir().join("startup-owned-home");
+            let status = crate::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "private_home::tests::startup_owns_home_and_xdg_directories",
+                ])
+                .env_remove(ROOT_MARKER)
+                .env("PA_TEST_SCRATCH_ROOT", &root)
+                .env(PROBE, "1")
+                .status()
+                .unwrap();
+            assert!(status.success());
+            std::fs::remove_dir_all(root).unwrap();
+            return;
+        }
         let root = std::env::var_os(ROOT_MARKER).expect("private test root");
         for &(variable, original, _) in DIRECTORIES {
             let directory = std::env::var_os(variable).expect("private test path");
