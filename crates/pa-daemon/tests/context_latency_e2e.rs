@@ -168,6 +168,7 @@ fn scripted_turn(client: &mut Client, session_id: &str, text: &str, id: &str) {
 /// chained message run with usage records, sized in the megabytes so an inline
 /// walk pays a real parse cost per child.
 fn seed_child_session(dir: &std::path::Path, child_id: &str) {
+    const CHILD_HEADER_ROWS: u64 = 1;
     std::fs::create_dir_all(dir).expect("child dir");
     let file = dir.join(format!("{child_id}.jsonl"));
     let filler = "x".repeat(SEEDED_ASSISTANT_CONTENT_KB * 1024);
@@ -203,7 +204,10 @@ fn seed_child_session(dir: &std::path::Path, child_id: &str) {
         content.push('\n');
         parent_id = Some(entry_id);
     }
-    write_session_rows(&file, &content);
+    assert_eq!(
+        write_session_rows(&file, &content),
+        SEEDED_MESSAGES_PER_CHILD as u64 + CHILD_HEADER_ROWS
+    );
 }
 
 #[test]
@@ -340,20 +344,26 @@ fn get_context_tree_answers_from_memory_on_a_grown_store() {
     );
 }
 
-fn write_session_rows(path: &std::path::Path, content: &str) {
-    let directory = path.parent().expect("session directory");
-    let id = path
-        .file_stem()
-        .and_then(|id| id.to_str())
-        .expect("session id");
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
-    let mut log = pa_core::session_log::SessionLog::open(directory, id, deadline)
-        .expect("native fixture log");
+#[path = "support/session_fixture.rs"]
+mod session_fixture;
+
+fn write_session_rows(path: &std::path::Path, content: &str) -> u64 {
+    let mut fixture = session_fixture::BulkSessionFixture::new(path);
     for line in content.lines().filter(|line| !line.is_empty()) {
         let row: serde_json::Value = serde_json::from_str(line).expect("fixture row");
-        assert!(matches!(
-            log.append(&row, deadline),
-            pa_core::session_log::Outcome::Committed { .. }
-        ));
+        fixture.push(&row);
+    }
+    fixture.finish()
+}
+
+#[test]
+#[ignore = "expensive old durable path; run explicitly for fixture byte equivalence"]
+fn static_child_fixtures_match_the_durable_writer() {
+    let dir = tempfile::tempdir().expect("fixture equivalence directory");
+    for index in 0..SEEDED_CHILDREN {
+        let child_dir = dir.path().join(format!("sub-latency-{index:03}"));
+        let child_id = format!("latency-child-{index:03}");
+        seed_child_session(&child_dir, &child_id);
+        session_fixture::assert_durable_equivalent(&child_dir.join(format!("{child_id}.jsonl")));
     }
 }

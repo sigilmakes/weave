@@ -31,25 +31,16 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant, SystemTime};
 
-fn write_session_rows(path: &std::path::Path, content: &str) {
-    use pa_core::session_log::{Outcome, SessionLog};
-    let deadline = || std::time::Instant::now() + std::time::Duration::from_secs(5);
-    assert!(!path.exists(), "fixture log must not exist");
-    let mut log = SessionLog::open(
-        path.parent().expect("session directory"),
-        path.file_stem()
-            .and_then(|name| name.to_str())
-            .expect("session ID"),
-        deadline(),
-    )
-    .expect("open fixture log");
-    for line in content.lines() {
-        let row: serde_json::Value = serde_json::from_str(line).expect("fixture payload");
-        assert!(matches!(
-            log.append(&row, deadline()),
-            Outcome::Committed { .. }
-        ));
+#[path = "support/session_fixture.rs"]
+mod session_fixture;
+
+fn write_session_rows(path: &std::path::Path, content: &str) -> u64 {
+    let mut fixture = session_fixture::BulkSessionFixture::new(path);
+    for line in content.lines().filter(|line| !line.is_empty()) {
+        let row: serde_json::Value = serde_json::from_str(line).expect("fixture row");
+        fixture.push(&row);
     }
+    fixture.finish()
 }
 
 struct Daemon {
@@ -157,6 +148,7 @@ fn write_fixture(
     grown_lines: usize,
     modified: SystemTime,
 ) -> PathBuf {
+    const CATALOG_PREFIX_ROWS: u64 = 3;
     let path = dir.join(format!("{id}.jsonl"));
     let mut content = format!(
         "{{\"type\":\"session\",\"version\":3,\"id\":\"{id}\",\"timestamp\":\"2024-01-01T00:00:00.000Z\",\"cwd\":\"/tmp\",\"rlmDepth\":0}}\n"
@@ -177,7 +169,10 @@ fn write_fixture(
             index as u64
         );
     }
-    write_session_rows(&path, &content);
+    assert_eq!(
+        write_session_rows(&path, &content),
+        grown_lines as u64 + CATALOG_PREFIX_ROWS
+    );
     let file = std::fs::File::options()
         .write(true)
         .open(&path)
@@ -315,4 +310,32 @@ fn the_saved_catalog_streams_per_file_during_the_scan() {
         first_item.as_millis() * 3 < response_at.as_millis().max(1),
         "the first streamed row landed at {first_item:?} but the response at {response_at:?}: the catalog streamed after the whole scan, not per file"
     );
+}
+
+#[test]
+#[ignore = "expensive old durable path; run explicitly for fixture byte equivalence"]
+fn static_catalog_fixtures_match_the_durable_writer() {
+    const FIXTURE_TIMESTAMP_SECS: u64 = 1_704_067_200; // 2024-01-01T00:00:00Z
+    let dir = tempfile::tempdir().expect("fixture equivalence directory");
+    let base = std::time::UNIX_EPOCH + Duration::from_secs(FIXTURE_TIMESTAMP_SECS);
+    let grown = write_fixture(dir.path(), "grown-store", "grown store", 60_000, base);
+    session_fixture::assert_durable_equivalent(&grown);
+    assert_eq!(std::fs::metadata(&grown).unwrap().modified().unwrap(), base);
+    eprintln!("grown-store mtime preserved: {base:?}");
+    for index in 0..30 {
+        let modified = base + Duration::from_secs(60 + index as u64);
+        let path = write_fixture(
+            dir.path(),
+            &format!("alpha-{index:02}"),
+            &format!("alpha row {index:02}"),
+            0,
+            modified,
+        );
+        session_fixture::assert_durable_equivalent(&path);
+        assert_eq!(
+            std::fs::metadata(path).unwrap().modified().unwrap(),
+            modified
+        );
+        eprintln!("alpha-{index:02} mtime preserved: {modified:?}");
+    }
 }
