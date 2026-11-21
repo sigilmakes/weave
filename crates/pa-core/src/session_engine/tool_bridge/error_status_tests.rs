@@ -298,11 +298,13 @@ async fn assert_persisted_status(is_error: bool) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn error_flag_survives_rich_result_to_provider_sdk_events_and_disk() {
     assert_persisted_status(/*is_error*/ true).await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn success_flag_ignores_error_strings_in_details_through_all_boundaries() {
     assert_persisted_status(/*is_error*/ false).await;
 }

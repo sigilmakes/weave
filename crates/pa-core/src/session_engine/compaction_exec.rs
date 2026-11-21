@@ -484,6 +484,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn add_assistant_usage_saturates_token_totals() {
         let mut total = pa_types::ai::Usage {
@@ -502,6 +503,7 @@ mod tests {
         assert_eq!(total.output, 1);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn compaction_entry_records_the_ts_wire_fields() {
         let usage = pa_types::ai::Usage {
@@ -543,6 +545,7 @@ mod tests {
 
     /// The history request carries the recency anchor after the previous
     /// summary; a missing anchor adds no block.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn summarization_request_carries_the_recent_state_anchor() {
         let request = build_summarization_request(
@@ -578,6 +581,7 @@ mod tests {
 
     /// The serialized `details` block byte-matches the TS literal order
     /// (`readFiles` first): struct field order is the wire byte order.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn details_serialize_in_the_ts_key_order() {
         let details = CompactionDetails {
@@ -591,6 +595,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn compact_summarizes_prefix_and_returns_result() {
         let messages = vec![user("one"), user("two"), user("three")];
         let entries: Vec<FileEntry> = messages
@@ -660,6 +665,7 @@ mod tests {
 
     /// The turn-prefix request never carries the checkpoint prompt, a
     /// previous summary, or the kernel note.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn turn_prefix_request_shape() {
         let messages = vec![user("big turn"), user("more of the turn")];
@@ -678,6 +684,7 @@ mod tests {
         assert!(!text.contains("the Python kernel keeps running"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn split_summary_marker_format() {
         assert_eq!(
@@ -689,6 +696,7 @@ mod tests {
 
     /// A call without usage contributes nothing; no calls means no
     /// recorded usage.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn usage_summing_over_slices() {
         let usage = |input: u64, output: u64, cost: f64| pa_types::ai::Usage {
@@ -729,6 +737,7 @@ mod tests {
         assert_eq!(summed_usage(&[slice("a", None)]), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn summary_options_carry_the_owning_session_id() {
         let options = summary_stream_options(None, None, 512, Some("session-1"));
@@ -739,6 +748,7 @@ mod tests {
             .is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn summarization_request_shape() {
         let messages = vec![user("hello"), user("world")];

@@ -382,6 +382,7 @@ impl SettingsStorage for InMemorySettingsStorage {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     #[cfg(unix)]
     fn file_alias_uses_the_physical_targets_lock() {
@@ -398,6 +399,7 @@ mod tests {
             .is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn in_memory_round_trip() {
         let storage = InMemorySettingsStorage::default();
@@ -415,6 +417,7 @@ mod tests {
             .unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn file_storage_read_modify_write() {
         let dir = tempfile::tempdir().unwrap();
@@ -433,6 +436,7 @@ mod tests {
         assert_eq!(crate::platform::perms::file_mode(&path), Some(0o600));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn atomic_write_default_skips_fsync_and_opt_in_takes_exactly_one() {
         let dir = tempfile::tempdir().unwrap();
@@ -463,6 +467,7 @@ mod tests {
         assert_eq!(names, ["state.json".to_string()]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn settings_write_takes_exactly_one_fsync() {
         let dir = tempfile::tempdir().unwrap();
@@ -481,6 +486,7 @@ mod tests {
         assert_eq!(fs::read_to_string(&path).unwrap(), document);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_arm_serves_content_and_survives_writes() {
         let dir = tempfile::tempdir().unwrap();
@@ -517,6 +523,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_arm_error_matches_with_lock_read() {
         let dir = tempfile::tempdir().unwrap();
@@ -526,6 +533,7 @@ mod tests {
         assert!(storage.read(SettingsScope::Global).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_arm_default_is_with_lock_read() {
         let storage = InMemorySettingsStorage::default();
@@ -544,6 +552,7 @@ mod tests {
 
     /// A relative agent dir (a relative `PRIME_AGENT_CODING_AGENT_DIR`) locks and
     /// loads: the lock probe's `utimensat` resolves relative lock paths against `AT_FDCWD`.
+    #[pa_test_scratch::pa_test]
     #[test]
     #[cfg(unix)]
     fn relative_agent_dir_locks_and_loads() {

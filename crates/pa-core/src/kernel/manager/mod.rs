@@ -914,6 +914,7 @@ mod memo_slot_tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn memo_slot_completion_between_pending_check_and_wait_is_not_lost() {
         let slot = MemoSlot::new();
         let finishing = Arc::clone(&slot);
@@ -927,6 +928,7 @@ mod memo_slot_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn memo_slot_completion_wakes_all_joiners_and_remains_durable() {
         for fail in [false, true] {
             let slot = MemoSlot::new();

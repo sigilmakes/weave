@@ -155,6 +155,7 @@ fn truncate_string_to_bytes_from_end(s: &str, max_bytes: usize) -> String {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn format_size_matches_ts() {
         assert_eq!(format_size(512), "512B");
@@ -165,6 +166,7 @@ mod tests {
         assert_eq!(format_size(2 * 1024 * 1024 + 512 * 1024), "2.5MB");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tail_keeps_last_lines() {
         let r = truncate_tail("1\n2\n3\n4\n5", TruncationOptions::with_limits(2, 100));
@@ -172,6 +174,7 @@ mod tests {
         assert_eq!(r.truncated_by, Some(TruncatedBy::Lines));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tail_byte_limit_no_partial() {
         // 20 lines of 10 bytes + newline each = 220 bytes total.
@@ -187,6 +190,7 @@ mod tests {
         assert!(r.content.ends_with(&content[content.len() - 21..]));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tail_partial_line_rescue() {
         let long = "x".repeat(100);
@@ -197,6 +201,7 @@ mod tests {
         assert_eq!(r.content.len(), 50);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn multi_byte_boundary_from_end() {
         // "héllo" - é is 2 bytes.

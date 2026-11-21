@@ -6,6 +6,7 @@ use super::*;
 /// An already-aborted signal cancels the run before any summarizer
 /// request: the abort marker error surfaces and nothing commits.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn execute_compaction_with_pre_aborted_signal_never_runs_the_summarizer() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -45,6 +46,7 @@ async fn execute_compaction_with_pre_aborted_signal_never_runs_the_summarizer() 
 /// A signal that aborts while the summarizer is in flight cancels the run
 /// before it commits: the resolved summary never lands as an entry.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn execute_compaction_with_late_abort_cancels_before_the_commit() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -101,6 +103,7 @@ async fn execute_compaction_with_late_abort_cancels_before_the_commit() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn execute_compaction_skips_short_sessions() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -135,6 +138,7 @@ async fn execute_compaction_skips_short_sessions() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn execute_compaction_skips_when_already_compacted() {
     let registration = faux_registration();
     let model = registration.get_model();

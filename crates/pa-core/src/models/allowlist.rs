@@ -65,6 +65,7 @@ mod tests {
 
     const SELECTOR: &str = "prime-inference/internal/glm-5.3-fast";
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn exact_and_bare_id_patterns_match_case_insensitively() {
         assert!(model_allowed(
@@ -88,6 +89,7 @@ mod tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn glob_patterns_match_the_full_selector_or_bare_id() {
         let allow = |pattern: &str| vec![pattern.to_string()];
@@ -109,6 +111,7 @@ mod tests {
         assert!(!model_allowed(SELECTOR, &allow("[")));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_refusal_error_carries_the_selector() {
         let refusal = ModelAllowlistRefusal {

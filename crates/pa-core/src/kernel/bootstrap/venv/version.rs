@@ -151,6 +151,7 @@ pub(super) fn read_bootstrap_version_raw(venv: &Path) -> (Option<BootstrapVersio
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn reads_legacy_schema_ten_camel_case_marker() {
         let dir = tempfile::tempdir().unwrap();
@@ -178,6 +179,7 @@ mod tests {
         assert_eq!(written, marker);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn marker_retries_busy_swap_and_never_truncates_old_marker() {
         let dir = tempfile::tempdir().unwrap();
@@ -216,6 +218,7 @@ mod tests {
         assert!(!dir.path().join(".bootstrap-version.tmp").exists());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn failed_marker_swap_preserves_previous_marker() {
         let dir = tempfile::tempdir().unwrap();

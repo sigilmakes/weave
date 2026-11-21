@@ -256,6 +256,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn notice_content_matches_the_ts_text() {
         assert_eq!(
@@ -276,6 +277,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn notice_row_is_display_false_without_details() {
         let row = notice_message(notice_content(Some(&["v".to_string()])));
@@ -294,6 +296,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn capture_guards_match_ts() {
         let idle = ScriptedProbe::idle();
         assert_eq!(capture_notice_content(&idle).await, None);
@@ -404,6 +407,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn compaction_with_a_running_kernel_appends_the_notice_after_the_entry() {
         let registration = faux_registration(vec![pa_ai::faux::FauxResponseStep::Message(
             pa_ai::faux::faux_assistant_text_message(
@@ -457,6 +461,7 @@ mod tests {
     /// the compaction row, so back-to-back `/compact` RUNS again; a
     /// session without a kernel keeps the "Already compacted" skip.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn back_to_back_compact_runs_again_with_a_running_kernel() {
         let seen: std::sync::Arc<std::sync::Mutex<Vec<String>>> = std::sync::Arc::default();
         let registration = faux_registration(vec![
@@ -501,6 +506,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn back_to_back_compact_without_a_kernel_still_skips() {
         let registration = faux_registration(vec![pa_ai::faux::FauxResponseStep::Message(
             pa_ai::faux::faux_assistant_text_message(

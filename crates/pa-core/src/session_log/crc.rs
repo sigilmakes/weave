@@ -43,6 +43,7 @@ pub(crate) fn crc32_parts(parts: &[&[u8]]) -> u32 {
 mod tests {
     use super::crc32_parts;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn matches_the_published_check_value_over_the_parts() {
         // The CRC-32 check value every implementation agrees on, reached both

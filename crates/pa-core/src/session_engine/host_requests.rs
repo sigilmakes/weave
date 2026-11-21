@@ -367,6 +367,7 @@ mod tests {
         AgentCronJobStore::new(dir.path().join("jobs.json"))
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn goal_host_requests() {
         let (_session_dir, mut session) = persisted_session();
@@ -435,6 +436,7 @@ mod tests {
         assert!(error.to_string().contains("unknown goal request type"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rlm_heartbeat_host_requests() {
         let store = heartbeat_store();

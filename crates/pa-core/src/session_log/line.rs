@@ -294,6 +294,7 @@ mod tests {
         )
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_bare_line_is_its_own_row() {
         assert_eq!(
@@ -303,6 +304,7 @@ mod tests {
         assert_eq!(shape(br#"{"type":"message"}"#), Some(Format::Bare));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_envelope_yields_the_row_it_wraps() {
         let body = r#"{"type":"message","id":"b"}"#;
@@ -315,6 +317,7 @@ mod tests {
         assert!(parse(line.replace("id", "ie").as_bytes(), 1).is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_partial_envelope_is_damage_and_never_a_row() {
         let body = r#"{"type":"message","id":"c"}"#;
@@ -336,6 +339,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_non_object_or_a_trailing_byte_is_not_a_row() {
         assert!(parse(br#"{"type":"message"} {"x":1}"#, 0).is_none());
@@ -343,6 +347,7 @@ mod tests {
         assert!(parse(b"", 0).is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn both_shapes_round_trip_through_their_encoder() {
         let body = r#"{"type":"message","content":"line\nbreak"}"#;
@@ -354,6 +359,7 @@ mod tests {
         assert_eq!(parse(wrapped.as_bytes(), 6).unwrap().1, body);
         assert!(parse(wrapped.as_bytes(), 7).is_none());
     }
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_null_envelope_member_still_marks_the_line_as_an_envelope() {
         // `Option` fields cannot tell an absent member from a null one, so the
@@ -373,6 +379,7 @@ mod tests {
         assert!(!super::reserved_name(br#"{"type":"message","id":"a"}"#));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_backwards_walk_checks_that_neighbouring_envelopes_agree() {
         use super::BackwardsSequence;

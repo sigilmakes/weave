@@ -60,6 +60,7 @@ async fn result(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn two_real_plugins_exports_commands_hooks_and_host_isolation() {
     let host = host();
     let desired = vec![source("ledger", LEDGER), source("counter", COUNTER)];
@@ -152,6 +153,7 @@ async fn two_real_plugins_exports_commands_hooks_and_host_isolation() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn failed_reloads_preserve_whole_generation_success_replaces_and_disable_removes() {
     let host = host();
     let original = host
@@ -246,6 +248,7 @@ async fn failed_reloads_preserve_whole_generation_success_replaces_and_disable_r
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn config_is_private_owned_before_activation_and_changes_replace_the_generation() {
     let host = host();
     let mut configured = source(
@@ -367,6 +370,7 @@ impl HostCapabilities for Gate {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn cancellation_retirement_and_drop_release_capability_futures_without_blocking_host() {
     let (started_tx, mut started) = mpsc::unbounded_channel();
     let (dropped_tx, mut dropped) = mpsc::unbounded_channel();
@@ -458,6 +462,7 @@ async fn cancellation_retirement_and_drop_release_capability_futures_without_blo
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn pure_lua_busy_loop_yields_for_cancellation() {
     let host = host();
     host.reconcile(vec![source("counter", COUNTER)]).unwrap();
@@ -483,6 +488,7 @@ async fn pure_lua_busy_loop_yields_for_cancellation() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn callback_errors_and_retained_context_cannot_escape_the_invocation() {
     let host = host();
     host.reconcile(vec![source("counter", COUNTER), source("ledger", LEDGER)])
@@ -510,6 +516,7 @@ async fn callback_errors_and_retained_context_cannot_escape_the_invocation() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn revoked_retained_context_never_constructs_the_adapter_future() {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -550,6 +557,7 @@ async fn revoked_retained_context_never_constructs_the_adapter_future() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn host_drop_retires_invocations_and_drops_the_pending_capability_future() {
     let (started_tx, mut started) = mpsc::unbounded_channel();
     let (dropped_tx, mut dropped) = mpsc::unbounded_channel();
@@ -579,6 +587,7 @@ async fn host_drop_retires_invocations_and_drops_the_pending_capability_future()
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn optional_plugin_commands_are_reserved_only_by_the_consuming_host() {
     let host = host();
     let sample = "return {commands={{name='sample',run=function(input) return input end}}}";
@@ -601,6 +610,7 @@ async fn optional_plugin_commands_are_reserved_only_by_the_consuming_host() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stream_backpressure_then_ordered_delivery_crosses_the_same_host_interface() {
     struct Observe(mpsc::UnboundedSender<String>);
     impl HostCapabilities for Observe {
@@ -640,6 +650,7 @@ async fn stream_backpressure_then_ordered_delivery_crosses_the_same_host_interfa
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn buffered_terminal_result_is_fenced_after_observable_producer_completion() {
     use std::{
         future::Future,
@@ -691,6 +702,7 @@ async fn buffered_terminal_result_is_fenced_after_observable_producer_completion
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn already_buffered_update_is_fenced_on_disable_and_cancellation() {
     for action in ["disable", "cancel"] {
         let (started_tx, mut started) = mpsc::unbounded_channel();
@@ -731,6 +743,7 @@ async fn already_buffered_update_is_fenced_on_disable_and_cancellation() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn typed_context_callbacks_require_unary_and_existing_plugin_name_grammar() {
     let host = host();
     let context =
@@ -763,6 +776,7 @@ async fn typed_context_callbacks_require_unary_and_existing_plugin_name_grammar(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn provider_declarations_stream_and_reject_duplicate_ids_atomically() {
     let host = host();
     let provider = "return {providers={{name='custom-provider',run=function(input,ctx) ctx.emit(input); return {done=true} end}}}";
@@ -805,6 +819,7 @@ async fn provider_declarations_stream_and_reject_duplicate_ids_atomically() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn candidate_policy_validation_preserves_previous_generation_and_live_state() {
     let host = host();
     let original = host.reconcile(vec![source("counter", COUNTER)]).unwrap();
@@ -841,6 +856,7 @@ async fn candidate_policy_validation_preserves_previous_generation_and_live_stat
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn capability_requests_bind_each_callback_to_a_distinct_invocation() {
     struct Capture(mpsc::UnboundedSender<CapabilityRequest>);
     impl HostCapabilities for Capture {
@@ -883,6 +899,7 @@ async fn capability_requests_bind_each_callback_to_a_distinct_invocation() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn context_data_declarations_are_explicit_and_do_not_rewrite_invocation_values() {
     let host = host();
     let source = source(
@@ -955,6 +972,7 @@ async fn context_data_declarations_are_explicit_and_do_not_rewrite_invocation_va
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn runaway_declaration_hits_the_initialization_deadline() {
     let host = host();
     assert!(matches!(
@@ -965,6 +983,7 @@ async fn runaway_declaration_hits_the_initialization_deadline() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reload_cannot_publish_a_result_from_the_retired_generation() {
     struct Reload {
         host: std::sync::Mutex<std::sync::Weak<PluginHost>>,
@@ -1031,6 +1050,7 @@ async fn reload_cannot_publish_a_result_from_the_retired_generation() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn invalid_context_data_modes_or_kinds_leave_the_previous_activation_intact() {
     let host = host();
     let original = host.reconcile(vec![source("counter", COUNTER)]).unwrap();

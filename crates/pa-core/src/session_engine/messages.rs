@@ -420,6 +420,7 @@ mod tests {
 
     /// SANCTIONED DIVERGENCE, operator ruling 2026-09-23: one durable
     /// line per episode, never model context.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn provider_retry_outcome_row_is_the_one_line_and_never_context() {
         let recovered =
@@ -454,6 +455,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn model_prompt_error_row_is_never_context() {
         let message = crate::prompts::model_prompts::model_prompt_error_message(&[
@@ -462,6 +464,7 @@ mod tests {
         assert!(convert_to_llm(&[AgentMessage::Custom(message)]).is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn bash_output_fences_and_status() {
         let rendered = bash_output_to_text(
@@ -482,6 +485,7 @@ mod tests {
         assert!(fenced.contains("````\na ``` b\n````"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn conversion_wraps_summaries_and_drops_bookkeeping() {
         let messages = vec![
@@ -545,6 +549,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn loop_conversion_applies_session_rules_to_custom_rows() {
         let note_row: pa_agent::types::AgentMessage = serde_json::from_value(serde_json::json!({
@@ -585,6 +590,7 @@ mod tests {
         assert_eq!(text.text, "a note");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn heartbeat_prompt_message_matches_the_ts_shape() {
         let job = AgentCronJob {
@@ -654,6 +660,7 @@ mod tests {
         assert_eq!(details["lastRunAt"], "2026-09-22T00:10:00.000Z");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn async_bash_completion_message_matches_the_ts_shape() {
         let message =
@@ -680,6 +687,7 @@ mod tests {
         assert_eq!(details["exitCode"], 2);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn bash_execution_becomes_user_text() {
         let bash = AgentMessage::BashExecution(pa_types::session::BashExecutionMessage {

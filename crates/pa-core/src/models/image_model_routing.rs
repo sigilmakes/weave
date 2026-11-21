@@ -151,6 +151,7 @@ mod tests {
     // The TS table (test/image-model-override.test.ts): routes image turns
     // to imageModel; a vision session model serves image turns natively;
     // blocked images stay on the session model; refusals name the setting.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn routes_image_turns_to_image_model() {
         let session = model("claude-opus-4-7-text-only", false);
@@ -164,6 +165,7 @@ mod tests {
         assert_eq!(resolved.service_tier, Some(ServiceTier::Default));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn vision_session_model_serves_image_turns() {
         let session = model("claude-opus-4-7", true);
@@ -172,6 +174,7 @@ mod tests {
         assert_eq!(resolve_image_model_override(&inputs).unwrap(), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn blocked_images_stay_on_the_session_model() {
         let session = model("claude-opus-4-7-text-only", false);
@@ -180,6 +183,7 @@ mod tests {
         assert_eq!(resolve_image_model_override(&inputs).unwrap(), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refuses_without_image_model() {
         let session = model("claude-opus-4-7-text-only", false);
@@ -190,6 +194,7 @@ mod tests {
         assert!(error.contains("Set imageModel in settings.json"), "{error}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refuses_unusable_reference() {
         let session = model("claude-opus-4-7-text-only", false);
@@ -199,6 +204,7 @@ mod tests {
         assert!(error.contains("could not be resolved"), "{error}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refuses_text_only_image_model() {
         let session = model("claude-opus-4-7-text-only", false);
@@ -214,6 +220,7 @@ mod tests {
         assert!(error.contains("could not be resolved"), "{error}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refuses_unauthenticated_image_model() {
         let session = model("claude-opus-4-7-text-only", false);
@@ -225,6 +232,7 @@ mod tests {
         assert!(error.contains("could not be resolved"), "{error}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn priority_tier_kept_on_fast_mode_models() {
         let session = model("claude-opus-4-7-text-only", false);

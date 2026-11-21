@@ -478,6 +478,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_prime_cli_candidate_short_circuits_with_its_team() {
         let dir = tempfile::tempdir().expect("temp dir");
         let config_path = dir.path().join("config.json");
@@ -527,6 +528,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_prime_cli_candidate_without_a_team_is_the_personal_account() {
         let dir = tempfile::tempdir().expect("temp dir");
         let config_path = dir.path().join("config.json");
@@ -548,6 +550,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_denied_cli_key_runs_the_browser_challenge() {
         let dir = tempfile::tempdir().expect("temp dir");
         let config_path = dir.path().join("config.json");
@@ -613,6 +616,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_browser_challenge_url_carries_only_the_code() {
         let http = ScriptedHttp::new(vec![whoami_ok(true)]);
         let progress = Mutex::new(Vec::<String>::new());
@@ -649,6 +653,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_non_production_config_never_reads_the_prime_cli() {
         let dir = tempfile::tempdir().expect("temp dir");
         // The cli config carries a working key, but the base URL is
@@ -691,6 +696,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_browser_key_without_inference_access_reports_the_ts_error() {
         let http = ScriptedHttp::new(vec![whoami_ok(false)]);
         let callbacks = PrimeInferenceLoginCallbacks {
@@ -714,6 +720,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_expired_challenge_reports_the_ts_error() {
         // The dynamic generate stays off so the queue owns every answer.
         let http = ScriptedHttp::without_dynamic(vec![

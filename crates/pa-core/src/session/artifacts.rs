@@ -101,6 +101,7 @@ fn subtree_bytes(dir: &Path) -> u64 {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn top_level_session_partitions_beside_the_session_tree() {
         let dir = Path::new("/agent/sessions");
@@ -114,6 +115,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn child_partitions_use_the_agents_artifacts_tree_not_a_nested_one() {
         let child_dir = Path::new("/agent/session-artifacts/parent/sub-1");
@@ -127,6 +129,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn nested_roots_are_reported_with_the_bytes_below_them() {
         let agent = tempfile::tempdir().expect("agent dir");
@@ -149,6 +152,7 @@ mod tests {
         assert_eq!(roots[1].bytes, 4, "the deep root counts only its own files");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_unrelated_ancestor_name_is_not_an_artifacts_tree() {
         let dir = Path::new("/srv/session-artifacts-archive/agent/sessions");

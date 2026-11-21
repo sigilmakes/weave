@@ -6,6 +6,7 @@ use super::*;
 use serde_json::Map;
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn execute_compaction_persists_and_rebuilds() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -61,6 +62,7 @@ async fn execute_compaction_persists_and_rebuilds() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rebuilt_live_context_prevents_repeat_auto_compaction_until_new_usage() {
     let registration = faux_registration();
     registration.set_responses(vec![
@@ -177,6 +179,7 @@ async fn rebuilt_live_context_prevents_repeat_auto_compaction_until_new_usage() 
 /// The sink receives every summarizer text delta in order; the final result
 /// still comes from the terminal assistant message.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn execute_compaction_streams_summary_deltas_to_the_sink() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -225,6 +228,7 @@ async fn execute_compaction_streams_summary_deltas_to_the_sink() {
 /// streams live, the turn-prefix call never streams raw chunks, and the
 /// accumulated stream converges to the committed summary.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn split_turn_compaction_streams_in_final_order_and_converges() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -351,6 +355,7 @@ async fn split_turn_compaction_streams_in_final_order_and_converges() {
 /// An error-stop summarizer response fails the compaction, never an
 /// empty-summary success.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn execute_compaction_fails_on_an_error_summarizer_response() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -400,6 +405,7 @@ async fn execute_compaction_fails_on_an_error_summarizer_response() {
 /// The durable row carries the full record — `fromHook: false`, the usage,
 /// and the file-operation details — not just the summary boundary.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn durable_compaction_row_carries_the_ts_record() {
     let registration = faux_registration();
     let model = registration.get_model();

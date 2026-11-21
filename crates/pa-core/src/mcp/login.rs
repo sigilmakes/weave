@@ -387,6 +387,7 @@ mod tests {
         ])
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn oauth_config_threads_client_id_and_callback_port() {
         for endpoint in ["https://fixture.example/mcp", "https://mcp.slack.com/mcp"] {
@@ -411,6 +412,7 @@ mod tests {
 
     /// Slack has no DCR; drive its public desktop client through the real manager and auth store.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn slack_login_persists_refreshes_and_can_login_again() {
         struct SlackHttp {
             responses: ScriptedHttp,
@@ -529,6 +531,7 @@ mod tests {
         assert!(enabled.contains(&"slack".to_string()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn registered_oauth_client_follows_endpoint_instead_of_connection_name() {
         let agent = tempfile::tempdir().unwrap();
@@ -556,6 +559,7 @@ mod tests {
     /// `begin_login` -> persisted endpoint-bound credentials -> `is_authed`
     /// -> the server unlocks in the prompt gating.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn begin_login_persists_creds_and_unlocks_gating() {
         let agent = tempfile::tempdir().unwrap();
         let http = Arc::new(fixture_http());
@@ -630,6 +634,7 @@ mod tests {
     /// The builtin linear integration: `begin_login` removes its skill
     /// override; notion stays disabled.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn begin_login_unlocks_builtin_skill_gating() {
         let agent = tempfile::tempdir().unwrap();
         let http = Arc::new(ScriptedHttp::new(vec![
@@ -698,6 +703,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancelled_or_expired_login_waiting_for_storage_is_not_saved() {
         struct StorageUi {
             paste: PasteUi,
@@ -791,6 +797,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancellation_after_token_response_prevents_persistence() {
         struct CancelOnToken {
             scripted: ScriptedHttp,
@@ -867,6 +874,7 @@ mod tests {
     /// Unknown servers and non-OAuth servers error with the TS wording;
     /// the handler surfaces it to the kernel.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn begin_login_rejects_unknown_servers() {
         let agent = tempfile::tempdir().unwrap();
         let http = Arc::new(ReqwestOAuthHttp::new()) as Arc<dyn OAuthHttp>;
@@ -895,6 +903,7 @@ mod tests {
     /// Expired credentials refresh through the `AuthStorage` seam: the stored endpoint answers a
     /// `refresh_token` grant.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn mcp_oauth_refreshes_expired_credentials() {
         let agent = tempfile::tempdir().unwrap();
         let http = Arc::new(fixture_http());
@@ -932,6 +941,7 @@ mod tests {
 
     /// A credential written by another process is visible to the worker's `mcp.refresh`:.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn refresh_sees_credentials_written_by_another_process() {
         let agent = tempfile::tempdir().unwrap();
         let http = Arc::new(fixture_http());
@@ -976,6 +986,7 @@ mod tests {
 
     /// mcp.refresh refuses ACP-admitted servers with the TS wording.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn mcp_refresh_rejects_acp_servers() {
         let agent = tempfile::tempdir().unwrap();
         let http = Arc::new(ReqwestOAuthHttp::new()) as Arc<dyn OAuthHttp>;

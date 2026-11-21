@@ -45,6 +45,7 @@ pub fn open_in_browser(url: &str) {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn opener_selection() {
         let (program, args) = opener("https://example.com/login");
@@ -54,6 +55,7 @@ mod tests {
     }
 
     #[cfg(windows)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn browser_launch_uses_system32_program_and_dll_entrypoint_arguments() {
         let url = "https://example.com/login?state=a%20b&code=c";

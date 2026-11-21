@@ -193,6 +193,7 @@ mod tests {
         .unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cap_changes_and_removal_restore_the_exact_gateway_baseline() {
         let dir = tempfile::tempdir().unwrap();
@@ -234,6 +235,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn native_overlay_precedes_user_hook_and_uses_actual_request_model() {
         use pa_agent::stream::{LlmContext, StreamRequestOptions};
         let dir = tempfile::tempdir().unwrap();
@@ -288,6 +290,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn user_hook_none_keeps_overlay_and_non_ollama_requests_stay_unchanged() {
         use pa_agent::stream::{LlmContext, StreamRequestOptions};
         let dir = tempfile::tempdir().unwrap();
@@ -325,6 +328,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn explicit_caps_reload_and_removal_reach_the_real_provider_body() {
         use pa_agent::stream::{LlmContext, StreamRequestOptions};
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -434,6 +438,7 @@ mod tests {
         assert_eq!(original.max_tokens, 32000);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn full_model_projection_keeps_gateway_and_existing_agent_wire_spelling() {
         let full = model();
@@ -447,6 +452,7 @@ mod tests {
         assert!(serde_json::from_value::<pa_agent::types::Model>(wire).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn fresh_registry_baseline_wins_when_equal_to_an_old_cap() {
         let dir = tempfile::tempdir().unwrap();

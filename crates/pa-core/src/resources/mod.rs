@@ -311,6 +311,7 @@ mod tests {
     use super::*;
     use std::fs;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn context_files_global_then_ancestors_root_first() {
         let tmp = tempfile::tempdir().unwrap();
@@ -326,6 +327,7 @@ mod tests {
         assert_eq!(contents, vec!["global", "level-a", "deep"]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn system_prompt_discovery_prefers_project() {
         let tmp = tempfile::tempdir().unwrap();
@@ -351,6 +353,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn resources_load_end_to_end() {
         let tmp = tempfile::tempdir().unwrap();
@@ -392,6 +395,7 @@ mod tests {
         assert!(resources.append_system_prompt.is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn package_provided_skills_and_prompts_load_into_a_session() {
         let tmp = tempfile::tempdir().unwrap();
@@ -438,6 +442,7 @@ mod tests {
         assert_eq!(prompt.source_info.source, "../fixture-pkg");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn project_auto_skills_win_name_collisions_over_user_auto() {
         let tmp = tempfile::tempdir().unwrap();

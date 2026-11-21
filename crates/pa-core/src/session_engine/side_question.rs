@@ -583,6 +583,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn answers_from_the_cloned_conversation() {
         let provider = Arc::new(ScriptedProvider::new(test_model()));
         provider.push_text_turn("the side answer");
@@ -614,6 +615,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn side_question_reuses_the_parent_session_id() {
         let provider = Arc::new(ScriptedProvider::new(test_model()));
         provider.push_text_turn("the side answer");
@@ -651,6 +653,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn previous_turns_replay_after_the_clone() {
         let provider = Arc::new(ScriptedProvider::new(test_model()));
         provider.push_text_turn("follow-up answer");
@@ -684,6 +687,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn provider_failures_are_retried() {
         let provider = Arc::new(ScriptedProvider::new(test_model()));
         provider.push_stream_failure_turn("partial stream", "provider stream broke");
@@ -697,6 +701,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn exhausted_retries_fail_the_run() {
         let provider = Arc::new(ScriptedProvider::new(test_model()));
         provider.push_stream_failure_turn("", "provider stream broke");
@@ -716,6 +721,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn abort_mid_run_cancels_with_partial_answer() {
         let provider = Arc::new(ScriptedProvider::new(test_model()));
         provider.push_stalled_turn("partial answer");
@@ -737,6 +743,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancelled_sink_aborts_the_run() {
         let provider = Arc::new(ScriptedProvider::new(test_model()));
         provider.push_stalled_turn("streaming text");
@@ -751,6 +758,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn tool_calls_are_blocked_and_turn_capped() {
         let provider = Arc::new(ScriptedProvider::new(test_model()));
         provider.push_tool_call_turn(None, vec![("call-1", "echo", serde_json::json!({}))]);
@@ -776,6 +784,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn missing_model_fails_the_run() {
         let provider = Arc::new(ScriptedProvider::new(test_model()));
         provider.push_text_turn("never reached");

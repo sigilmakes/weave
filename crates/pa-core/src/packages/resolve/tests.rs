@@ -126,6 +126,7 @@ fn has_path(resources: &[ResolvedResource], suffix: &str) -> bool {
         .any(|r| r.path.to_string_lossy().ends_with(suffix))
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn resolve_without_configured_sources_returns_only_auto_resources() {
     let mut fixture = Fixture::new();
@@ -137,6 +138,7 @@ fn resolve_without_configured_sources_returns_only_auto_resources() {
     }));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn resolve_skill_paths_from_settings() {
     let mut fixture = Fixture::new();
@@ -154,6 +156,7 @@ fn resolve_skill_paths_from_settings() {
         .any(|r| r.path == skill_file && r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn auto_discovers_root_markdown_skills() {
     let mut fixture = Fixture::new();
@@ -170,6 +173,7 @@ fn auto_discovers_root_markdown_skills() {
         .any(|r| r.path == skill_file && r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn resolves_project_paths_relative_to_project_config_dir() {
     let mut fixture = Fixture::new();
@@ -185,6 +189,7 @@ fn resolves_project_paths_relative_to_project_config_dir() {
         .any(|r| r.path == prompt_path && r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn auto_discovers_user_prompts_with_overrides() {
     let mut fixture = Fixture::new();
@@ -199,6 +204,7 @@ fn auto_discovers_user_prompts_with_overrides() {
         .any(|r| r.path == prompt_path && !r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn auto_discovers_project_prompts_with_overrides() {
     let mut fixture = Fixture::new();
@@ -217,6 +223,7 @@ fn auto_discovers_project_prompts_with_overrides() {
 /// Unix symlink layout; Windows needs `symlink_dir` and a privileged
 /// developer mode to create links, so the case runs on Unix only.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn resolves_symlinked_user_and_project_resources_once() {
     use std::os::unix::fs::symlink;
@@ -256,6 +263,7 @@ fn resolves_symlinked_user_and_project_resources_once() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn agents_skills_scan_stops_at_git_repo_root() {
     let fixture = Fixture::new();
@@ -290,6 +298,7 @@ fn agents_skills_scan_stops_at_git_repo_root() {
     assert!(!result.skills.iter().any(|r| r.path == above_repo));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn agents_skills_scan_goes_to_fs_root_without_a_repo() {
     let fixture = Fixture::new();
@@ -320,6 +329,7 @@ fn agents_skills_scan_goes_to_fs_root_without_a_repo() {
         .any(|r| r.path == middle_skill && r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn agents_skills_ignores_root_markdown_files() {
     let mut fixture = Fixture::new();
@@ -336,6 +346,7 @@ fn agents_skills_ignores_root_markdown_files() {
     assert!(result.skills.iter().any(|r| r.path == nested && r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn home_agents_skills_stays_user_scoped_when_cwd_is_under_home() {
     let _guard = ENV_MUTEX.lock().unwrap();
@@ -375,6 +386,7 @@ fn home_agents_skills_stays_user_scoped_when_cwd_is_under_home() {
 
 /// Unix symlink layout (see `resolves_symlinked_user_and_project_resources_once`).
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn user_skill_entries_dedupe_when_agent_skills_symlinks_agents_skills() {
     use std::os::unix::fs::symlink;
@@ -402,6 +414,7 @@ fn user_skill_entries_dedupe_when_agent_skills_symlinks_agents_skills() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn skill_directories_respect_gitignore() {
     let mut fixture = Fixture::new();
@@ -418,6 +431,7 @@ fn skill_directories_respect_gitignore() {
     assert!(!result.skills.iter().any(|r| r.path == bad && r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn parent_gitignore_does_not_apply_to_auto_discovery() {
     let mut fixture = Fixture::new();
@@ -433,6 +447,7 @@ fn parent_gitignore_does_not_apply_to_auto_discovery() {
         .any(|r| r.path == skill_path && r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn top_level_filters_themes_with_glob_patterns() {
     let mut fixture = Fixture::new();
@@ -448,6 +463,7 @@ fn top_level_filters_themes_with_glob_patterns() {
     assert!(is_disabled(&result.themes, "funky.json"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn top_level_filters_prompts_with_exclusion_pattern() {
     let mut fixture = Fixture::new();
@@ -461,6 +477,7 @@ fn top_level_filters_prompts_with_exclusion_pattern() {
     assert!(is_disabled(&result.prompts, "explain.md"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn top_level_filters_skills_with_exclusion_pattern() {
     let mut fixture = Fixture::new();
@@ -480,6 +497,7 @@ fn top_level_filters_skills_with_exclusion_pattern() {
         .any(|r| r.path.to_string_lossy().contains("bad-skill") && !r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn manifest_supports_glob_patterns_for_skills() {
     let mut fixture = Fixture::new();
@@ -503,6 +521,7 @@ fn manifest_supports_glob_patterns_for_skills() {
         .any(|r| r.path.to_string_lossy().contains("bad-skill")));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn manifest_expands_positive_glob_entries_before_collecting_skills() {
     let mut fixture = Fixture::new();
@@ -538,6 +557,7 @@ fn manifest_expands_positive_glob_entries_before_collecting_skills() {
         && r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn user_filters_layer_on_top_of_manifest_filters() {
     let mut fixture = Fixture::new();
@@ -562,6 +582,7 @@ fn user_filters_layer_on_top_of_manifest_filters() {
     assert!(!has_path(&result.prompts, "baz.md"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn package_filters_filter_themes() {
     let mut fixture = Fixture::new();
@@ -580,6 +601,7 @@ fn package_filters_filter_themes() {
     assert!(is_disabled(&result.themes, "ugly.json"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn package_filters_combine_include_and_exclude_patterns() {
     let mut fixture = Fixture::new();
@@ -600,6 +622,7 @@ fn package_filters_combine_include_and_exclude_patterns() {
     assert!(is_disabled(&result.prompts, "gamma.md"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn package_filters_work_with_direct_paths() {
     let mut fixture = Fixture::new();
@@ -618,6 +641,7 @@ fn package_filters_work_with_direct_paths() {
     assert!(is_disabled(&result.prompts, "two.md"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn force_include_overrides_exclude_in_package_filters() {
     let mut fixture = Fixture::new();
@@ -638,6 +662,7 @@ fn force_include_overrides_exclude_in_package_filters() {
     assert!(is_disabled(&result.prompts, "gamma.md"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn force_include_multiple_resources() {
     let mut fixture = Fixture::new();
@@ -667,6 +692,7 @@ fn force_include_multiple_resources() {
         .any(|r| r.path.to_string_lossy().contains("skill-c") && r.enabled));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn force_include_after_specific_exclusion() {
     let mut fixture = Fixture::new();
@@ -683,6 +709,7 @@ fn force_include_after_specific_exclusion() {
     assert!(is_enabled(&result.prompts, "b.md"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn force_include_in_manifest_patterns() {
     let mut fixture = Fixture::new();
@@ -702,6 +729,7 @@ fn force_include_in_manifest_patterns() {
     assert!(is_enabled(&result.prompts, "three.md"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn force_include_themes() {
     let mut fixture = Fixture::new();
@@ -720,6 +748,7 @@ fn force_include_themes() {
     assert!(is_enabled(&result.themes, "special.json"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn force_include_prompts() {
     let mut fixture = Fixture::new();
@@ -738,6 +767,7 @@ fn force_include_prompts() {
     assert!(is_enabled(&result.prompts, "debug.md"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn force_exclude_top_level_resources() {
     let mut fixture = Fixture::new();
@@ -754,6 +784,7 @@ fn force_exclude_top_level_resources() {
     assert!(is_enabled(&result.themes, "beta.json"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn force_exclude_in_package_filters() {
     let mut fixture = Fixture::new();
@@ -772,6 +803,7 @@ fn force_exclude_in_package_filters() {
     assert!(is_enabled(&result.prompts, "beta.md"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn same_local_package_in_both_scopes_resolves_once_with_project_scope() {
     let mut fixture = Fixture::new();
@@ -798,6 +830,7 @@ fn same_local_package_in_both_scopes_resolves_once_with_project_scope() {
     assert_eq!(shared[0].metadata.scope, SourceScope::Project);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn different_packages_in_both_scopes_both_resolve() {
     let mut fixture = Fixture::new();
@@ -827,6 +860,7 @@ fn different_packages_in_both_scopes_both_resolve() {
         .any(|r| r.path.to_string_lossy().contains("pkg2")));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn offline_mode_skips_installing_missing_sources() {
     const CHILD: &str = "PA_PACKAGES_OFFLINE_FIXTURE_CHILD";
@@ -874,6 +908,7 @@ fn offline_mode_skips_installing_missing_sources() {
         .any(|r| r.metadata.origin == ResourceOrigin::Package));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn on_missing_error_fails_resolution() {
     let _guard = ENV_MUTEX.lock().unwrap();
@@ -890,6 +925,7 @@ fn on_missing_error_fails_resolution() {
     assert_eq!(error.to_string(), "Missing source: npm:missing-package");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn on_missing_skip_leaves_the_source_out() {
     let _guard = ENV_MUTEX.lock().unwrap();
@@ -908,6 +944,7 @@ fn on_missing_skip_leaves_the_source_out() {
         .all(|r| r.metadata.origin != ResourceOrigin::Package));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bundled_skills_collect_with_websearch_excluded_until_enabled() {
     let fixture = Fixture::new();
@@ -955,6 +992,7 @@ fn bundled_skills_collect_with_websearch_excluded_until_enabled() {
     assert!(!websearch.enabled, "websearch excluded until enabled");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn empty_bundled_skills_dir_warns() {
     let fixture = Fixture::new();
@@ -977,6 +1015,7 @@ fn empty_bundled_skills_dir_warns() {
     }));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn disabled_builtin_skills_are_not_collected() {
     let fixture = Fixture::new();

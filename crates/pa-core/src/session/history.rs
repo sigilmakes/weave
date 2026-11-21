@@ -964,6 +964,7 @@ mod tests {
         messages.iter().map(message_text).collect()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn get_last_region_and_id_address_the_same_view() {
         let (entries, ids) = chain(50);
@@ -984,6 +985,7 @@ mod tests {
         assert_eq!(by_id.id.as_deref(), Some("u7"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn drop_removes_the_region_from_the_request_and_keeps_the_record() {
         let (entries, ids) = chain(20);
@@ -1001,6 +1003,7 @@ mod tests {
         assert!(texts(&walk.messages()).contains(&"m8".to_string()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn inserted_notes_are_visible_but_never_sent() {
         let (entries, _) = chain(3);
@@ -1023,6 +1026,7 @@ mod tests {
         assert_eq!(texts(&walk.messages()), before);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn two_changes_resolve_against_the_pre_edit_view() {
         let (entries, _) = chain(10);
@@ -1046,6 +1050,7 @@ mod tests {
         assert_eq!(walk.entries[1].text, "m4");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn dropped_tool_result_cannot_strand_its_call() {
         let content =
@@ -1082,6 +1087,7 @@ mod tests {
         assert_eq!(walk.entries.len(), 4);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn replacing_an_assistant_tool_call_is_rejected() {
         let content =
@@ -1106,6 +1112,7 @@ mod tests {
         assert!(error.contains("tool calls"), "{error}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unknown_op_and_unused_keys_are_parse_errors() {
         let unknown = serde_json::json!({"op": "explode", "at": 1});
@@ -1127,6 +1134,7 @@ mod tests {
             .contains("needs 'text'"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_unknown_op_row_degrades_and_round_trips_verbatim() {
         let line = r#"{"type":"context_edit","id":"e1","parentId":null,"timestamp":"t","by":"agent","changes":[{"op":"explode","at":1}]}"#;
@@ -1139,6 +1147,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_session_without_edits_sends_as_before() {
         let lines = [
@@ -1169,6 +1178,7 @@ mod tests {
         .to_string()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn compaction_then_edit_substitutes_on_the_same_walk() {
         let lines = [
@@ -1197,6 +1207,7 @@ mod tests {
         assert!(!sent.contains(&"STATE".to_string()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn edit_then_compaction_composes_in_the_other_order() {
         let lines = [
@@ -1216,6 +1227,7 @@ mod tests {
         assert_eq!(sent[2], "after");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn auto_compaction_fires_only_above_the_threshold() {
         use crate::session_engine::compaction::{
@@ -1248,6 +1260,7 @@ mod tests {
         assert!(estimate_context_tokens(&trimmed).tokens < estimate_context_tokens(&full).tokens);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn selectors_off_the_path_name_the_rule_and_the_target() {
         let (entries, _) = chain(3);
@@ -1331,6 +1344,7 @@ mod tests {
         .to_string()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn edit_then_a_portable_compaction_retires_the_usage_and_the_drift() {
         let big = "x".repeat(200_000);
@@ -1387,6 +1401,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_native_compaction_retires_the_usage_behind_it() {
         let big = "x".repeat(200_000);
@@ -1435,6 +1450,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_edit_after_a_compaction_does_not_revive_the_retired_usage() {
         let lines = [
@@ -1465,6 +1481,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn replacing_the_compaction_row_retires_the_usage_it_carried() {
         let big = "x".repeat(40_000);
@@ -1498,6 +1515,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_usage_reported_after_a_compaction_is_honoured_and_clears_the_correction() {
         let lines = [
@@ -1555,6 +1573,7 @@ mod tests {
         assert_ne!(fresh, chars);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn dropping_the_compaction_row_clears_its_archive() {
         let lines = [
@@ -1582,6 +1601,7 @@ mod tests {
             .any(|entry| entry.source.is_some() && entry.role == ContextRole::User));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_native_archive_is_an_addressable_view_entry() {
         let lines = [
@@ -1608,6 +1628,7 @@ mod tests {
         assert_eq!(walk.messages().len(), 2, "a view-only entry is never sent");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_untouched_archive_survives_the_walk() {
         let lines = [
@@ -1622,6 +1643,7 @@ mod tests {
         assert!(walk.archive.is_some());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn dropping_a_row_before_the_usage_anchor_moves_the_estimate() {
         let big = "x".repeat(40_000);
@@ -1648,6 +1670,7 @@ mod tests {
         assert_eq!(after, before - 10_000, "{before} -> {after}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_edit_that_removes_the_usage_anchor_falls_back_to_the_char_count() {
         let big = "x".repeat(40_000);
@@ -1672,6 +1695,7 @@ mod tests {
         assert!(estimate > 10_000, "{estimate}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn deleting_below_the_threshold_stops_compaction_from_firing() {
         let big = "x".repeat(400_000);
@@ -1709,6 +1733,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn drop_and_replace_naming_one_entry_is_rejected() {
         let (entries, _ids) = chain(4);
@@ -1729,6 +1754,7 @@ mod tests {
         assert_eq!(walk.entries.len(), 4, "a rejected edit mutates nothing");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn replacing_a_row_before_the_usage_anchor_counts_the_replacement() {
         let lines = [
@@ -1769,6 +1795,7 @@ mod tests {
         assert!(after > 49_000, "{after}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_view_without_an_anchor_compacts_on_its_own_char_count() {
         let big = "x".repeat(500_000);
@@ -1818,6 +1845,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn dropping_the_compaction_row_leaves_no_anchor_for_the_prefix() {
         let lines = [
@@ -1846,6 +1874,7 @@ mod tests {
         assert!(estimate < 100, "{estimate}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn replace_then_drop_naming_one_entry_is_rejected_too() {
         let (entries, _ids) = chain(4);
@@ -1867,6 +1896,7 @@ mod tests {
         assert_eq!(walk.entries[1].text, "m1");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_fresh_usage_anchor_resets_the_edit_correction() {
         let big = "x".repeat(200_000);
@@ -1936,6 +1966,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_note_before_the_anchor_does_not_move_the_estimate() {
         let big = "x".repeat(200_000);
@@ -1980,6 +2011,7 @@ mod tests {
         assert!((90_000..91_000).contains(&estimate), "{estimate}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_range_end_an_earlier_edit_dropped_uses_the_off_path_rule() {
         let (entries, _ids) = chain(5);
@@ -2001,6 +2033,7 @@ mod tests {
         assert!(error.contains("u1"), "{error}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_insert_anchored_to_a_dropped_row_still_resolves() {
         let (entries, _ids) = chain(6);
@@ -2035,6 +2068,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_edit_that_no_longer_resolves_is_counted_rather_than_silently_skipped() {
         let lines = [
@@ -2061,6 +2095,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_inserted_note_can_be_dropped_by_position_and_survives_compaction() {
         let lines = [

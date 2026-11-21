@@ -291,6 +291,7 @@ pub fn expand_skill_command<'a>(text: &str, skills: &'a [Skill]) -> (String, Opt
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn name_validation_rules() {
         assert!(validate_name("web-search", "web-search").is_empty());
@@ -300,6 +301,7 @@ mod tests {
         assert!(!validate_name("web", "other").is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn description_validation_rules() {
         assert_eq!(validate_description(""), vec!["description is required"]);
@@ -332,6 +334,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn expands_a_known_skill_command_with_and_without_args() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -363,6 +366,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_empty_frontmatter_block_is_a_warned_skip_not_a_panic() {
         // TS no-frontmatter semantics: the whole document is the body, the
@@ -379,6 +383,7 @@ mod tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_empty_frontmatter_name_falls_back_to_the_parent_directory() {
         // TS `frontmatter.name || parentDirName`.
@@ -401,6 +406,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn non_skill_and_unknown_inputs_pass_through() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -417,6 +423,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_unreadable_skill_file_passes_through() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -429,6 +436,7 @@ mod tests {
         assert!(used.is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prompt_formatting_excludes_hidden() {
         let skill = |name: &str, disable: bool| Skill {

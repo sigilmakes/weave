@@ -445,6 +445,7 @@ mod tests {
         paths
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn groups_follow_ts_ordering_and_labels() {
         let paths = resolved(vec![
@@ -522,6 +523,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prompt_display_names_show_the_file_name() {
         let item = resource(
@@ -568,6 +570,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn toggling_a_user_skill_writes_the_disable_then_enable_pattern() {
         let (root, mut settings) = settings_fixture();
@@ -588,6 +591,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn toggling_a_bundled_skill_keys_off_the_bundled_dir() {
         let (root, mut settings) = settings_fixture();
@@ -601,6 +605,7 @@ mod tests {
         assert_eq!(written, "-websearch/SKILL.md");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn toggling_a_project_resource_writes_the_project_scope() {
         let (root, mut settings) = settings_fixture();
@@ -621,6 +626,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn toggling_a_package_resource_writes_a_filter_entry() {
         let (root, mut settings) = settings_fixture();
@@ -652,6 +658,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn relative_paths_match_ts_semantics() {
         assert_eq!(

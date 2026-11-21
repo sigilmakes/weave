@@ -137,6 +137,7 @@ mod tests {
         read_keys(path)
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn write_then_hit_and_dedupe() {
         let dir = tempfile::tempdir().unwrap();
@@ -151,6 +152,7 @@ mod tests {
         assert!(std::fs::symlink_metadata(&path).is_ok_and(|m| m.is_file()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cap_then_clear_matches_the_in_process_rule() {
         let dir = tempfile::tempdir().unwrap();
@@ -167,6 +169,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stale_and_forged_entries_never_hit() {
         let dir = tempfile::tempdir().unwrap();
@@ -207,6 +210,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn invalidate_serves_no_hits_with_the_fallback() {
         let dir = tempfile::tempdir().unwrap();
@@ -227,6 +231,7 @@ mod tests {
         std::fs::remove_dir(&path).unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn missing_dir_is_fail_open_on_write() {
         let dir = tempfile::tempdir().unwrap();

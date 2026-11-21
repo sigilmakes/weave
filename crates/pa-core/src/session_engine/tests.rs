@@ -32,6 +32,7 @@ async fn scripted_session() -> AgentSession {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn prompt_persists_user_and_assistant() {
     let session = scripted_session().await;
     session
@@ -61,6 +62,7 @@ async fn prompt_persists_user_and_assistant() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_skill_command_prompt_expands_into_the_skill_block() {
     // TS `_expandSkillCommand`: a `/skill:<name> [args]` submission
     // persists as the `<skill>` block plus the argument text; the
@@ -112,6 +114,7 @@ async fn a_skill_command_prompt_expands_into_the_skill_block() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_unknown_skill_command_passes_through() {
     let session = scripted_session().await;
     session
@@ -178,6 +181,7 @@ fn user_text(message: &pa_agent::types::Message) -> String {
 /// turn (the custom row, appended once), never a duplicate user
 /// message.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn prompt_injected_message_persists_one_custom_row() {
     let provider = Arc::new(ScriptedProvider::new(test_model()));
     provider.push_text_turn("notice acknowledged");
@@ -250,6 +254,7 @@ async fn prompt_injected_message_persists_one_custom_row() {
 /// The comparison covers the whole request - system prompt, tools, and
 /// every message row - with only the per-run timestamps normalized.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_agent_message_custom_row_matches_the_plain_prompt_context() {
     let prompt = "[agent-message from child:research-lane]\n\nthe research is done";
 
@@ -311,6 +316,7 @@ fn normalized_context(context: &pa_agent::stream::LlmContext) -> serde_json::Val
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn prompt_persists_tool_results() {
     struct EchoTool;
     impl pa_agent::types::AgentTool for EchoTool {
@@ -431,6 +437,7 @@ async fn prompt_persists_tool_results() {
 /// Persisted `ipython`/`python` calls dispatch through `ToolDefinitionBridge`
 /// to the registered Python tool.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn python_tool_aliases_dispatch_to_python_repl() {
     let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let definition = crate::tools::tool_definition::ToolDefinition {
@@ -513,6 +520,7 @@ async fn python_tool_aliases_dispatch_to_python_repl() {
 /// A `toolResult` entry captured from a live TS session (read-only, from
 /// the installed product's own session store) parses into the Rust
 /// session types and re-serializes to the identical wire shape.
+#[pa_test_scratch::pa_test]
 #[test]
 fn ts_toolresult_entry_round_trips() {
     let golden: serde_json::Value = serde_json::from_str(include_str!(
@@ -550,6 +558,7 @@ fn ts_toolresult_entry_round_trips() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn template_expansion_applies() {
     let provider = Arc::new(ScriptedProvider::new(test_model()));
     provider.push_text_turn("ok");
@@ -605,6 +614,7 @@ async fn template_expansion_applies() {
 /// branch switch between turns is recorded by the next run, and an unchanged
 /// context at `agent_end` adds nothing.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn run_boundaries_record_git_state() {
     fn git(cwd: &std::path::Path, args: &[&str]) {
         let output = std::process::Command::new("git")
@@ -699,6 +709,7 @@ async fn run_boundaries_record_git_state() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn durable_event_failure_refuses_local_message_publication() {
     struct RefusingWriter;
     impl crate::session::manager::SessionEntryWriter for RefusingWriter {
@@ -724,6 +735,7 @@ async fn durable_event_failure_refuses_local_message_publication() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn custom_event_replays_exact_admitted_row_without_another_append() {
     let mut manager = SessionManager::in_memory(std::path::Path::new("/tmp"));
     let row = pa_types::session::CustomMessage {
@@ -753,6 +765,7 @@ async fn custom_event_replays_exact_admitted_row_without_another_append() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn admitted_user_event_uses_stored_message_not_transient_timestamp() {
     let mut manager = SessionManager::in_memory(std::path::Path::new("/tmp"));
     let original: SessionAgentMessage = serde_json::from_value(serde_json::json!({
@@ -779,6 +792,7 @@ async fn admitted_user_event_uses_stored_message_not_transient_timestamp() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn admitted_custom_event_uses_stored_timestamp_details_and_extra_fields() {
     let mut manager = SessionManager::in_memory(std::path::Path::new("/tmp"));
     let id = manager
@@ -822,6 +836,7 @@ async fn admitted_custom_event_uses_stored_timestamp_details_and_extra_fields() 
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn context_custom_prefix_cannot_consume_the_admitted_custom_input() {
     let mut manager = SessionManager::in_memory(std::path::Path::new("/tmp"));
     let id = manager
@@ -891,6 +906,7 @@ async fn context_custom_prefix_cannot_consume_the_admitted_custom_input() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn engine_supplies_session_id_to_the_model_stream() {
     let dir = tempfile::tempdir().unwrap();
     let cwd = dir.path().join("project");

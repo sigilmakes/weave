@@ -58,6 +58,7 @@ impl OAuthHttp for HangingHttp {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn explicit_cancel_drops_discovery_registration_and_token_exchange() {
     for hang_url in [ORIGIN_URL, ORIGIN_REGISTER, ORIGIN_TOKEN] {
         let http = HangingHttp {
@@ -104,6 +105,7 @@ async fn explicit_cancel_drops_discovery_registration_and_token_exchange() {
 }
 
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn whole_flow_deadline_includes_pending_discovery() {
     let http = HangingHttp {
         scripted: ScriptedHttp::new(vec![]),
@@ -125,6 +127,7 @@ async fn whole_flow_deadline_includes_pending_discovery() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn pre_cancelled_login_issues_no_requests() {
     let http = ScriptedHttp::new(vec![]);
     let ui = CancelUi {
@@ -140,6 +143,7 @@ async fn pre_cancelled_login_issues_no_requests() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn whole_flow_deadline_interrupts_token_exchange() {
     let http = HangingHttp {
         scripted: ScriptedHttp::new(vec![
@@ -183,6 +187,7 @@ async fn whole_flow_deadline_interrupts_token_exchange() {
 }
 
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn whole_flow_deadline_closes_pending_callback_listener() {
     struct PendingUi(Mutex<String>);
     impl McpLoginUi for PendingUi {

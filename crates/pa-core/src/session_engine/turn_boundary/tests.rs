@@ -137,6 +137,7 @@ fn handler(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn model_info_reports_the_bound_model() {
     let requests = Arc::new(TurnBoundaryRequests::new());
     let handlers = registered(&requests);
@@ -181,6 +182,7 @@ async fn model_info_reports_the_bound_model() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_run_validates_and_reports_no_active_turn() {
     let requests = Arc::new(TurnBoundaryRequests::new());
     let handlers = registered(&requests);
@@ -234,6 +236,7 @@ async fn compact_run_validates_and_reports_no_active_turn() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_run_prepare_skips_report_the_ts_reasons() {
     for ((_session_dir, case), expected) in [
         // A branch ending in a compaction has nothing new to summarize.
@@ -279,6 +282,7 @@ async fn compact_run_prepare_skips_report_the_ts_reasons() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_run_schedules_inside_a_tool_call_and_status_sees_it() {
     let requests = Arc::new(TurnBoundaryRequests::new());
     let handlers = registered(&requests);
@@ -340,6 +344,7 @@ async fn compact_run_schedules_inside_a_tool_call_and_status_sees_it() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn clear_pending_drops_scheduled_requests() {
     let requests = Arc::new(TurnBoundaryRequests::new());
     registered(&requests);
@@ -381,6 +386,7 @@ async fn clear_pending_drops_scheduled_requests() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_run_merges_instructions_into_a_pending_request() {
     let requests = Arc::new(TurnBoundaryRequests::new());
     registered(&requests);
@@ -427,6 +433,7 @@ async fn compact_run_merges_instructions_into_a_pending_request() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn context_usage_anchors_on_the_last_valid_assistant_usage() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -462,6 +469,7 @@ fn context_usage_anchors_on_the_last_valid_assistant_usage() {
     assert!((percent - (usage.tokens.unwrap() as f64 / 100_000.0 * 100.0)).abs() < 1e-9);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn context_usage_after_a_compaction_falls_back_to_the_view_estimate() {
     let (_session_dir, mut session) = session_with_history(false);
@@ -486,6 +494,7 @@ fn context_usage_after_a_compaction_falls_back_to_the_view_estimate() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_failing_live_view_falls_back_to_the_edit_aware_walk() {
     let requests = Arc::new(TurnBoundaryRequests::new());
     let handlers = registered(&requests);

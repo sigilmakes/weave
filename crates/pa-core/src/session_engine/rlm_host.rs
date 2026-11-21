@@ -1095,6 +1095,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn find_models_round_trip_through_the_registry() {
         let dir = tempfile::TempDir::new().unwrap();
         let wiring = wired(dir.path(), None);
@@ -1176,6 +1177,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn progress_note_throttles_and_stores() {
         let dir = tempfile::TempDir::new().unwrap();
         let wiring = wired(dir.path(), None);
@@ -1230,6 +1232,7 @@ mod tests {
     /// The accepted note announces with its message and wall-clock
     /// timestamp; a throttled note announces nothing.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn accepted_note_announces_throttled_note_stays_silent() {
         let dir = tempfile::TempDir::new().unwrap();
         let session = persisted_session(dir.path());
@@ -1279,6 +1282,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn spawn_round_trip_through_the_registry() {
         let dir = tempfile::TempDir::new().unwrap();
         let host = RecordingHost::new();
@@ -1369,6 +1373,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn create_session_round_trip_through_the_registry() {
         let dir = tempfile::TempDir::new().unwrap();
         let host = RecordingHost::new();
@@ -1450,6 +1455,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn roster_collect_and_delete_round_trip() {
         let dir = tempfile::TempDir::new().unwrap();
         let host = RecordingHost::new();
@@ -1544,6 +1550,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn rename_round_trip_and_validation() {
         let dir = tempfile::TempDir::new().unwrap();
         let host = RecordingHost::new();
@@ -1618,6 +1625,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn no_host_rename_appends_locally_and_rejects_child_targets() {
         let dir = tempfile::TempDir::new().unwrap();
         let wiring = wired(dir.path(), None);
@@ -1646,6 +1654,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn no_host_session_reports_empty_roster_and_selector_misses() {
         let dir = tempfile::TempDir::new().unwrap();
         let wiring = wired(dir.path(), None);

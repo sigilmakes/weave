@@ -16,6 +16,7 @@ use crate::session_engine::semantic_edges::{
 /// turn context behind the TS split marker, with both calls' usage
 /// summed onto the durable row (TS `compact`'s split arm).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn split_turn_compaction_runs_two_summarizer_calls_and_merges_the_turn_context() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -196,6 +197,7 @@ async fn split_turn_compaction_runs_two_summarizer_calls_and_merges_the_turn_con
 /// duplicate user message — compacts with a whole-turn cut; the double-represented
 /// shape lands mid-turn.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn injected_custom_turn_cuts_whole_turns_the_double_row_splits() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -367,6 +369,7 @@ async fn injected_custom_turn_cuts_whole_turns_the_double_row_splits() {
 /// A split turn with no history makes only the turn-prefix wire call and
 /// stands in the literal "No prior history." for the history half.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn split_turn_without_history_makes_only_the_prefix_call() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -536,6 +539,7 @@ fn begun_compaction_id(events: &[LedgerEvent]) -> String {
 /// `summaryCall` + `compactionRecorded`: the ledger lands before the
 /// compaction entry).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_split_turn_compaction_commits_both_summary_slices_before_its_entry() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -690,6 +694,7 @@ async fn a_split_turn_compaction_commits_both_summary_slices_before_its_entry() 
 /// records `cancelled` (TS's catch: the abort settles the compaction, and
 /// no summary request stays committed for the next turn to attach to).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_aborted_compaction_fails_its_slices_and_records_cancelled() {
     let registration = faux_registration();
     let model = registration.get_model();

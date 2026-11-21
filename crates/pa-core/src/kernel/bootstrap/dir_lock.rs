@@ -92,6 +92,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn reaped_parent_pid_times_out_without_reclaiming_the_lock() {
         use std::os::unix::fs::MetadataExt;
 
@@ -136,6 +137,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn old_unknown_owner_files_time_out_without_mutating_the_lock() {
         for owner in [
             b"".as_slice(),
@@ -173,6 +175,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn old_legacy_directory_without_pid_times_out_without_moving_the_lock() {
         let root = tempfile::tempdir().unwrap();
         let venv = root.path().join("kernel-venv");
@@ -197,6 +200,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn live_pid_file_has_a_bounded_wait_without_removing_the_owner() {
         let root = tempfile::tempdir().unwrap();
         let venv = root.path().join("kernel-venv");
@@ -221,6 +225,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn legacy_directory_has_a_bounded_wait_without_removing_the_owner() {
         let root = tempfile::tempdir().unwrap();
         let venv = root.path().join("kernel-venv");
@@ -240,6 +245,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn an_owner_releasing_before_the_deadline_allows_acquisition() {
         let root = tempfile::tempdir().unwrap();
         let venv = root.path().join("kernel-venv");
@@ -258,6 +264,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn cancelling_a_waiter_preserves_the_owner_and_cleans_candidates() {
         let root = tempfile::tempdir().unwrap();
         let venv = root.path().join("kernel-venv");

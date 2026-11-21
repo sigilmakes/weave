@@ -1,5 +1,6 @@
 use super::*;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn default_percentage_preserves_the_current_threshold_and_strict_boundary() {
     let settings = CompactionSettings::default();
@@ -18,6 +19,7 @@ fn default_percentage_preserves_the_current_threshold_and_strict_boundary() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn custom_percentages_obey_both_ceilings_as_model_limits_change() {
     for (percent, expected_by_model) in [
@@ -44,6 +46,7 @@ fn custom_percentages_obey_both_ceilings_as_model_limits_change() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn invalid_runtime_percentages_fall_back_without_losing_headroom() {
     for percent in [
@@ -71,6 +74,7 @@ fn invalid_runtime_percentages_fall_back_without_losing_headroom() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn saved_percentage_applies_to_existing_sessions_without_changing_manual_budgets() {
     let dir = tempfile::tempdir().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -114,6 +118,7 @@ async fn saved_percentage_applies_to_existing_sessions_without_changing_manual_b
     ));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn low_percentages_leave_room_for_retained_history_and_both_summaries() {
     for percent in [1.0, 5.0, 10.0] {

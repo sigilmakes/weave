@@ -338,6 +338,7 @@ mod tests {
         .unwrap()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn merges_each_scope_per_key_and_only_overlays_the_outgoing_body() {
         let fixture = Fixture::new();
@@ -390,6 +391,7 @@ mod tests {
         assert_eq!(config.configure_model(&other_provider), other_provider);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn drops_unknown_fields_and_invalid_values_before_merging() {
         let fixture = Fixture::new();
@@ -454,6 +456,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn accepts_all_finite_sampler_keys_without_imposing_numeric_ranges() {
         let fixture = Fixture::new();
@@ -480,6 +483,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rejects_overflow_numbers_but_keeps_valid_siblings_and_empty_stop() {
         let fixture = Fixture::new();
@@ -498,6 +502,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn caps_use_js_safe_integer_semantics_including_decimal_rounding() {
         let fixture = Fixture::new();
@@ -523,6 +528,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn invalid_or_missing_files_fall_back_independently() {
         let fixture = Fixture::new();
@@ -547,6 +553,7 @@ mod tests {
         assert_eq!(fixture.load().overlay_request(body.clone(), "x"), body);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn numeric_normalization_preserves_strings_and_rejects_malformed_numbers() {
         let fixture = Fixture::new();
@@ -578,6 +585,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn independent_loads_and_reload_do_not_retain_removed_caps() {
         let fixture = Fixture::new();

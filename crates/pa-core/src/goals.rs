@@ -447,6 +447,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn normalize_derives_active_from_status() {
         let mut goal = active_goal();
@@ -457,6 +458,7 @@ mod tests {
         assert_eq!(normalized.status, GoalStatus::Paused);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn objective_and_budget_validation() {
         assert_eq!(validate_goal_objective("  padded  ").unwrap(), "padded");
@@ -471,6 +473,7 @@ mod tests {
         assert!(validate_goal_budget(Some(0)).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn usage_delta_clamps_negatives() {
         assert_eq!(goal_token_delta_for_usage(10, 20), 30);
@@ -478,6 +481,7 @@ mod tests {
         assert_eq!(goal_token_delta_for_usage(-5, -20), 0);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn persisted_state_guard() {
         let goal = active_goal();
@@ -493,6 +497,7 @@ mod tests {
         })));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn host_response_shapes() {
         let goal = active_goal();
@@ -515,6 +520,7 @@ mod tests {
         assert_eq!(empty.remaining_tokens, None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn goal_context_messages_match_prompts() {
         let goal = active_goal();
@@ -562,6 +568,7 @@ mod tests {
         assert!(create_goal_context_message(&bare, GoalContextKind::Continuation, &[]).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn usage_formatting() {
         let goal = active_goal();
@@ -641,6 +648,7 @@ mod tests {
 
     /// The restore-resurrection scan: the newest active goal row with a
     /// terminal failure settled after it.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stale_active_goal_failure_scan() {
         let active = goal_state_entry(&active_goal());

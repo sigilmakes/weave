@@ -360,6 +360,7 @@ pub(crate) fn write_jobs_state(path: &Path, state: &CronJobsState) -> anyhow::Re
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn jobs_state_write_propagates_physical_failure() {
         let dir = tempfile::tempdir().unwrap();
@@ -370,6 +371,7 @@ mod tests {
 
     /// The cron state write opts in (the TS test pins `{ fsync: true, mode: 0o600 }`)
     /// `to_string_pretty(state) + "\n"` bytes.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn jobs_state_write_keeps_exactly_one_fsync() {
         let dir = tempfile::tempdir().unwrap();

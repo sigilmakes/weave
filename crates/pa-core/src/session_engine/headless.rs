@@ -213,6 +213,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn selects_final_assistant_message() {
         let messages = vec![
@@ -232,6 +233,7 @@ mod tests {
         assert_eq!(exit_code, 0);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn failed_assistant_runs_exit_nonzero() {
         let mut error = text_assistant("partial", StopReason::Error);
@@ -260,6 +262,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn skips_internal_suffix_and_collects_compactions() {
         let messages = vec![
@@ -285,6 +288,7 @@ mod tests {
         assert_eq!(result.compaction_outcomes[1].outcome, "failed");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn slash_command_results_are_primary() {
         let messages = vec![
@@ -312,6 +316,7 @@ mod tests {
         assert_eq!(severity, None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn non_suffix_messages_stop_the_walk() {
         // A compaction summary (not a custom message) ends the suffix walk.

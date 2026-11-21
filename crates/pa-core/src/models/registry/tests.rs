@@ -27,6 +27,7 @@ fn model(id: &str, provider: &str) -> Model {
     .unwrap()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn in_memory_loads_built_in_catalog() {
     let registry = ModelRegistry::in_memory(auth_with(&serde_json::json!({})));
@@ -42,6 +43,7 @@ fn in_memory_loads_built_in_catalog() {
 /// unmarked when no override configures `maxTokens` — the default 32000
 /// ceiling keeps applying to them (901 of the catalog's models declare
 /// more than 32000 and their request size must not change).
+#[pa_test_scratch::pa_test]
 #[test]
 fn built_in_catalog_models_stay_unmarked() {
     let registry = ModelRegistry::in_memory(auth_with(&serde_json::json!({})));
@@ -52,6 +54,7 @@ fn built_in_catalog_models_stay_unmarked() {
         .all(|model| !model.max_tokens_explicit));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn available_filters_by_configured_auth() {
     let auth = auth_with(&serde_json::json!({
@@ -71,6 +74,7 @@ fn available_filters_by_configured_auth() {
     }));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rlm_searchable_models_gate_one_stale_provider_across_its_models() {
     // The per-provider status memo must answer every model of a provider
@@ -96,6 +100,7 @@ fn rlm_searchable_models_gate_one_stale_provider_across_its_models() {
         .all(|model| model.provider != "zz-no-provider"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn models_json_custom_models_and_auth_header() {
     let dir = tempfile::tempdir().unwrap();
@@ -129,6 +134,7 @@ fn models_json_custom_models_and_auth_header() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn models_json_error_keeps_built_ins() {
     let dir = tempfile::tempdir().unwrap();
@@ -139,6 +145,7 @@ fn models_json_error_keeps_built_ins() {
     assert!(!registry.get_all().is_empty());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn header_precedence_model_over_provider() {
     let mut registry = ModelRegistry::in_memory(auth_with(&serde_json::json!({
@@ -184,6 +191,7 @@ async fn serve_catalog_once(payload: serde_json::Value) -> (String, tokio::task:
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::too_many_lines)]
 async fn live_scope_keyed_cache_merges_over_the_compiled_prime_inference_models() {
     let dir = tempfile::tempdir().unwrap();
@@ -305,6 +313,7 @@ async fn live_scope_keyed_cache_merges_over_the_compiled_prime_inference_models(
         .any(|model| model.id == "anthropic/live-only-model"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn invalid_models_config_keeps_the_bundled_catalog() {
     let dir = tempfile::tempdir().unwrap();
@@ -318,6 +327,7 @@ fn invalid_models_config_keeps_the_bundled_catalog() {
     assert!(registry.get_error().is_some());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn explicit_private_ids_are_authorized() {
     let registry = ModelRegistry::in_memory(auth_with(&serde_json::json!({})));
@@ -325,6 +335,7 @@ fn explicit_private_ids_are_authorized() {
     assert!(!registry.is_authorized_private_model(&private_model));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_stored_copilot_credential_rewrites_its_models_base_url() {
     // TS `githubCopilotOAuthProvider.modifyModels`: the token's
@@ -361,6 +372,7 @@ fn a_stored_copilot_credential_rewrites_its_models_base_url() {
     assert_eq!(grok.base_url, "https://copilot-api.company.ghe.com");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_stored_xai_subscription_switches_its_models_onto_responses() {
     let auth = auth_without_env(&serde_json::json!({
@@ -410,6 +422,7 @@ fn a_stored_xai_subscription_switches_its_models_onto_responses() {
 /// A model that already declares addressable levels keeps them under the
 /// subscription — a blanket replacement collapsed a thinking-capable route
 /// onto the all-null default arm (the `/effort` false refusal).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_subscription_model_keeps_its_own_thinking_level_map() {
     let mut grok = model("grok-build-0.1", "xai");
@@ -428,6 +441,7 @@ fn a_subscription_model_keeps_its_own_thinking_level_map() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn without_a_stored_xai_subscription_the_models_stay_on_completions() {
     let registry = ModelRegistry::in_memory(auth_without_env(&serde_json::json!({})));

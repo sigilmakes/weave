@@ -64,6 +64,7 @@ fn disk() -> Arc<BarrierDisk> {
     })
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_observed_pending_row_requires_a_new_barrier_before_publication() {
     let dir = tempfile::tempdir().unwrap();
@@ -108,6 +109,7 @@ fn an_observed_pending_row_requires_a_new_barrier_before_publication() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn initial_unknown_retains_its_exact_row_and_recovery_until_the_barrier_returns() {
     let dir = tempfile::tempdir().unwrap();

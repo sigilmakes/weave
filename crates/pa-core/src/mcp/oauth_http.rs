@@ -153,6 +153,7 @@ fn method_label(method: OAuthHttpMethod) -> &'static str {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn response_header_lookup_is_case_insensitive() {
         let response = OAuthHttpResponse {

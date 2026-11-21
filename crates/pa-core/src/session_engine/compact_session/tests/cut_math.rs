@@ -4,6 +4,7 @@
 use super::*;
 use pa_types::session::EntryBase;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cut_and_tokens_computed_from_entries() {
     let tmp = tempfile::tempdir().unwrap();
@@ -13,6 +14,7 @@ fn cut_and_tokens_computed_from_entries() {
     assert_eq!(tokens, 120);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn message_extraction_skips_compaction_and_tool_results() {
     let mut compaction = FileEntry::Compaction {
@@ -57,6 +59,7 @@ fn message_extraction_skips_compaction_and_tool_results() {
 
 /// A usage-less error turn never anchors `tokensBefore`: the estimate uses
 /// the last settled usage plus a chars/4 estimate of what trails it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn tokens_before_anchors_on_last_valid_usage_plus_trailing() {
     let reply = |usage: pa_types::ai::Usage, error: bool| {
@@ -130,6 +133,7 @@ fn tokens_before_anchors_on_last_valid_usage_plus_trailing() {
 
 /// A split turn estimates BOTH the history request and the turn-prefix
 /// request; the no-history split arm estimates only the prefix call.
+#[pa_test_scratch::pa_test]
 #[test]
 fn summary_window_estimate_covers_both_split_requests() {
     let history = vec![user_message("some history to summarize")];

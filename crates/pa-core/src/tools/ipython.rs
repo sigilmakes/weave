@@ -536,6 +536,7 @@ pub fn create_ipython_tool_definition(_cwd: &str, options: IpythonToolOptions) -
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn sent_agent_message_json_matches_ts_wire_shape() {
         let sent = crate::kernel::shared::KernelSentAgentMessage {

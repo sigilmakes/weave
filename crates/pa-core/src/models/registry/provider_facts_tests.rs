@@ -32,6 +32,7 @@ return {providers = {
 }}
 "#;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_plugin_fact_exposes_its_provider_and_models_without_a_session() {
     let dir = agent_dir(LOCAL_FACT);
@@ -59,6 +60,7 @@ fn a_plugin_fact_exposes_its_provider_and_models_without_a_session() {
     assert_eq!(status.source, None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_keyless_provider_resolves_set_model_and_sends_no_authorization() {
     let dir = agent_dir(LOCAL_FACT);
@@ -102,6 +104,7 @@ fn remote_model(id: &str, context: u64, max_tokens: u64) -> Model {
     .unwrap()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn fact_limits_clamp_endpoint_metadata_and_mark_the_ceiling_explicit() {
     let dir = agent_dir(LOCAL_FACT);
@@ -128,6 +131,7 @@ fn fact_limits_clamp_endpoint_metadata_and_mark_the_ceiling_explicit() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_fact_named_after_a_builtin_provider_is_rejected() {
     let dir = agent_dir(

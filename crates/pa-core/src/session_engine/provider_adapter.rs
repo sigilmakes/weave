@@ -544,6 +544,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn delivered_terminal_survives_close_and_abort() {
         for reason in [
             pa_types::ai::StopReason::Stop,
@@ -605,6 +606,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn configured_transport_reaches_the_provider_options() {
         let registration =
             pa_ai::faux::register_faux_provider(pa_ai::faux::RegisterFauxProviderOptions {
@@ -645,6 +647,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn live_target_service_tier_reaches_provider_and_reset() {
         let registration =
             pa_ai::faux::register_faux_provider(pa_ai::faux::RegisterFauxProviderOptions {
@@ -695,6 +698,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn auxiliary_model_is_not_replaced_by_the_main_switchable_target() {
         let registration =
             pa_ai::faux::register_faux_provider(pa_ai::faux::RegisterFauxProviderOptions {
@@ -755,6 +759,7 @@ mod tests {
         registration.unregister();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prompt_text_message_round_trips() {
         let message = pa_agent::types::AgentMessage::Standard(pa_agent::types::Message::User(
@@ -786,6 +791,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn routed_model_modalities_survive_the_agent_boundary() {
         let mut routed = pa_agent::types::Model::unknown();
@@ -814,6 +820,7 @@ mod tests {
     /// Regression guard: provider signatures must survive the round-trip. pa-agent has no
     /// catch-all field, so a key-casing mismatch silently dropped them — a Rust-written
     /// session lost the signature TS-written ones carry.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn provider_signatures_round_trip_both_directions() {
         let thinking = pa_types::ai::ThinkingContent {
@@ -857,6 +864,7 @@ mod tests {
     /// A delayed faux response holds the request mid-wait; `ModelStream::close` cancels the fetch
     /// NOW, so the stream settles on the aborted message instead of waiting out the hold.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn closing_the_stream_cancels_a_held_fetch_immediately() {
         let registration =
             pa_ai::faux::register_faux_provider(pa_ai::faux::RegisterFauxProviderOptions {

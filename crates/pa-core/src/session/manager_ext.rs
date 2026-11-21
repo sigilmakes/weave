@@ -332,6 +332,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_and_summary() {
         let tmp = tempfile::tempdir().unwrap();
@@ -349,6 +350,7 @@ mod tests {
         assert!(manager.get_entry_by_id(&b).is_some());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn user_content_detection() {
         let tmp = tempfile::tempdir().unwrap();
@@ -361,6 +363,7 @@ mod tests {
         assert!(manager.has_user_content());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn labels_on_active_branch() {
         let tmp = tempfile::tempdir().unwrap();

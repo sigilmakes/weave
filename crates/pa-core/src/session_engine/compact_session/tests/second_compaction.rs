@@ -7,6 +7,7 @@ use super::*;
 /// A session compacted twice: the second request carries the update prompt
 /// with the prior summary and summarizes only the conversation since.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn second_compaction_updates_the_prior_summary_over_new_history() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -143,6 +144,7 @@ async fn second_compaction_updates_the_prior_summary_over_new_history() {
 /// the file lists: the update request carries a STRIPPED `<previous-summary>`
 /// plus the newest retained assistant text in a `<recent-state-anchor>` block.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn second_compaction_request_carries_the_anchor_and_strips_file_blocks() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -316,6 +318,7 @@ async fn second_compaction_request_carries_the_anchor_and_strips_file_blocks() {
 /// A split-turn cut after a prior compaction: the history call runs in
 /// update mode, while the turn-prefix call stays a plain prefix summary.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn second_compaction_split_turn_history_updates_prefix_does_not() {
     let registration = faux_registration();
     let model = registration.get_model();

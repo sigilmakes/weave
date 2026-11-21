@@ -292,6 +292,7 @@ mod tests {
     use super::*;
 
     #[cfg(not(unix))]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ordinary_file_auth_survives_unsupported_rotating_refresh() {
         let dir = tempfile::tempdir().unwrap();
@@ -313,6 +314,7 @@ mod tests {
         assert_eq!(backend.read().unwrap().as_deref(), Some("{}"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn file_backend_round_trip_and_modes() {
         let dir = tempfile::tempdir().unwrap();
@@ -338,6 +340,7 @@ mod tests {
 
     /// The auth save goes through the real `with_lock` writer and takes exactly one fsync branch
     /// landing the exact document bytes.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn auth_write_takes_exactly_one_fsync() {
         let dir = tempfile::tempdir().unwrap();
@@ -358,6 +361,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parse_rejects_non_object() {
         assert!(parse_storage_data(Some("[1,2]")).is_err());
@@ -367,6 +371,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_creates_the_document_like_with_lock() {
         let dir = tempfile::tempdir().unwrap();
@@ -375,6 +380,7 @@ mod tests {
         assert!(dir.path().join("auth.json").is_file());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_hits_do_not_run_the_lock_protocol() {
         let dir = tempfile::tempdir().unwrap();
@@ -391,6 +397,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_sees_external_atomic_writes() {
         let dir = tempfile::tempdir().unwrap();
@@ -407,6 +414,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_sees_external_in_place_writes() {
         let dir = tempfile::tempdir().unwrap();
@@ -421,6 +429,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_hits_serve_the_validated_copy_under_a_foreign_holder() {
         let dir = tempfile::tempdir().unwrap();
@@ -434,6 +443,7 @@ mod tests {
         fs::remove_dir(crate::platform::lock_dir::LockDir::path_for(&path)).unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_sees_this_process_with_lock_writes() {
         let dir = tempfile::tempdir().unwrap();

@@ -252,6 +252,7 @@ async fn replay_and_prompt(f: &StartupFixture, engine: &SessionEngine, admitted:
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_leaf_uses_stored_strategy_and_prefix_then_replays_exact_admitted_user_once() {
     let f = StartupFixture::new(OBSERVING, "policy/b");
     let mut manager = f.manager();
@@ -301,6 +302,7 @@ async fn startup_leaf_uses_stored_strategy_and_prefix_then_replays_exact_admitte
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_empty_has_no_user_or_leaf_then_replays_first_admitted_user_once() {
     let f = StartupFixture::new(OBSERVING, "policy/a");
     let mut manager = f.manager();
@@ -332,6 +334,7 @@ async fn startup_empty_has_no_user_or_leaf_then_replays_first_admitted_user_once
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_current_default_keeps_the_full_existing_branch() {
     let f = StartupFixture::new(OBSERVING, "policy/a");
     let mut manager = f.manager();
@@ -358,6 +361,7 @@ async fn startup_current_default_keeps_the_full_existing_branch() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_rejects_empty_missing_and_nonancestor_leaf_before_callback() {
     for kind in ["empty", "missing", "nonancestor"] {
         let f = StartupFixture::new(FORBIDDEN, "policy/a");
@@ -377,6 +381,7 @@ async fn startup_rejects_empty_missing_and_nonancestor_leaf_before_callback() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_leaf_requires_explicit_exact_suffix_admission_ids_before_callback() {
     for wrong_id in [false, true] {
         let f = StartupFixture::new(FORBIDDEN, "policy/a");
@@ -390,6 +395,7 @@ async fn startup_leaf_requires_explicit_exact_suffix_admission_ids_before_callba
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_empty_rejects_unadmitted_old_history_before_callback() {
     let f = StartupFixture::new(FORBIDDEN, "policy/a");
     let mut manager = f.manager();
@@ -400,6 +406,7 @@ async fn startup_empty_rejects_unadmitted_old_history_before_callback() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_disabled_stored_strategy_fails_closed_instead_of_using_global_default() {
     let f = StartupFixture::new(FORBIDDEN, "default_context/rolling");
     let mut manager = f.manager();
@@ -416,6 +423,7 @@ async fn startup_disabled_stored_strategy_fails_closed_instead_of_using_global_d
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_current_rejects_admission_ids_before_callback() {
     let f = StartupFixture::new(FORBIDDEN, "policy/a");
     let mut manager = f.manager();
@@ -425,6 +433,7 @@ async fn startup_current_rejects_admission_ids_before_callback() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_empty_accepts_bootstrap_metadata_and_uses_stored_strategy() {
     let f = StartupFixture::new(OBSERVING, "policy/b");
     let mut manager = f.manager();
@@ -497,6 +506,7 @@ async fn assert_rejected_view_unchanged(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_rebuild_at_keeps_full_rows_and_prefix_and_rejects_invalid_proof_atomically() {
     let f = StartupFixture::new(OBSERVING, "policy/b");
     let mut manager = f.manager();
@@ -548,6 +558,7 @@ async fn startup_rebuild_at_keeps_full_rows_and_prefix_and_rejects_invalid_proof
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_window_restore_at_keeps_full_rows_and_prefix_and_rejects_foreign_or_invalid_views()
 {
     use crate::session::window::WindowedSessionStore;
@@ -684,6 +695,7 @@ fn assert_receipt_a(receipts: &SelectionReceipts) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_selection_ack_failure_precedes_strategy_callbacks_for_fresh_and_saved_choices() {
     for saved in [false, true] {
         let f = StartupFixture::new(FORBIDDEN, if saved { "policy/b" } else { "policy/a" });
@@ -713,6 +725,7 @@ async fn startup_selection_ack_failure_precedes_strategy_callbacks_for_fresh_and
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_selection_ack_success_is_recorded_before_first_strategy_callback() {
     for saved in [false, true] {
         let f = StartupFixture::new(FORBIDDEN, if saved { "policy/b" } else { "policy/a" });
@@ -742,6 +755,7 @@ async fn startup_selection_ack_success_is_recorded_before_first_strategy_callbac
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_selection_ack_uses_pinned_a_without_inventing_mirror_selection_rows() {
     for saved in [false, true] {
         let f = StartupFixture::new(OBSERVING, if saved { "policy/b" } else { "policy/a" });
@@ -788,6 +802,7 @@ async fn startup_selection_ack_uses_pinned_a_without_inventing_mirror_selection_
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_without_selection_ack_keeps_default_sdk_choice_append() {
     let f = StartupFixture::new(OBSERVING, "policy/a");
     let mut manager = f.manager();
@@ -856,6 +871,7 @@ async fn startup_native_export(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_native_optchat_sources_only_prefix_then_includes_admitted_user_once_at_model() {
     let f = StartupFixture::new("return {}", "optchat/tree");
     std::fs::create_dir_all(f.cwd.join(".prime/agent")).unwrap();
@@ -1009,6 +1025,7 @@ async fn startup_native_optchat_sources_only_prefix_then_includes_admitted_user_
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_invalid_boundary_does_not_invoke_external_selection_ack() {
     let f = StartupFixture::new(FORBIDDEN, "policy/a");
     let mut manager = f.manager();

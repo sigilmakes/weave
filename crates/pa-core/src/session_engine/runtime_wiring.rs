@@ -429,6 +429,7 @@ mod tests {
     use super::{kernel_exec_error, KernelExecError};
     use crate::kernel::shared::KernelBusyAfterInterruptError;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn busy_after_interrupt_survives_the_adapter() {
         let error = kernel_exec_error(anyhow::Error::new(KernelBusyAfterInterruptError));
@@ -439,6 +440,7 @@ mod tests {
         assert!(matches!(error, KernelExecError::BusyAfterInterrupt(_)));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn other_kernel_errors_stay_other() {
         let error = kernel_exec_error(anyhow::anyhow!("kernel exploded"));

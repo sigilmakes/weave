@@ -25,6 +25,7 @@ fn aux_context(
 /// A selector equal to the session model keeps the session model (the
 /// faux factory records the model).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compaction_auxiliary_selector_equal_to_the_session_model_runs_on_the_session_model() {
     let registration = faux_registration();
     let model = registration.get_model();
@@ -75,6 +76,7 @@ async fn compaction_auxiliary_selector_equal_to_the_session_model_runs_on_the_se
 /// A selector that resolves to no model (unusable) falls back to the
 /// session model with a warning: the compaction still runs.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compaction_auxiliary_selector_unusable_falls_back_to_the_session_model() {
     let registration = faux_registration();
     let model = registration.get_model();

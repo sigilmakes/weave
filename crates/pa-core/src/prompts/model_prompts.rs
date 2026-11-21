@@ -288,6 +288,7 @@ mod tests {
         dir
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn documented_selector_examples_match() {
         let cases = [
@@ -346,6 +347,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn every_matching_rule_applies_and_shared_files_dedupe_first() {
         let dir = user_layer(
@@ -371,6 +373,7 @@ files = ["a.md"]
         assert_eq!(resolution.extras.as_deref(), Some("A\n\nB\n\nC"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn user_files_override_shipped_and_user_rules_run_last() {
         let dir = user_layer(
@@ -403,6 +406,7 @@ files = ["shared.md", "user-only.md"]
         assert_eq!(resolution.extras.as_deref(), Some("SHIPPED"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn layer_problems_disable_extras_and_name_the_source() {
         let empty = tempfile::tempdir().unwrap();
@@ -465,6 +469,7 @@ files = ["shared.md", "user-only.md"]
             .any(|error| error.contains(USER_MODEL_PROMPTS_TOML)));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_shipped_map_is_valid() {
         let empty = tempfile::tempdir().unwrap();
@@ -472,6 +477,7 @@ files = ["shared.md", "user-only.md"]
         assert!(resolution.errors.is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn shipped_glm_bash_rule_applies_to_glm_models_only() {
         let empty = tempfile::tempdir().unwrap();
@@ -489,6 +495,7 @@ files = ["shared.md", "user-only.md"]
         assert_eq!(other, ModelPromptResolution::default());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn file_entries_outside_the_agent_dir_are_rejected() {
         let root = tempfile::tempdir().unwrap();
@@ -529,6 +536,7 @@ files = ["shared.md", "user-only.md"]
         assert!(failures.is_empty(), "{failures:#?}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn normalized_names_resolve_shipped_files() {
         let dir = user_layer("[[rule]]\nmatch = [\"*\"]\nfiles = [\"./a.md\", \"a.md\"]\n");
@@ -543,6 +551,7 @@ files = ["shared.md", "user-only.md"]
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn symlink_targets_must_stay_inside_agent_directory() {
         use std::os::unix::fs::symlink;
@@ -581,6 +590,7 @@ files = ["shared.md", "user-only.md"]
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn fifos_are_rejected_without_opening_them() {
         // Keep a writer available so a regression fails assertions instead of hanging the suite.

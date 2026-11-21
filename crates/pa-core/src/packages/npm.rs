@@ -159,6 +159,7 @@ pub fn ensure_gitignore(dir: &Path) -> Result<()> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn npm_command_defaults_and_configuration() {
         assert_eq!(npm_command(None), ("npm".to_string(), Vec::<String>::new()));
@@ -172,6 +173,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn git_dependency_args_follow_npm_command_configuration() {
         assert_eq!(
@@ -184,6 +186,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn install_paths_per_scope() {
         let cwd = Path::new("/work");
@@ -207,6 +210,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn reads_installed_version() {
         let dir = tempfile::tempdir().unwrap();

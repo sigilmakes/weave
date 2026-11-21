@@ -314,6 +314,7 @@ mod tests {
     use crate::platform::process::Signal;
     use serde_json::json;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn teardown_resets_pending_background_count() {
         let manager = ReplKernelManager::new(KernelManagerOptions::default());
@@ -352,6 +353,7 @@ mod tests {
         )
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn background_work_settlement_fires_once_and_ignores_malformed_releases() {
         let (fired, on_settled) = settlement_counter();
@@ -397,6 +399,7 @@ mod tests {
         assert_eq!(fired.load(Ordering::SeqCst), 1);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn teardown_with_live_handles_settles_once() {
         let (fired, on_settled) = settlement_counter();
@@ -421,6 +424,7 @@ mod tests {
         assert_eq!(fired.load(Ordering::SeqCst), 1);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_panic_in_the_settlement_callback_neither_breaks_the_event_path_nor_the_teardown() {
         let manager = ReplKernelManager::new(KernelManagerOptions {

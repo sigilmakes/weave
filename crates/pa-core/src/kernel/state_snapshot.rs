@@ -57,6 +57,7 @@ pub fn manifest_path_in(artifact_dir: impl AsRef<Path>) -> PathBuf {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn paths_match_ts_layout() {
         assert_eq!(

@@ -119,6 +119,7 @@ pub fn create_rlm_child_failure_message(
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn no_reply_notice_matches_the_ts_shape() {
         let notice = RlmChildTerminalNotice::CompletedWithoutReply {
@@ -143,6 +144,7 @@ mod tests {
         assert_eq!(details["lastAssistantTextPreview"], "done with the task");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cancelled_notice_without_reason_has_no_body() {
         let notice = RlmChildTerminalNotice::Cancelled {
@@ -160,6 +162,7 @@ mod tests {
         assert_eq!(details["reason"], serde_json::Value::Null);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cancelled_notice_carries_the_reason_body() {
         let notice = RlmChildTerminalNotice::Cancelled {
@@ -177,6 +180,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn failure_notice_matches_the_ts_shape() {
         let message = create_rlm_child_failure_message("sub-9", "lane", "boom", 4_000);

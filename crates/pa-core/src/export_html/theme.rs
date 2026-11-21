@@ -348,6 +348,7 @@ mod tests {
     use super::*;
 
     /// The bundled prime theme resolves like the TS exporter.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prime_theme_resolves_like_the_ts_exporter() {
         let theme = resolve_export_theme(Some("prime"), Path::new("/nonexistent-agent-dir"))
@@ -359,6 +360,7 @@ mod tests {
         assert_eq!(theme.info_bg, "#151518");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ansi256_colors() {
         assert_eq!(ansi256_to_hex(196), "#ff0000");
@@ -374,6 +376,7 @@ mod tests {
 
     /// A custom theme under `<agent-dir>/themes/<name>.json` loads (variables resolved, the
     /// `export` override honored); an unknown name errors.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn custom_theme_discovery_and_not_found() {
         let dir = tempfile::TempDir::new().expect("temp dir");
@@ -398,6 +401,7 @@ mod tests {
         assert_eq!(error.to_string(), "Theme not found: missing");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn default_theme_detection() {
         assert!(!detect_light_terminal_background(Some("15;0")));
@@ -407,6 +411,7 @@ mod tests {
         assert!(!detect_light_terminal_background(Some("bogus")));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn derived_export_colors() {
         let dir = tempfile::TempDir::new().expect("temp dir");
@@ -432,6 +437,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn light_theme_derivation() {
         let dir = tempfile::TempDir::new().expect("temp dir");
@@ -449,12 +455,14 @@ mod tests {
         assert!(theme.theme_vars.contains("--text: #000000;"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn adjust_brightness_clamps() {
         assert_eq!(adjust_brightness((255, 0, 10), 1.2), "rgb(255, 0, 12)");
         assert_eq!(adjust_brightness((10, 10, 10), 0.5), "rgb(5, 5, 5)");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn var_reference_errors() {
         let dir = tempfile::TempDir::new().expect("temp dir");

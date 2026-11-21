@@ -173,6 +173,7 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn validates_artifact_rows_like_ts() {
         let release = LatestRelease {
@@ -195,6 +196,7 @@ mod tests {
         assert!(artifact_for_platform(&unknown).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parse_channel_manifest_accepts_the_producer_shape() {
         // The shape release.yml's promote job emits: a v1 `binaries` list plus the
@@ -221,6 +223,7 @@ mod tests {
             .any(|artifact| artifact.platform == "linux-arm64"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parse_channel_manifest_keeps_the_reader_guards() {
         // A row the reader cannot verify empties the artifacts (TS parity).
@@ -242,6 +245,7 @@ mod tests {
         assert!(version_only.artifacts.is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn user_agent_keeps_the_ts_shape() {
         let agent = update_user_agent("1.2.3");
@@ -288,6 +292,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn latest_release_fetches_the_channel_manifest_over_http() {
         let manifest = serde_json::json!({
             "version": "1.2.3",
@@ -323,6 +328,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_endpoint_error_is_no_release_never_a_planning_failure() {
         let (base_url, _) = fake_release_endpoint("500 Internal Server Error", String::new()).await;
         let release = latest_release("1.2.2", None, &base_url, std::time::Duration::from_secs(5))

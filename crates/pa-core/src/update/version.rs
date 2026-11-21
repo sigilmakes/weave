@@ -282,6 +282,7 @@ mod tests {
 
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_and_compares_semver() {
         assert_eq!(parse_package_version("1.2.3").map(|v| v.major), Some(1));
@@ -309,6 +310,7 @@ mod tests {
         assert_eq!(compare_package_versions("x", "1.2.3"), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn newer_and_downgrade_rules_match_ts() {
         assert!(is_newer_package_version("1.3.0", "v1.2.3"));
@@ -318,6 +320,7 @@ mod tests {
         assert!(!is_base_version_downgrade("junk", "1.2.3"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn opaque_build_tag_shuffles_are_never_candidates() {
         assert!(same_base_opaque_build_tag(
@@ -360,6 +363,7 @@ mod tests {
         assert!(!same_base_opaque_build_tag("junk", "0.10.0-rust-64f66e3d"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prerelease_tags_are_detected() {
         assert!(has_prerelease_tag("0.10.0-rust-64f66e3d"));
@@ -368,6 +372,7 @@ mod tests {
         assert!(!has_prerelease_tag("junk"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn channel_and_candidate_rules_match_ts() {
         assert_eq!(

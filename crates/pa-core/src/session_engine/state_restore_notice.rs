@@ -84,6 +84,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn revived_notice_lists_names() {
         let message = notice_message(&restore(vec!["data", "helper"], vec![]));
@@ -102,6 +103,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn empty_restore_notifies_fresh_kernel() {
         let message = notice_message(&restore(vec![], vec![]));
@@ -118,6 +120,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn failed_names_get_the_recreate_line() {
         let message = notice_message(&restore(vec!["data"], vec![("sock", "cannot pickle")]));

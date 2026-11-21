@@ -335,6 +335,7 @@ mod tests {
 
     /// SANCTIONED DIVERGENCE, operator ruling 2026-09-23: ±20% around
     /// the computed backoff.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn jitter_stays_inside_the_band_and_mid_is_identity() {
         assert_eq!(jittered_delay_ms(1000, 0.5), 1000);
@@ -352,6 +353,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn retry_delay_exponentially_backs_off() {
         let policy = ProviderRetryPolicy {
@@ -379,6 +381,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn retry_delay_caps_server_requests() {
         let policy = ProviderRetryPolicy {
@@ -406,6 +409,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn permanent_kinds_never_retry() {
         assert!(is_permanent_provider_failure_kind(
@@ -472,6 +476,7 @@ mod tests {
     /// fires and the completion settles on the retry's healthy stream
     /// (the fleet's death shape, replayed).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_dropped_sse_stream_retries_and_completes_on_the_retry() {
         use crate::session_engine::provider_adapter::{json_round_trip, real_stream_fn};
         use pa_agent::stream::{LlmContext, StreamRequestOptions};
@@ -553,6 +558,7 @@ mod tests {
     /// `stream_drop` class through the same retry ladder: a dropped stream
     /// retries and the completion settles on the retry.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn stream_drop_failures_retry_in_the_one_shot_arms() {
         let policy = ProviderRetryPolicy {
             enabled: true,
@@ -590,6 +596,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn transient_failure_is_retried_until_success() {
         let policy = ProviderRetryPolicy {
             enabled: true,
@@ -644,6 +651,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn retries_exhaust_after_max_retries() {
         let policy = ProviderRetryPolicy {
             enabled: true,
@@ -669,6 +677,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn disabled_policy_never_retries() {
         let policy = ProviderRetryPolicy {
             enabled: false,
@@ -694,6 +703,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn permanent_failure_returns_without_waiting() {
         let policy = ProviderRetryPolicy {
             enabled: true,
@@ -732,6 +742,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn aborted_signal_racing_failure_stops_aborted() {
         let policy = ProviderRetryPolicy {
             enabled: true,
@@ -754,6 +765,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn aborted_wait_stops_aborted() {
         let policy = ProviderRetryPolicy {
             enabled: true,
@@ -779,6 +791,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn lifecycle_and_faux_failures_are_never_retried() {
         let policy = ProviderRetryPolicy {
             enabled: true,
@@ -829,6 +842,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn attempt_errors_propagate() {
         let policy = ProviderRetryPolicy {
             enabled: true,
@@ -848,6 +862,7 @@ mod tests {
         assert_eq!(error.to_string(), "attempt failed");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stream_failure_fields_read_from_diagnostics() {
         let message = error_message(Some("server_error"), Some(500), Some(120));
@@ -863,6 +878,7 @@ mod tests {
 
     /// Provider-controllable text alone never steers the retry policy;
     /// the rejection is permanent only together with the 404 status.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unsupported_tool_rejections_are_terminal() {
         let mut unsupported = error_message(Some("invalid_request"), Some(404), None);
@@ -887,6 +903,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unsupported_tool_failures_never_retry() {
         let policy = ProviderRetryPolicy {
             enabled: true,

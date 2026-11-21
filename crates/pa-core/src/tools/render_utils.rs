@@ -149,6 +149,7 @@ fn webp_dimensions(b: &[u8]) -> Option<ImageDimensions> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn png_dimensions_parsed() {
         // Minimal PNG header with IHDR 2x3.

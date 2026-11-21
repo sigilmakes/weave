@@ -370,6 +370,7 @@ pub fn kwargs_from_payload(payload: &Value) -> serde_json::Map<String, Value> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn normalizes_session_name() {
         assert_eq!(
@@ -385,6 +386,7 @@ mod tests {
         assert!(normalize_requested_rlm_subagent_session_name(Some(&long), "rlm.spawn").is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn normalizes_thinking_and_model() {
         assert_eq!(
@@ -401,6 +403,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn default_session_name_shape() {
         let name =
@@ -410,6 +413,7 @@ mod tests {
         assert!(name.chars().count() <= 64);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn model_matches_ranked_and_capped() {
         let models = vec![
@@ -434,6 +438,7 @@ mod tests {
         assert_eq!(matches.len(), 1, "empty query lists up to the limit");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn short_form_resolution_and_error_text() {
         let models = vec![

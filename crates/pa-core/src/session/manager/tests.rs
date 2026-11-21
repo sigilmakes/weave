@@ -21,6 +21,7 @@ fn canonical_in_memory_header_fixture() -> SessionHeader {
     .unwrap()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn in_memory_from_header_preserves_authoritative_header_without_io() {
     let tmp = tempfile::tempdir().unwrap();
@@ -80,6 +81,7 @@ fn in_memory_from_header_preserves_authoritative_header_without_io() {
     assert_eq!(std::fs::read_dir(tmp.path()).unwrap().count(), 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn in_memory_from_header_accepts_a_header_only_session() {
     let tmp = tempfile::tempdir().unwrap();
@@ -93,6 +95,7 @@ fn in_memory_from_header_accepts_a_header_only_session() {
     assert_eq!(std::fs::read_dir(tmp.path()).unwrap().count(), 0);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn in_memory_from_header_rejects_an_empty_id_without_io() {
     let tmp = tempfile::tempdir().unwrap();
@@ -105,6 +108,7 @@ fn in_memory_from_header_rejects_an_empty_id_without_io() {
     assert_eq!(std::fs::read_dir(tmp.path()).unwrap().count(), 0);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn in_memory_from_header_keeps_metadata_after_verified_window_adoption() {
     let tmp = tempfile::tempdir().unwrap();
@@ -151,6 +155,7 @@ fn in_memory_from_header_keeps_metadata_after_verified_window_adoption() {
     assert_eq!(std::fs::read(&path).unwrap(), bytes.as_bytes());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn generated_entry_ids_are_unique_and_link_to_previous_entry() {
     let mut manager = SessionManager::in_memory(Path::new("/tmp"));
@@ -171,6 +176,7 @@ fn generated_entry_ids_are_unique_and_link_to_previous_entry() {
 /// The durable compaction line is the full TS `CompactionEntry` record:
 /// `fromHook: false` is present (never a missing key), and the details
 /// and usage ride along.
+#[pa_test_scratch::pa_test]
 #[test]
 fn append_compaction_serializes_the_full_ts_record() {
     let tmp = tempfile::tempdir().unwrap();
@@ -212,6 +218,7 @@ fn append_compaction_serializes_the_full_ts_record() {
     assert!(line.contains("\"usage\":"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn persist_appends_before_first_assistant() {
     let tmp = tempfile::tempdir().unwrap();
@@ -250,6 +257,7 @@ fn persist_appends_before_first_assistant() {
     let _ = first;
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn open_rejects_torn_tail_without_modifying_source() {
     let tmp = tempfile::tempdir().unwrap();
@@ -279,6 +287,7 @@ fn open_rejects_torn_tail_without_modifying_source() {
     assert_eq!(std::fs::read_to_string(&file).unwrap(), content.trim_end());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn flush_now_durability_without_assistant() {
     let tmp = tempfile::tempdir().unwrap();
@@ -289,6 +298,7 @@ fn flush_now_durability_without_assistant() {
     assert_eq!(manager.get_session_name().as_deref(), Some("my session"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn iso_format_round_trips() {
     let stamp = format_iso(1_704_067_200_012);
@@ -296,6 +306,7 @@ fn iso_format_round_trips() {
     assert_eq!(super::super::timestamp_to_millis(&stamp), 1_704_067_200_012);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn fork_from_copies_the_branch_under_a_fresh_header() {
     let tmp = tempfile::tempdir().unwrap();
@@ -406,6 +417,7 @@ fn fork_from_copies_the_branch_under_a_fresh_header() {
     assert!(after.lines().count() > before.lines().count());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn fork_from_never_rewrites_the_source() {
     let tmp = tempfile::tempdir().unwrap();
@@ -419,6 +431,7 @@ fn fork_from_never_rewrites_the_source() {
     assert_eq!(std::fs::read_to_string(&file).unwrap(), content);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn fork_from_terminates_on_cyclic_git_state_parents() {
     let tmp = tempfile::tempdir().unwrap();
@@ -455,6 +468,7 @@ fn fork_from_terminates_on_cyclic_git_state_parents() {
 /// The loader returns no entries for a missing file, an empty file, AND a
 /// file without a valid leading header (the no-header error stays as
 /// TS-faithful defense-in-depth).
+#[pa_test_scratch::pa_test]
 #[test]
 fn fork_from_rejects_empty_and_headerless_sources() {
     let tmp = tempfile::tempdir().unwrap();
@@ -474,6 +488,7 @@ fn fork_from_rejects_empty_and_headerless_sources() {
     assert!(!target.exists());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn fork_from_rejects_a_non_regular_source() {
     let tmp = tempfile::tempdir().unwrap();
@@ -491,6 +506,7 @@ fn fork_from_rejects_a_non_regular_source() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn open_treats_a_path_shaped_header_id_as_corrupted() {
     let tmp = tempfile::tempdir().unwrap();
@@ -506,6 +522,7 @@ fn open_treats_a_path_shaped_header_id_as_corrupted() {
 /// Replay validation must stay on the retained index: the full-history query
 /// panics after window adoption. Replaying a registered row once does not
 /// suppress a later legitimate submission of the same text.
+#[pa_test_scratch::pa_test]
 #[test]
 fn replay_admitted_user_rows_stays_windowed_and_reuses_only_registered_ids() {
     let dir = tempfile::tempdir().unwrap();
@@ -567,6 +584,7 @@ fn replay_admitted_user_rows_stays_windowed_and_reuses_only_registered_ids() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn host_writer_receives_exact_entry_before_publication() {
     use std::sync::{Arc, Mutex};
@@ -598,6 +616,7 @@ fn host_writer_receives_exact_entry_before_publication() {
     assert_eq!(*rows.lock().unwrap(), vec![entry.clone()]);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn host_writer_failure_does_not_publish_an_entry() {
     struct Writer;
@@ -620,6 +639,7 @@ fn host_writer_failure_does_not_publish_an_entry() {
     assert_eq!(manager.retained_entries(), before);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn host_writer_does_not_repeat_accepted_user_rows() {
     use std::sync::{Arc, Mutex};
@@ -652,6 +672,7 @@ fn host_writer_does_not_repeat_accepted_user_rows() {
     assert!(rows.lock().unwrap().is_empty());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn host_sink_returns_the_committed_identity_and_parent() {
     struct Writer;
@@ -684,6 +705,7 @@ fn host_sink_returns_the_committed_identity_and_parent() {
     assert_eq!(stored.timestamp(), "2001-02-03T04:05:06.789Z");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn admitted_custom_identity_is_consumed_once_without_content_deduplication() {
     let tmp = tempfile::tempdir().unwrap();
@@ -726,6 +748,7 @@ fn write_log_fixture(path: &Path, content: impl AsRef<[u8]>) -> std::io::Result<
     Ok(())
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn external_commits_enter_context_before_inference_and_parent_selection() {
     let dir = tempfile::tempdir().unwrap();
@@ -754,6 +777,7 @@ fn external_commits_enter_context_before_inference_and_parent_selection() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn unsupported_and_torn_prefixes_never_repair_or_recreate_existing_files() {
     let dir = tempfile::tempdir().unwrap();
@@ -769,6 +793,7 @@ fn unsupported_and_torn_prefixes_never_repair_or_recreate_existing_files() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn mirrored_sink_tail_is_visible_before_model_and_next_append() {
     use std::sync::{Arc, Mutex};
@@ -848,6 +873,7 @@ fn mirrored_sink_tail_is_visible_before_model_and_next_append() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn lazy_new_session_never_adopts_a_precreated_target() {
     let dir = tempfile::tempdir().unwrap();

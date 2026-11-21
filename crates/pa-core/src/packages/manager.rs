@@ -658,6 +658,7 @@ mod tests {
         pkg
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn install_and_remove_local_round_trip() {
         let (dir, mut manager) = setup();
@@ -702,6 +703,7 @@ mod tests {
             .unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn installing_missing_local_path_fails() {
         let (dir, mut manager) = setup();
@@ -718,6 +720,7 @@ mod tests {
         assert!(manager.list_configured_packages().is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn duplicate_installs_are_settings_noops() {
         let (dir, mut manager) = setup();
@@ -732,6 +735,7 @@ mod tests {
         assert_eq!(settings["packages"].as_array().unwrap().len(), 1);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn project_scope_persists_against_project_settings_base() {
         let (dir, mut manager) = setup();
@@ -761,6 +765,7 @@ mod tests {
         assert_eq!(configured[0].scope, UserOrProject::Project);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn equivalent_local_path_forms_remove_by_identity() {
         let (dir, mut manager) = setup();
@@ -773,6 +778,7 @@ mod tests {
             .unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn filtered_entries_list_and_remove_by_source() {
         let (dir, mut manager) = setup();
@@ -798,6 +804,7 @@ mod tests {
         assert!(manager.list_configured_packages().is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn progress_events_report_start_and_error() {
         let (_dir, mut manager) = setup();

@@ -136,6 +136,7 @@ impl Disk for TestDisk {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn append_and_read_round_trip() {
     let temp = tempfile::tempdir().unwrap();
@@ -158,6 +159,7 @@ fn append_and_read_round_trip() {
     assert_eq!(tail[0].seq, 2);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_killed_writer_leaves_a_torn_tail_that_repair_truncates() {
     let temp = tempfile::tempdir().unwrap();
@@ -204,6 +206,7 @@ fn a_killed_writer_leaves_a_torn_tail_that_repair_truncates() {
     assert_eq!(log.read_since(0).unwrap().len(), 3);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn reading_stops_at_a_torn_tail_without_repairing() {
     let temp = tempfile::tempdir().unwrap();
@@ -224,6 +227,7 @@ fn reading_stops_at_a_torn_tail_without_repairing() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_interrupted_write_is_provably_not_written() {
     let temp = tempfile::tempdir().unwrap();
@@ -264,6 +268,7 @@ fn an_interrupted_write_is_provably_not_written() {
     assert_eq!(committed_seq(&log.append(&row(1), deadline())), Some(1));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_second_writer_is_refused_at_the_deadline() {
     let temp = tempfile::tempdir().unwrap();
@@ -290,6 +295,7 @@ fn a_second_writer_is_refused_at_the_deadline() {
     assert_eq!(committed_seq(&log.append(&row(1), deadline())), Some(1));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn two_writers_never_share_a_seq() {
     let temp = tempfile::tempdir().unwrap();
@@ -312,6 +318,7 @@ fn two_writers_never_share_a_seq() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_crash_before_the_directory_sync_leaves_no_partial_row() {
     let temp = tempfile::tempdir().unwrap();
@@ -335,6 +342,7 @@ fn a_crash_before_the_directory_sync_leaves_no_partial_row() {
     assert_eq!(log.read_since(0).unwrap().len(), 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_failed_fsync_is_undecided_and_recover_never_lies() {
     for bytes_survive in [true, false] {
@@ -401,6 +409,7 @@ fn a_failed_fsync_is_undecided_and_recover_never_lies() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_duplicate_retry_is_idempotent() {
     let temp = tempfile::tempdir().unwrap();
@@ -442,6 +451,7 @@ fn a_duplicate_retry_is_idempotent() {
     assert_eq!(log.read_since(0).unwrap().len(), 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_flipped_byte_stops_the_read_and_is_reported_by_repair() {
     let temp = tempfile::tempdir().unwrap();
@@ -480,6 +490,7 @@ fn a_flipped_byte_stops_the_read_and_is_reported_by_repair() {
     assert!(report.truncated_bytes > 0, "repair reports the damage");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_byte_flip_inside_a_string_is_the_damage_a_bare_line_cannot_show() {
     // The envelope's checksum caught this; a bare line does not. Stated as a
@@ -510,6 +521,7 @@ fn a_byte_flip_inside_a_string_is_the_damage_a_bare_line_cannot_show() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_legacy_envelope_log_loads_and_its_seq_must_match_its_position() {
     let temp = tempfile::tempdir().unwrap();
@@ -572,6 +584,7 @@ fn a_legacy_envelope_log_loads_and_its_seq_must_match_its_position() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_new_file_is_bare_and_its_lines_are_the_rows() {
     let temp = tempfile::tempdir().unwrap();
@@ -587,6 +600,7 @@ fn a_new_file_is_bare_and_its_lines_are_the_rows() {
     assert_eq!(text, expected);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_partial_envelope_appended_by_a_foreign_writer_is_corrupt_not_a_row() {
     // A line that names any part of the envelope is judged as an envelope. A
@@ -621,6 +635,7 @@ fn a_partial_envelope_appended_by_a_foreign_writer_is_corrupt_not_a_row() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_wrong_seq_envelope_is_rejected_wherever_it_is_read() {
     let temp = tempfile::tempdir().unwrap();
@@ -650,6 +665,7 @@ fn a_wrong_seq_envelope_is_rejected_wherever_it_is_read() {
     assert_eq!(std::fs::read(&path).unwrap(), envelope.as_bytes());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn every_append_writes_the_row_itself() {
     let temp = tempfile::tempdir().unwrap();
@@ -680,6 +696,7 @@ fn every_append_writes_the_row_itself() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_foreign_line_does_not_change_what_the_next_append_writes() {
     // Another writer may append either shape after this handle opened: an old
@@ -717,6 +734,7 @@ fn a_foreign_line_does_not_change_what_the_next_append_writes() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_row_may_not_carry_a_reserved_name() {
     // The reader judges a line that names seq/ts/crc/row as an envelope, so a
@@ -745,6 +763,7 @@ fn a_row_may_not_carry_a_reserved_name() {
     assert_eq!(committed_seq(&log.append(&row(2), deadline())), Some(2));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_file_holding_both_shapes_reads() {
     // A row followed by an envelope is what an append by this binary to a legacy
@@ -775,6 +794,7 @@ fn a_file_holding_both_shapes_reads() {
     assert_eq!(log.read_since(0).unwrap().len(), 3);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_corrupt_first_envelope_line_is_left_for_an_operator() {
     // With nothing before the damage there is no anchor: a repair would empty
@@ -804,6 +824,7 @@ fn a_corrupt_first_envelope_line_is_left_for_an_operator() {
     assert_eq!(std::fs::read(&path).unwrap(), bytes);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_creator_crash_before_the_directory_sync_is_repaired_by_the_next_open() {
     let temp = tempfile::tempdir().unwrap();
@@ -839,6 +860,7 @@ fn a_creator_crash_before_the_directory_sync_is_repaired_by_the_next_open() {
     assert_eq!(committed_seq(&log.append(&row(1), deadline())), Some(1));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_busy_holder_record_round_trips() {
     let temp = tempfile::tempdir().unwrap();
@@ -903,6 +925,7 @@ fn the_busy_holder_record_round_trips() {
     assert_eq!(committed_seq(&log.append(&row(3), deadline())), Some(3));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_oversized_row_is_refused_before_it_is_written() {
     let temp = tempfile::tempdir().unwrap();
@@ -936,6 +959,7 @@ fn an_oversized_row_is_refused_before_it_is_written() {
     assert_eq!(committed_seq(&log.append(&row(2), deadline())), Some(2));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_append_behind_a_corrupt_tail_is_refused_with_its_own_reason() {
     let temp = tempfile::tempdir().unwrap();
@@ -978,6 +1002,7 @@ fn an_append_behind_a_corrupt_tail_is_refused_with_its_own_reason() {
     ));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_damaged_bare_file_is_never_truncated_by_open_or_repair() {
     // Nineteen logs on the live disk are bare and carry a complete line that is
@@ -1018,6 +1043,7 @@ fn a_damaged_bare_file_is_never_truncated_by_open_or_repair() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_torn_tail_on_a_bare_file_is_still_repaired() {
     // A torn tail is a write that never became a row: dropping it loses nothing,
@@ -1042,6 +1068,7 @@ fn a_torn_tail_on_a_bare_file_is_still_repaired() {
     assert_eq!(committed_seq(&log.append(&row(2), deadline())), Some(2));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn seq_keeps_increasing_across_handles() {
     let temp = tempfile::tempdir().unwrap();
@@ -1055,6 +1082,7 @@ fn seq_keeps_increasing_across_handles() {
     assert_eq!(second.read_since(1).unwrap().len(), 2);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn refresh_reads_only_the_new_tail_and_advances_the_cursor() {
     let temp = tempfile::tempdir().unwrap();
@@ -1101,6 +1129,7 @@ fn refresh_reads_only_the_new_tail_and_advances_the_cursor() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn refresh_reports_damage_the_way_an_append_does() {
     let temp = tempfile::tempdir().unwrap();
@@ -1158,6 +1187,7 @@ fn refresh_reports_damage_the_way_an_append_does() {
     ));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_hundred_thousand_rows_stay_usable() {
     let temp = tempfile::tempdir().unwrap();
@@ -1191,6 +1221,7 @@ fn a_hundred_thousand_rows_stay_usable() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_row_that_is_not_an_object_is_refused() {
     let temp = tempfile::tempdir().unwrap();
@@ -1205,6 +1236,7 @@ fn a_row_that_is_not_an_object_is_refused() {
     assert!(log.read_since(0).unwrap().is_empty());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_session_id_must_be_one_path_component() {
     let temp = tempfile::tempdir().unwrap();
@@ -1215,6 +1247,7 @@ fn a_session_id_must_be_one_path_component() {
 }
 
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_unopenable_session_is_reported() {
     use std::os::unix::fs::PermissionsExt;
@@ -1257,6 +1290,7 @@ fn an_unopenable_session_is_reported() {
     .unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_pinned_retry_reestablishes_the_failed_durability_barrier() {
     let dir = tempfile::tempdir().unwrap();
@@ -1294,6 +1328,7 @@ fn a_pinned_retry_reestablishes_the_failed_durability_barrier() {
     assert_eq!(log.read_since(0).unwrap().len(), 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_first_append_never_adopts_a_rivals_bytes() {
     let dir = tempfile::tempdir().unwrap();
@@ -1324,6 +1359,7 @@ fn a_first_append_never_adopts_a_rivals_bytes() {
     assert_eq!(std::fs::read(log_path(dir.path())).unwrap(), torn);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn recover_does_not_truncate_a_bare_files_complete_bad_line() {
     // `recover` resolves this process's own undecided append. A complete line

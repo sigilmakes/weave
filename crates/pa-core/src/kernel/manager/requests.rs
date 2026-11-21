@@ -353,6 +353,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn plugin_refresh_frame_is_deferred_past_bootstrap_and_internal_work() {
         use super::*;
         use std::os::unix::fs::PermissionsExt;
@@ -406,6 +407,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn bounded_execute_settles_when_kernel_stops_reading_stdin() {
         use super::*;
         use std::os::unix::fs::PermissionsExt;
@@ -457,6 +459,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancelled_request_write_retires_the_kernel() {
         use super::*;
         use std::os::unix::fs::PermissionsExt;
@@ -530,6 +533,7 @@ for line in sys.stdin:
         manager.kill();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn capped_stream_matches_original_unicode_and_frame_semantics() {
         let frames = ["", "a", "é", "🍁", "xy", "é🍁abc", "", "tail"];
@@ -564,6 +568,7 @@ for line in sys.stdin:
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn exact_fill_remainder_counts_as_truncation() {
         // The buffer filled exactly on an earlier frame; a later non-empty

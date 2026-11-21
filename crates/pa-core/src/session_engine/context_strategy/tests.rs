@@ -103,6 +103,7 @@ end}}}
 ";
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_engine_orders_failures_and_commits_once_then_restores() {
     let f = Fixture::new(ORDERED, "policy/view", true).await;
     let before = f.engine.session.entries().await;
@@ -154,6 +155,7 @@ async fn public_engine_orders_failures_and_commits_once_then_restores() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn ineligible_decline_does_no_work_and_all_failures_preserve_exact_state() {
     let decline=ORDERED.replace("{status='failure',reason='local failure'}","{status='decline'}").replace("{status='failure',reason='render failure'}","{status='decline'}").replace("{status='success',summary='accepted third',first_kept_entry_id=input.entries[#input.entries].id}","{status='decline'}");
     let f = Fixture::new(&decline, "policy/view", true).await;
@@ -217,6 +219,7 @@ async fn ready(f: &Fixture) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn cancellation_and_retirement_are_terminal_not_fallback() {
     for retire in [false, true] {
         let f = Fixture::new(HELD, "policy/view", true).await;
@@ -252,6 +255,7 @@ async fn cancellation_and_retirement_are_terminal_not_fallback() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn selected_strategy_changes_startup_branch_and_actual_model_view_not_history() {
     let source = r"return {context_strategies={{name='last',run=function(input)
       if input.stage=='restore' then return {accepted=true} end
@@ -292,6 +296,7 @@ async fn selected_strategy_changes_startup_branch_and_actual_model_view_not_hist
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn standard_native_adapter_is_actual_third_fallback_and_default_skip_parity() {
     let source = ORDERED.replace("'policy/third'", "'standard_compaction/standard'");
     let f = Fixture::new(&source, "policy/view", false).await;
@@ -397,6 +402,7 @@ async fn gated_compact(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn descendant_append_is_retained_but_branch_departure_reprepares_without_fallback() {
     let f = Fixture::new(GATED, "policy/view", true).await;
     let (gate, task) = gated_compact(&f).await;
@@ -447,6 +453,7 @@ async fn descendant_append_is_retained_but_branch_departure_reprepares_without_f
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn intervening_compaction_reprepares_instead_of_falling_through() {
     let f = Fixture::new(GATED, "policy/view", true).await;
     let (gate, task) = gated_compact(&f).await;
@@ -487,6 +494,7 @@ async fn intervening_compaction_reprepares_instead_of_falling_through() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn failed_durable_append_never_publishes_candidate() {
     let f = Fixture::new(ORDERED, "policy/view", true).await;
     let before = f.state().await;
@@ -573,6 +581,7 @@ async fn json_server(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn native_archive_restores_raw_prefix_and_appends_only_uncovered_continuation() {
     let envelope = r#"{"id":"response_1","created_at":1,"object":"response.compaction","output":[{"type":"message","id":"kept","role":"user","content":[{"type":"input_text","text":"kept native"}]},{"type":"compaction","id":"cmp","encrypted_content":"opaque-\u0061","future":1.2300}],"usage":{"input_tokens":20,"output_tokens":7,"total_tokens":27}}"#;
     let envelope = envelope.replace("opaque-", &format!("opaque-{}", "x".repeat(24_000)));
@@ -783,6 +792,7 @@ async fn native_archive_restores_raw_prefix_and_appends_only_uncovered_continuat
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn invalid_archive_restore_does_not_adopt_branch_or_publish_view() {
     let f = Fixture::new(ORDERED, "policy/view", true).await;
     f.compact(None).await.unwrap();
@@ -807,6 +817,7 @@ async fn invalid_archive_restore_does_not_adopt_branch_or_publish_view() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn selected_strategy_is_durable_before_compaction_and_not_reselected_from_global_settings() {
     let source = ORDERED.replace(
         "if input.stage=='assemble' then return {messages=input.messages} end",
@@ -866,6 +877,7 @@ async fn selected_strategy_is_durable_before_compaction_and_not_reselected_from_
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn strategy_rejection_or_assembly_failure_before_commit_preserves_exact_state() {
     for source in [
         ORDERED.replace("return {accepted=input.archive.version==1}","return {accepted=false}"),
@@ -921,6 +933,7 @@ async fn reopened(f: &Fixture) -> SessionEngine {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn explicit_selection_is_durable_and_restores_the_exact_selected_view() {
     let f = Fixture::new(SWITCHABLE, "policy/view", true).await;
     let before = f.engine.session.entries().await;
@@ -963,6 +976,7 @@ async fn explicit_selection_is_durable_and_restores_the_exact_selected_view() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn selection_validation_and_durable_append_failures_leave_old_choice_and_view_intact() {
     let f = Fixture::new(SWITCHABLE, "policy/view", true).await;
     let before = f.state().await;
@@ -1019,6 +1033,7 @@ fn policy_enabled(f: &Fixture, enabled: bool) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn explicit_disable_removes_contributions_and_refuses_model_work_until_explicit_selection() {
     let f = Fixture::new(SWITCHABLE, "policy/view", true).await;
     let before = f.state().await;
@@ -1122,6 +1137,7 @@ async fn gated_selection(f: &Fixture) -> (Arc<Gate>, tokio::task::JoinHandle<any
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn selection_cancel_retire_and_branch_change_do_not_publish_a_choice() {
     for mode in ["cancel", "retire", "branch"] {
         let f = Fixture::new(SWITCHABLE, "policy/view", true).await;
@@ -1181,6 +1197,7 @@ async fn selection_cancel_retire_and_branch_change_do_not_publish_a_choice() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn selection_rejects_an_active_main_run_without_changing_history() {
     let f = Fixture::new(SWITCHABLE, "policy/view", true).await;
     let ready = Arc::new(tokio::sync::Notify::new());
@@ -1243,6 +1260,7 @@ impl crate::plugins::HostCapabilities for BudgetCapture {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn model_budget_receives_exact_once_enriched_instructions_tools_and_output_override() {
     let source = r"return {exports={{name='marker',run=function()return true end}},
  hooks={{name='context_contribution',run=function()return {instructions='BUDGET-CURRENT-INSTRUCTION'}end}},
@@ -1332,6 +1350,7 @@ async fn model_budget_receives_exact_once_enriched_instructions_tools_and_output
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn explicit_disable_is_not_blocked_by_an_unrelated_invalid_enabled_replacement() {
     let source = SWITCHABLE.replace(
         "return {exports=",
@@ -1390,6 +1409,7 @@ async fn explicit_disable_is_not_blocked_by_an_unrelated_invalid_enabled_replace
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn explicit_startup_strategy_errors_do_not_select_rolling_or_commit_a_choice() {
     let f = Fixture::new(SWITCHABLE, "policy/view", true).await;
     for requested in ["policy/view", "policy/reject"] {
@@ -1442,6 +1462,7 @@ async fn explicit_startup_strategy_errors_do_not_select_rolling_or_commit_a_choi
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn switching_strategy_uses_canonical_source_not_a_foreign_archive_or_hidden_fallback() {
     let source=ORDERED.replace("context_strategies={{name='view'",r"context_strategies={{name='tail',run=function(input)
  if input.stage=='assemble' then local m=input.messages;while #m>1 do table.remove(m,1) end;return {messages=m} end
@@ -1472,6 +1493,7 @@ async fn switching_strategy_uses_canonical_source_not_a_foreign_archive_or_hidde
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn invalid_settings_preserve_last_valid_sources_but_removing_a_source_retires_it() {
     let f = Fixture::new(SWITCHABLE, "policy/view", true).await;
     let path = f.agent.join("settings.json");
@@ -1536,6 +1558,7 @@ async fn invalid_settings_preserve_last_valid_sources_but_removing_a_source_reti
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn direct_agent_run_admitted_during_preparation_fences_selection_publication() {
     let f = Fixture::new(SWITCHABLE, "policy/view", true).await;
     let (gate, selection) = gated_selection(&f).await;
@@ -1576,6 +1599,7 @@ async fn direct_agent_run_admitted_during_preparation_fences_selection_publicati
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn mixed_reload_retires_disabled_a_and_keeps_the_last_valid_enabled_b_generation() {
     let f = Fixture::new(SWITCHABLE, "policy/view", true).await;
     let path = f.agent.join("settings.json");
@@ -1643,6 +1667,7 @@ const REFERENCE_VIEW: &str = r"return {context_strategies={{name='view',context_
 end}}}";
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reference_strategy_selects_explicit_spans_but_keeps_original_canonical_rows() {
     let source=REFERENCE_VIEW.replace("return {messages=input.messages}",
         "if input.messages.count>1 then input.messages.spans={{first=2,count=input.messages.count-1}} end; return {messages=input.messages}");
@@ -1669,6 +1694,7 @@ async fn reference_strategy_selects_explicit_spans_but_keeps_original_canonical_
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reference_replay_is_rejected_before_actual_provider_or_selection_publication() {
     let source = REFERENCE_VIEW
         .replace(
@@ -1720,6 +1746,7 @@ async fn reference_replay_is_rejected_before_actual_provider_or_selection_public
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reference_compactors_cancel_or_retire_without_fallback_or_commit() {
     let source = HELD
         .replace("name='hold',run", "name='hold',context_data='refs_v1',run")
@@ -1767,6 +1794,7 @@ async fn reference_compactors_cancel_or_retire_without_fallback_or_commit() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn large_legacy_callback_fails_explicitly_and_builtin_name_override_keeps_body_contract() {
     let f = Fixture::new(REFERENCE_VIEW, "policy/view", false).await;
     let source = r"return {context_strategies={{name='rolling',run=function(input)
@@ -1806,6 +1834,7 @@ async fn large_legacy_callback_fails_explicitly_and_builtin_name_override_keeps_
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reference_model_echo_matches_prior_tool_image_signature_conversion_and_exact_controls() {
     let source=REFERENCE_VIEW.replace("return {messages=input.messages}",
         "if input.phase=='model' then assert(input.instructions=='EXACT PROMPT' and input.tools[1].name=='actual_tool' and input.output_tokens==77) end; return {messages=input.messages}");
@@ -1859,6 +1888,7 @@ async fn reference_model_echo_matches_prior_tool_image_signature_conversion_and_
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reference_default_restore_keeps_a_large_unknown_archive_body_out_of_lua() {
     let f = Fixture::new(REFERENCE_VIEW, "policy/view", false).await;
     let plugins = f.engine.session.plugins.as_ref().unwrap();
@@ -1899,6 +1929,7 @@ async fn reference_default_restore_keeps_a_large_unknown_archive_body_out_of_lua
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reference_selected_disable_fails_closed_until_explicit_recovery() {
     let f = Fixture::new(REFERENCE_VIEW, "policy/view", true).await;
     let before = f.state().await;
@@ -1943,6 +1974,7 @@ async fn reference_selected_disable_fails_closed_until_explicit_recovery() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn oversized_legacy_compactor_remains_a_failed_stage_not_a_chain_bypass() {
     let source = r"local called=0; return {exports={{name='calls',run=function()return called end}},
       compactors={{name='body',run=function(input)called=called+1; assert(input.messages[1].content=='old first'); return {status='failure',reason='body callback ran'} end}},
@@ -2001,6 +2033,7 @@ async fn oversized_legacy_compactor_remains_a_failed_stage_not_a_chain_bypass() 
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn before_model_refreshes_foreign_committed_rows_without_appending() {
     struct Tail(std::sync::Mutex<Vec<FileEntry>>);
     impl crate::session::manager::SessionEntryWriter for Tail {

@@ -135,6 +135,7 @@ mod tests {
     use crate::settings::TransportSetting;
     use serde_json::json;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn project_plugins_are_dropped_but_other_project_fields_merge() {
         let global: Settings = serde_json::from_value(json!({
@@ -164,6 +165,7 @@ mod tests {
         assert!(!plugins.contains_key("beta"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn malformed_plugin_raw_survives_merge_without_losing_other_fields() {
         let mut global = Settings {
@@ -180,6 +182,7 @@ mod tests {
         assert_eq!(merged.plugins, None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn project_scope_cannot_inject_a_malformed_plugin_map() {
         let global: Settings = serde_json::from_value(json!({
@@ -196,6 +199,7 @@ mod tests {
         assert!(merged.extra.get("plugins").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn settings_without_plugins_merge_to_no_entries() {
         assert_eq!(
@@ -213,6 +217,7 @@ mod tests {
         assert_eq!(merge_scopes(&Settings::default(), &global).plugins, None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn merge_prefers_overrides_and_merges_nested() {
         let base: Settings = serde_json::from_value(json!({
@@ -232,6 +237,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn migration_rewrites_legacy_shapes() {
         let mut doc = json!({

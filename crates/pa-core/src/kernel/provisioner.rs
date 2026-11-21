@@ -1297,6 +1297,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn session_settings_reach_the_kernel_shell() {
         let dir = tempfile::tempdir().unwrap();
         let agent_dir = dir.path().join("agent");
@@ -1322,6 +1323,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn session_settings_reach_the_kernel_command_prefix() {
         let dir = tempfile::tempdir().unwrap();
         let agent_dir = dir.path().join("agent");
@@ -1341,6 +1343,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_stored_serper_key_reaches_the_kernel_env() {
         let dir = tempfile::tempdir().unwrap();
         let agent_dir = dir.path().join("agent");
@@ -1370,6 +1373,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn without_a_websearch_skill_no_serper_key_env() {
         let dir = tempfile::tempdir().unwrap();
         let agent_dir = dir.path().join("agent");
@@ -1399,6 +1403,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn session_settings_reject_a_missing_shell_path() {
         let dir = tempfile::tempdir().unwrap();
         let agent_dir = dir.path().join("agent");
@@ -1425,6 +1430,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_spent_stop_arm_releases_only_its_own_boot() {
         let provisioner = IpythonKernelProvisioner::new(
@@ -1450,6 +1456,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn kill_releases_the_stop_arm_armed_for_the_killed_boot() {
         let provisioner = IpythonKernelProvisioner::new(
@@ -1477,6 +1484,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_killed_boot_never_takes_the_dispose_teardown() {
         let provisioner = IpythonKernelProvisioner::new(
@@ -1507,6 +1515,7 @@ mod tests {
         assert_eq!(settle_decision(&state, true), SettleDecision::Publish);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_doomed_boot_teardown_never_flushes_a_snapshot() {
         let provisioner = IpythonKernelProvisioner::new(
@@ -1619,6 +1628,7 @@ mod tests {
         drop(gate);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn boot_concurrency_defaults_and_override() {
         let default = default_kernel_boot_concurrency();
@@ -1635,6 +1645,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn ensure_rejects_aborted_signal() {
         let provisioner =
             IpythonKernelProvisioner::new("/tmp", IpythonKernelProvisionerOptions::default());
@@ -1646,6 +1657,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn dispose_then_ensure_fails() {
         let provisioner =
             IpythonKernelProvisioner::new("/tmp", IpythonKernelProvisionerOptions::default());
@@ -1657,6 +1669,7 @@ mod tests {
         assert!(error.to_string().contains("disposed"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn retryable_failure_classification() {
         assert!(startup_failure_is_retryable(&anyhow!(
@@ -1684,6 +1697,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn startup_failure_surfaces_cause_and_duration() {
         let options = IpythonKernelProvisionerOptions {
             python: Some(PathBuf::from("/nonexistent/kernel-python-for-test")),
@@ -1712,6 +1726,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn startup_retries_transient_failure() {
         // One retry (the default), so the bogus-python boot fails twice and
         // the backoff (>= 250ms) shows up in the elapsed time.
@@ -1729,6 +1744,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn startup_retry_cancelled_by_dispose() {
         let options = IpythonKernelProvisionerOptions {
             python: Some(PathBuf::from("/nonexistent/kernel-python-for-test")),
@@ -1751,6 +1767,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn clone_shares_kernel_state() {
         let provisioner =
             IpythonKernelProvisioner::new("/tmp", IpythonKernelProvisionerOptions::default());
@@ -1760,6 +1777,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn prewarm_swallows_failure_and_keeps_lazy_fallback() {
         let options = IpythonKernelProvisionerOptions {
             python: Some(PathBuf::from("/nonexistent/kernel-python-for-test")),
@@ -1788,6 +1806,7 @@ mod tests {
     /// request or the failed boot's shutdown behind a full pipe.
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn nonreading_kernel_fails_bootstrap_without_parking_shutdown() {
         use std::os::unix::fs::PermissionsExt;
 
@@ -1832,6 +1851,7 @@ mod tests {
     /// failure.
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn silent_bootstrap_fails_bounded_and_leaves_no_kernel() {
         use std::os::unix::fs::PermissionsExt;
 
@@ -1902,6 +1922,7 @@ for line in sys.stdin:
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn real_kernel_bootstrap_keeps_default_budget_in_test_builds() {
         let options = IpythonKernelProvisionerOptions::default();

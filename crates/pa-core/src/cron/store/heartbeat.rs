@@ -294,6 +294,7 @@ mod tests {
     use super::*;
     use crate::cron::store::input;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn pause_does_not_ack_when_state_lock_is_held() {
         let dir = tempfile::tempdir().unwrap();
@@ -313,6 +314,7 @@ mod tests {
         assert_eq!(store.get_heartbeat("live-1"), Some(heartbeat));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn heartbeat_lifecycle() {
         let dir = tempfile::TempDir::new().unwrap();

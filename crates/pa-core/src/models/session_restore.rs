@@ -57,6 +57,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn environment_only_auth_restores_a_known_model_without_waiting() {
         struct Environment;
         impl crate::auth::manager::EnvCredentialSource for Environment {
@@ -101,6 +102,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn restore_requires_a_registered_model_with_configured_auth() {
         let auth = crate::auth::AuthStorage::in_memory_without_env(
             &crate::auth::AuthStorageData::default(),

@@ -420,6 +420,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn default_prompt_is_layered_with_static_prefix_first() {
         let breakdown = system_prompt_breakdown(&base_options());
@@ -454,6 +455,7 @@ mod tests {
         assert!(tail.contains("Pre-installed Python packages: requests, httpx,"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn dynamic_tail_isolates_the_cached_prefix() {
         let mut other = base_options();
@@ -476,6 +478,7 @@ mod tests {
             .contains("You are a child agent spawned by the lead."));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn custom_prompt_replaces_layers_keeps_tail() {
         let mut options = base_options();
@@ -493,6 +496,7 @@ mod tests {
         assert!(!prompt.contains("Tier-2 guidance."));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn mcp_servers_are_a_tail_segment() {
         let mut options = base_options();
@@ -510,6 +514,7 @@ mod tests {
             .contains("Enabled generic MCP servers: `t`."));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn model_prompt_extras_form_the_last_static_segment() {
         let mut options = base_options();

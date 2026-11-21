@@ -566,6 +566,7 @@ mod win32 {
 mod windows_tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn pid_exists_for_self_but_not_zero() {
         assert!(pid_exists(std::process::id()));
@@ -573,6 +574,7 @@ mod windows_tests {
         assert!(!pid_exists(u32::MAX));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn out_of_range_pids_never_prove_kills() {
         assert!(!kill_pid(-1, Signal::Kill));
@@ -590,6 +592,7 @@ mod exit_wait_tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn wait_for_exit_resolves_at_once_for_a_reaped_pid() {
         let mut child = std::process::Command::new("sleep")
             .arg("600")

@@ -619,6 +619,7 @@ mod tests {
     }
 
     #[cfg(windows)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn kernel_spawn_env_forces_utf8_mode() {
         let mut options_env = HashMap::new();
@@ -632,6 +633,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn stale_reader_exit_does_not_cancel_new_generation_host_requests() {
         let (started_tx, started_rx) = oneshot::channel();
         let (probe_tx, probe_rx) = oneshot::channel();
@@ -678,6 +680,7 @@ mod tests {
         lock(&manager.inner.guarded).host_inflight.remove("new");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn kernel_stderr_log_is_owner_only() {
         let root = temp_root("create");
@@ -703,6 +706,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn kernel_stderr_log_rotation_tightens_a_world_readable_log() {
         use std::io::Write;

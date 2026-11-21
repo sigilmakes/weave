@@ -95,6 +95,7 @@ mod tests {
     use super::super::parse_session_entries;
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tree_paths_and_labels() {
         let content = r#"

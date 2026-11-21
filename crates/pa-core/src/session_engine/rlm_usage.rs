@@ -558,6 +558,7 @@ mod tests {
     /// and totalTokens FROZEN at the parent's 23,032; the raw parent's
     /// cache/output split is synthetic.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn captured_ts_fixture_attributes_with_frozen_total_tokens() {
         let raw_parent = usage_block(2_690, 1_577, 19_917, 0, 23_032, 0.0);
         let child = usage_block(50_208, 2_929, 0, 0, 53_137, 0.008_995_7);
@@ -610,6 +611,7 @@ mod tests {
     /// the retired registrations and bases, so a post-swap report continues
     /// the chain instead of dropping.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn rebuild_adoption_continues_the_aggregate_chain() {
         let raw_parent = usage_block(1_000, 0, 0, 0, 4_096, 0.0);
         let (_tmp, manager) = manager_with_assistant(raw_parent);
@@ -772,6 +774,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn multiple_children_and_origins_share_the_cumulative_base() {
         let raw_parent = usage_block(1_000, 100, 0, 0, 1_100, 0.01);
         let (_tmp, manager) = manager_with_assistant(raw_parent);
@@ -824,6 +827,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unregistered_child_report_attributes_nothing() {
         let (_tmp, manager) = manager_with_assistant(usage_block(1, 1, 0, 0, 2, 0.0));
         let producer = producer(manager.clone());
@@ -875,6 +879,7 @@ mod tests {
     /// A failed append returns false and writes no row; the retry persists
     /// the batch once, folding from the unchanged base (no double fold).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_failed_append_leaves_the_base_for_the_retry() {
         let raw_parent = usage_block(1_000, 0, 0, 0, 4_096, 0.0);
         let (_tmp, manager) = manager_with_assistant(raw_parent);
@@ -956,6 +961,7 @@ mod tests {
 
     /// Acknowledged origins must not be folded again when a later origin fails.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_partially_persisted_report_is_counted_once_on_retry() {
         let (_tmp, manager) = manager_with_assistant(usage_block(1_000, 0, 0, 0, 4_096, 0.0));
         let producer =
@@ -1004,6 +1010,7 @@ mod tests {
 
     /// An error after a complete real append cannot safely mean nothing persisted.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_persisted_report_with_lost_acknowledgment_is_not_appended_twice() {
         let (_tmp, manager) = manager_with_assistant(usage_block(1_000, 0, 0, 0, 4_096, 0.0));
         let producer =

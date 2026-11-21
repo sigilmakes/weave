@@ -205,6 +205,7 @@ pub fn create_dir_all_private(path: &Path) -> std::io::Result<()> {
 mod windows_tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn restriction_is_a_no_op_and_probes_match_open_semantics() {
         let dir = std::env::temp_dir().join(format!("pa-perms-{}", std::process::id()));

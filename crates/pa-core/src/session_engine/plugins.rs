@@ -907,6 +907,7 @@ mod context_selection_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn capability_namespaces_route_independently() {
         struct Capture {
             name: &'static str,
@@ -1023,6 +1024,7 @@ mod context_selection_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn compiled_default_and_full_chain_are_real_lua_contributions() {
         let f = Fixture::new();
         f.manager.reload().await.unwrap();
@@ -1080,6 +1082,7 @@ mod context_selection_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn archive_restore_validates_schema_without_requiring_creator_generation() {
         let f = Fixture::new();
         let strategy = f.manager.context_selection().unwrap();
@@ -1112,6 +1115,7 @@ mod context_selection_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn invalid_enabled_replacement_preserves_host_but_explicit_disable_retires_it() {
         let f = Fixture::new();
         let old = f.manager.context_selection().unwrap();
@@ -1164,6 +1168,7 @@ mod context_selection_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn invalid_builtin_chain_preserves_host_revision_and_selection() {
         let f = Fixture::new();
         let original = f.manager.host.snapshot();
@@ -1194,6 +1199,7 @@ mod context_selection_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn custom_strategy_and_compactors_use_same_typed_invocation_and_retirement() {
         let f = Fixture::new();
         let source = r"return {
@@ -1246,6 +1252,7 @@ mod context_selection_tests {
             .is_err());
     }
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn context_registration_rejects_away_then_back_even_same_generation() {
         let f = Fixture::new();
         std::fs::write(f.manager.agent_dir.join("away.lua"), "return {context_strategies={{name='other',run=function(input) return {messages=input.messages} end}}}").unwrap();
@@ -1280,6 +1287,7 @@ mod context_selection_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn context_commit_admission_does_not_publish_after_compactor_retirement() {
         let f = Fixture::new();
         let strategy = f.manager.context_selection().unwrap();

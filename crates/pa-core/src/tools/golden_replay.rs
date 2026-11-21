@@ -118,6 +118,7 @@ fn assert_json_eq(actual: &serde_json::Value, expected: &serde_json::Value, what
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn golden_edit_group_matches_ts() {
     let corpus = corpus("edit");
     let mut checked = 0;
@@ -184,6 +185,7 @@ async fn golden_edit_group_matches_ts() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn golden_bash_group_matches_ts() {
     let corpus = corpus("bash");
     let cases = corpus["cases"].as_array().expect("cases array").clone();
@@ -308,6 +310,7 @@ async fn golden_bash_group_matches_ts() {
     assert_eq!(checked, corpus["caseCount"].as_u64().expect("caseCount"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn golden_truncate_group_matches_ts() {
     let corpus = corpus("truncate");
@@ -489,6 +492,7 @@ fn mock_execution(entry: &serde_json::Value) -> MockOutcome {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn golden_ipython_group_matches_ts() {
     let corpus = corpus("ipython");
     let mut checked = 0;
@@ -573,6 +577,7 @@ async fn golden_ipython_group_matches_ts() {
     assert_eq!(checked, corpus["caseCount"].as_u64().expect("caseCount"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn golden_schema_group_matches_ts() {
     let corpus = corpus("schema");
@@ -621,6 +626,7 @@ fn golden_schema_group_matches_ts() {
 
 // Small direct checks of guard parsing (subsumed by the bash golden group).
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn destructive_git_discard_detection_examples() {
     assert!(crate::tools::bash_guard::is_destructive_git_discard_command("git reset --hard"));

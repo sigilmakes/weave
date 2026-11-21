@@ -68,6 +68,7 @@ impl Fixture {
     }
 }
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn native_public_capability_roundtrip_durable_cache_and_exact_source() {
     let f = Fixture::new();
     let before = {
@@ -141,6 +142,7 @@ async fn native_public_capability_roundtrip_durable_cache_and_exact_source() {
     );
 }
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn cancellation_branch_departure_and_persistence_failure_preserve_active_view() {
     for mode in ["cancel", "branch", "persist"] {
         let f = Fixture::new();
@@ -191,6 +193,7 @@ async fn cancellation_branch_departure_and_persistence_failure_preserve_active_v
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn whole_call_budget_charges_exact_instructions_tools_and_output_before_layout() {
     let f = Fixture::new();
     let mut input = json!({"budget_bytes":4096,"summary_bytes":128,"phase":"model",
@@ -259,6 +262,7 @@ impl HostCapabilities for PlanRouter {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn actual_native_plan_reply_stays_within_lua_quota_without_shrinking_history() {
     use crate::plugins::{ContributionKind, InvocationEvent, InvocationOutcome};
     let dir = tempfile::tempdir().unwrap();

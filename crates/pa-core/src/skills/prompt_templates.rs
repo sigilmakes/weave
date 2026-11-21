@@ -332,6 +332,7 @@ pub fn expand_prompt_template(text: &str, templates: &[PromptTemplate]) -> Strin
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn command_args_quoting() {
         assert_eq!(
@@ -341,6 +342,7 @@ mod tests {
         assert_eq!(parse_command_args("  "), Vec::<String>::new());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn substitutes_positional_and_slices() {
         let args = vec!["one".to_string(), "two".to_string(), "three".to_string()];
@@ -356,6 +358,7 @@ mod tests {
         assert_eq!(substitute_args("cost is $10", &args), "cost is ");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn slash_command_parsing() {
         assert_eq!(
@@ -369,6 +372,7 @@ mod tests {
         assert_eq!(parse_slash_command("no slash"), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn template_expansion() {
         let template = PromptTemplate {
@@ -390,6 +394,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn loads_templates_from_dirs() {
         let tmp = tempfile::tempdir().unwrap();

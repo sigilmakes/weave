@@ -138,6 +138,7 @@ mod tests {
 
     const ID: &str = "01a1fb6b-cd31-7694-a622-8cbd0fa54d8d";
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn sizes_split_the_artifact_directory_from_its_kernel_snapshot() {
         let root = tempfile::tempdir().unwrap();
@@ -172,6 +173,7 @@ mod tests {
         assert_eq!(sizes.total(), 195);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_child_log_resolves_to_the_agents_artifacts_tree() {
         let root = tempfile::tempdir().unwrap();
@@ -190,6 +192,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn absent_storage_measures_zero() {
         let root = tempfile::tempdir().unwrap();

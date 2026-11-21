@@ -238,6 +238,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parks_at_the_reported_reset_plus_grace() {
         let decision = provider_park_decision(0, Some(3_600_000), &policy());
@@ -249,6 +250,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn caps_a_distant_reset_at_max_pause_ms() {
         let decision = provider_park_decision(0, Some(30 * 86_400_000), &policy());
@@ -260,6 +262,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn clamps_a_configured_bound_above_one_week() {
         let mut configured = policy();
@@ -273,6 +276,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn disabled_keeps_the_immediate_abort() {
         let mut disabled = policy();
@@ -285,6 +289,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn spent_park_budget_aborts() {
         assert_eq!(
@@ -295,6 +300,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn no_reported_reset_never_parks() {
         assert_eq!(
@@ -334,6 +340,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn quota_classification_reads_the_rate_limit_kind() {
         assert!(is_quota_block_failure(&quota_message(
@@ -356,6 +363,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parked_status_names_the_wake_time() {
         let message = quota_parked_final_error(
@@ -369,6 +377,7 @@ mod tests {
         assert!(message.starts_with("Provider requested a 4363s wait"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_scan_takes_the_newest_park() {
         let entries = vec![
@@ -399,6 +408,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_scan_stops_at_a_newer_resume() {
         let entries = vec![
@@ -419,6 +429,7 @@ mod tests {
         assert_eq!(scan_quota_park_entries(&entries), BranchParkScan::Resumed);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_scan_ignores_unrelated_entries_and_bad_data() {
         let entries = vec![

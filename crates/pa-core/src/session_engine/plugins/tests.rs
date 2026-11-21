@@ -226,6 +226,7 @@ async fn command(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn configured_plugins_cross_engine_kernel_and_slash_surfaces() {
     let f = Fixture::new(ALPHA).await;
     let engine = &f.engine;
@@ -319,6 +320,7 @@ async fn configured_plugins_cross_engine_kernel_and_slash_surfaces() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reload_is_atomic_config_sensitive_and_history_neutral() {
     let f = Fixture::new(ALPHA).await;
     let engine = &f.engine;
@@ -411,6 +413,7 @@ async fn reload_is_atomic_config_sensitive_and_history_neutral() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn disable_cancels_active_kernel_work_and_fences_saved_command() {
     let f = Fixture::new(ALPHA).await;
     let engine = &f.engine;
@@ -478,6 +481,7 @@ async fn disable_cancels_active_kernel_work_and_fences_saved_command() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn malformed_activation_does_not_kill_normal_startup_and_sessions_are_private() {
     let bad = Fixture::new("not valid Lua !").await;
     assert!(bad.engine.plugin_diagnostic().is_some());
@@ -509,6 +513,7 @@ async fn malformed_activation_does_not_kill_normal_startup_and_sessions_are_priv
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn namespace_incompatible_replacement_preserves_native_inventory() {
     let f = Fixture::new(ALPHA).await;
     let engine = &f.engine;
@@ -557,6 +562,7 @@ async fn namespace_incompatible_replacement_preserves_native_inventory() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn active_inventory_is_a_live_model_prompt_tail_not_canonical_history() {
     let f = Fixture::new(ALPHA).await;
     let engine = &f.engine;
@@ -592,6 +598,7 @@ async fn active_inventory_is_a_live_model_prompt_tail_not_canonical_history() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn actual_kernel_preimports_refreshes_and_fences_plugin_callables() {
     tokio::time::timeout(std::time::Duration::from_secs(45), async {
     use crate::kernel::shared::{ExecuteOptions, ExecuteStatus};

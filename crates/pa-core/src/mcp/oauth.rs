@@ -768,6 +768,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn dropping_a_login_with_a_pending_paste_releases_the_registered_port() {
         struct PendingUi(Mutex<String>);
         impl McpLoginUi for PendingUi {
@@ -823,6 +824,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn settled_browser_code_wins_over_paste_cancel_and_validation_errors() {
         struct GraceUi {
             auth_url: Mutex<String>,
@@ -916,6 +918,7 @@ mod tests {
     /// The full Plane-style login through a manual paste: PRM, issuer
     /// metadata, DCR, and the token endpoint.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn discovers_protected_resource_metadata_and_external_issuer() {
         let http = ScriptedHttp::new(vec![
             (RESOURCE, 401, None, ""),
@@ -1020,6 +1023,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn origin_level_metadata_without_protected_resource() {
         let origin_prm = "https://srv.test/.well-known/oauth-protected-resource/mcp";
         let http = ScriptedHttp::new(vec![
@@ -1079,6 +1083,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn www_authenticate_pointer_preferred() {
         let pointer = "https://metadata.example/resources/plane";
         let http = ScriptedHttp::new(vec![
@@ -1142,6 +1147,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn protected_resource_mismatch_fails() {
         let http = ScriptedHttp::new(vec![
             (RESOURCE, 401, None, ""),
@@ -1166,6 +1172,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn prm_selected_issuer_must_match_exactly() {
         let http = ScriptedHttp::new(vec![
             (RESOURCE, 401, None, ""),
@@ -1204,6 +1211,7 @@ mod tests {
 
     /// Pathful OIDC metadata when RFC 8414 serves a non-metadata document.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn pathful_oidc_fallback() {
         let issuer = "https://login.example/tenant";
         let oidc_meta = "https://login.example/tenant/.well-known/openid-configuration";
@@ -1260,6 +1268,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn dynamic_registration_unavailable_fails_clearly() {
         let meta = serde_json::json!({
             "issuer": "https://srv.test/tenant",
@@ -1280,6 +1289,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn redirected_token_post_rejected() {
         let credentials = AuthCredential::Oauth {
             access: "a".to_string(),
@@ -1311,6 +1321,7 @@ mod tests {
     /// Refresh keeps the stored bindings, the resource indicator, and the
     /// prior refresh token when the server omits a new one.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn refresh_validates_bindings() {
         let credentials = AuthCredential::Oauth {
             access: "access-1".to_string(),
@@ -1438,6 +1449,7 @@ mod tests {
     /// A discovery-mode change (origin-only credentials against a
     /// resource-bound server) requires a fresh login.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn discovery_mode_change_requires_relogin() {
         let credentials = AuthCredential::Oauth {
             access: "origin-access".to_string(),
@@ -1483,6 +1495,7 @@ mod tests {
     /// A genuine paste validation error surfaces; a cancelled paste keeps the browser path alive,
     /// then reports a missing code.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn manual_paste_state_mismatch_surfaces() {
         let http = ScriptedHttp::new(vec![
             (ORIGIN_URL, 404, None, ""),
@@ -1511,6 +1524,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn zero_callback_port_fails_before_any_oauth_request() {
         for client_id in [None, Some("fixture-client".to_string())] {
             let http = ScriptedHttp::new(vec![]);
@@ -1525,6 +1539,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn pre_registered_client_skips_registration_and_pins_the_redirect() {
         let (reservation, ownership) =
             super::super::oauth_callback::test_listener::reserve_listener();
@@ -1594,6 +1609,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn dynamic_registration_advertises_the_pinned_redirect() {
         let (reservation, ownership) =
             super::super::oauth_callback::test_listener::reserve_listener();
@@ -1654,6 +1670,7 @@ mod tests {
     /// string-equal, match — the declared resource is the stored and sent
     /// audience.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn root_endpoint_trailing_slash_resource_audience() {
         const ROOT: &str = "https://root.example";
         const ROOT_PRM: &str = "https://root.example/.well-known/oauth-protected-resource";
@@ -1742,6 +1759,7 @@ mod tests {
     /// The Notion/Slack shape (TS parity): an origin-level declared
     /// resource serves a pathful endpoint as an "origin" audience.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn origin_level_resource_audience_serves_pathful_endpoint() {
         const NOTION_PRM: &str = "https://srv.test/.well-known/oauth-protected-resource/mcp";
         let http = ScriptedHttp::new(vec![
@@ -1812,6 +1830,7 @@ mod tests {
     /// Origin-mode credentials refresh against the origin-level binding;
     /// an audience-mode drift against current discovery requires re-login.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn refresh_validates_audience_modes() {
         const NOTION_PRM: &str = "https://srv.test/.well-known/oauth-protected-resource/mcp";
         const DECLARED: &str = "https://srv.test";

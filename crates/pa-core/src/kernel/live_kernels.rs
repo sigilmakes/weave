@@ -93,6 +93,7 @@ mod tests {
     use crate::kernel::shared::KernelManagerOptions;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn registry_tracks_and_releases_kernels() {
         assert_eq!(live_kernel_count(), 0);
         let manager = crate::kernel::ReplKernelManager::new(KernelManagerOptions::default());
@@ -111,6 +112,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn shutdown_all_is_safe_with_no_kernels() {
         shutdown_all_live_kernels().await;
     }

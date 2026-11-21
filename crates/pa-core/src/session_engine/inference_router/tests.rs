@@ -114,6 +114,7 @@ fn text(message: &AssistantMessage) -> String {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn engine_main_and_auxiliary_routes_are_session_scoped_and_stream_real_deltas() {
     let a = Fixture::new(PROVIDER, "alpha").await;
     let b = Fixture::new(PROVIDER, "beta").await;
@@ -182,6 +183,7 @@ async fn engine_main_and_auxiliary_routes_are_session_scoped_and_stream_real_del
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn invalid_reload_preserves_route_and_disable_fences_queued_terminal_without_fallback() {
     let f = Fixture::new(PROVIDER, "kept").await;
     let mut stream = f.stream("before").await;
@@ -208,6 +210,7 @@ async fn invalid_reload_preserves_route_and_disable_fences_queued_terminal_witho
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn malformed_stream_and_cancelled_caller_are_terminal_diagnostics() {
     let f=Fixture::new("return {providers={{name='custom',mode='streaming',run=function(i,c) c.emit({bogus=true}); return {} end}}}","bad").await;
     let mut stream = f.stream("malformed").await;
@@ -241,6 +244,7 @@ async fn malformed_stream_and_cancelled_caller_are_terminal_diagnostics() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn lua_can_wrap_native_request_and_transform_response_without_recursion() {
     const WRAPPER: &str = r"
 return {providers={{name='custom',mode='streaming',run=function(input,ctx)
@@ -276,6 +280,7 @@ end}}}
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn normalized_tool_events_and_terminal_tool_result_survive_the_route() {
     let source=PROVIDER.replace("message.content={{type='text',text=text}}", "message.content={{type='toolCall',id='call_1',name='lookup',arguments={query='kept'}}}")
       .replace("ctx.emit({type='text_delta',contentIndex=0,delta=text,partial=message})",
@@ -336,6 +341,7 @@ async fn emitted(engine: &super::super::engine::SessionEngine) -> u64 {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn slow_consumer_applies_bounded_lua_backpressure_and_drop_stops_publication() {
     let source=PROVIDER.replace("return {providers", "local emitted=0; return {exports={{name='emitted',run=function() return emitted end}},providers")
       .replace("ctx.emit({type='text_delta',contentIndex=0,delta=text,partial=message})",
@@ -399,6 +405,7 @@ async fn http_service(body: String) -> (String, tokio::task::JoinHandle<String>)
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn custom_http_sse_and_native_gateway_are_real_engine_provider_routes() {
     let message = pa_ai::faux::faux_assistant_text_message(
         "custom network",
@@ -471,6 +478,7 @@ end}}}}}}
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn dropping_engine_provider_stream_closes_held_http_socket() {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -522,6 +530,7 @@ end}}}}}}
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn dedicated_auxiliary_retains_full_requested_model_and_explicit_options() {
     let f = Fixture::new(PROVIDER, "unused").await;
     f.disable().await;
@@ -585,6 +594,7 @@ async fn dedicated_auxiliary_retains_full_requested_model_and_explicit_options()
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn typed_native_input_survives_lua_delegate_and_actual_responses_transport() {
     use pa_ai::compaction::{
         CompactionLimits, CompactionRoute, ResponsesCompactor, ResponsesWindow,

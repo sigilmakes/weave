@@ -810,6 +810,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn connection_roster_covers_builtins_and_user_servers() {
         let mut user_servers = HashMap::new();
@@ -835,6 +836,7 @@ mod tests {
         assert_eq!(linear.transport, "http");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn builtin_catalog_and_skill_overrides() {
         let manager = manager_with(None);
@@ -857,6 +859,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stdio_and_env_token_servers_are_enabled() {
         let mut user_servers = HashMap::new();
@@ -871,6 +874,7 @@ mod tests {
         assert!(!generic.contains(&"search".to_string()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn user_servers_cannot_reserve_builtin_names() {
         let mut user_servers = HashMap::new();
@@ -891,6 +895,7 @@ mod tests {
             .contains(&"linear".to_string()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn generic_name_pattern() {
         assert!(is_generic_server_name("a"));
@@ -901,6 +906,7 @@ mod tests {
         assert!(!is_generic_server_name(&"x".repeat(65)));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn acp_server_ownership() {
         let manager = manager_with(None);
@@ -925,6 +931,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn config_host_handler_returns_user_stdio_server_config() {
         let mut user_servers = HashMap::new();
         user_servers.insert(
@@ -957,6 +964,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn config_host_handler_resolves_user_and_acp_servers() {
         let manager = std::sync::Arc::new(std::sync::Mutex::new(manager_with(None)));
         let mut handlers = HostRequestHandlers::default();

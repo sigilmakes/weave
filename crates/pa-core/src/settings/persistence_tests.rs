@@ -17,6 +17,7 @@ fn document(storage: &dyn SettingsStorage) -> Value {
     serde_json::from_str(&storage.read(SettingsScope::Global).unwrap().unwrap()).unwrap()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn model_switch_preserves_a_document_that_failed_to_load() {
     for content in ["{\"theme\":\"light\",}", "\u{feff}{\"theme\":\"light\"}"] {
@@ -36,6 +37,7 @@ fn model_switch_preserves_a_document_that_failed_to_load() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn chat_detail_save_changes_only_the_requested_setting() {
     let (storage, mut manager) = fixture(r#"{"theme":"light","pluginSetting":{"keep":true}}"#);
@@ -48,6 +50,7 @@ fn chat_detail_save_changes_only_the_requested_setting() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn stale_managers_preserve_other_writers_and_explicit_same_value_choices() {
     let (storage, mut first) =
@@ -65,6 +68,7 @@ fn stale_managers_preserve_other_writers_and_explicit_same_value_choices() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn saves_preserve_a_document_corrupted_after_load() {
     let (storage, mut manager) = fixture(r#"{"theme":"light"}"#);
@@ -92,6 +96,7 @@ fn saves_preserve_a_document_corrupted_after_load() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn resource_save_preserves_a_document_corrupted_after_load() {
     let (storage, mut manager) = fixture("{}");
@@ -109,6 +114,7 @@ fn resource_save_preserves_a_document_corrupted_after_load() {
         .any(|error| error.message.contains("not saved")));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn clearing_a_setting_removes_only_that_key() {
     let (storage, mut manager) = fixture(r#"{"enabledModels":["old"],"theme":"light"}"#);
@@ -116,6 +122,7 @@ fn clearing_a_setting_removes_only_that_key() {
     assert_eq!(document(storage.as_ref()), json!({"theme":"light"}));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn resource_save_survives_an_unrelated_later_save() {
     let (storage, mut manager) = fixture("{}");
@@ -129,6 +136,7 @@ fn resource_save_survives_an_unrelated_later_save() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn compaction_percentage_preserves_siblings_and_survives_reload() {
     let (storage, mut manager) =
@@ -147,6 +155,7 @@ fn compaction_percentage_preserves_siblings_and_survives_reload() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn invalid_compaction_percentage_never_mutates_or_saves() {
     let (storage, mut manager) = fixture(r#"{"compaction":{"thresholdPercent":80.0}}"#);
@@ -167,6 +176,7 @@ fn invalid_compaction_percentage_never_mutates_or_saves() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn invalid_loaded_percentage_keeps_other_compaction_settings() {
     for invalid in [
@@ -197,6 +207,7 @@ fn invalid_loaded_percentage_keeps_other_compaction_settings() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn project_percentage_overrides_global_and_stale_writes_preserve_external_settings() {
     let (storage, mut first) = fixture(r#"{"compaction":{"thresholdPercent":80.0}}"#);
@@ -219,6 +230,7 @@ fn project_percentage_overrides_global_and_stale_writes_preserve_external_settin
     assert_eq!(first.get_compaction_threshold_percent(), 60.5);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn aliased_settings_scopes_have_one_global_authority() {
     for alias in [
@@ -339,6 +351,7 @@ fn aliased_settings_scopes_have_one_global_authority() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[cfg(unix)]
 fn global_settings_file_symlink_survives_atomic_save() {
@@ -363,6 +376,7 @@ fn global_settings_file_symlink_survives_atomic_save() {
     assert_eq!(manager.reopen().get_theme(), Some("new"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn tree_filter_falls_back_to_default_but_keeps_explicit_preferences() {
     let mut manager = SettingsManager::in_memory(&super::Settings::default());
@@ -375,6 +389,7 @@ fn tree_filter_falls_back_to_default_but_keeps_explicit_preferences() {
     assert_eq!(manager.reopen().get_tree_filter_mode(), "default");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn in_memory_scopes_remain_independent_by_default() {
     let (storage, mut manager) = fixture(r#"{"packages":["global"],"skills":["global-skill"]}"#);

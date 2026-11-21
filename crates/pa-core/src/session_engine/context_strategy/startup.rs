@@ -140,6 +140,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn startup_mixed_inputs_require_exact_order_and_preserve_prefix() {
         let mut manager = SessionManager::in_memory(std::path::Path::new("/project"));
@@ -186,6 +187,7 @@ mod tests {
         .is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn startup_empty_accepts_bootstrap_but_not_unproven_body_or_archive() {
         let mut manager = SessionManager::in_memory(std::path::Path::new("/project"));

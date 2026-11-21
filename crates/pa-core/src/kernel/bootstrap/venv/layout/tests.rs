@@ -2,6 +2,7 @@
 
 use super::*;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rust_kernel_namespaces_preserve_legacy_fixtures_and_private_overrides() {
     const CASE_ENV: &str = "PA_RUNTIME_NAMESPACING_CASE";

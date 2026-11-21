@@ -576,6 +576,7 @@ pub fn load_custom_models(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[pa_test_scratch::pa_test]
     #[test]
     fn discovery_urls_keep_credentials_out_of_the_authority_and_fragment() {
         for url in [
@@ -596,6 +597,7 @@ mod tests {
         assert!(validate_config(&config, &|_| false).is_ok());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn discovery_defaults_reject_invented_modalities_and_incomplete_pricing() {
         let defaults = serde_json::json!({"contextWindow":32000,"maxTokens":4000,"reasoning":false,"input":["text"],
@@ -619,6 +621,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn strips_comments_and_trailing_commas() {
         let input = r#"{
@@ -632,6 +635,7 @@ mod tests {
         assert!(parsed["providers"]["ollama"]["baseUrl"].is_string());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn validates_custom_provider_requirements() {
         let config = parse_models_config(
@@ -643,6 +647,7 @@ mod tests {
         assert!(validate_config(&config, &|p| p == "custom").is_ok());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_custom_models_with_defaults() {
         let result = load_custom_models(
@@ -662,6 +667,7 @@ mod tests {
         assert_eq!(result.models[0].context_window, 128_000);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_a_custom_model_definition_thinking_level_map() {
         let result = load_custom_models(
@@ -693,6 +699,7 @@ mod tests {
     /// TS `755-configured-max-tokens.test.ts`: a models.json `maxTokens`
     /// is explicit — the configured value reaches the provider unchanged
     /// instead of being clamped to the 32000 default ceiling.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_models_json_max_tokens_is_explicit() {
         let result = load_custom_models(
@@ -714,6 +721,7 @@ mod tests {
 
     /// A custom model that omits `maxTokens` defaults to 16384 and stays
     /// catalog-like (capped): the flag marks a CONFIGURED value only.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_custom_model_without_max_tokens_stays_unmarked() {
         let result = load_custom_models(
@@ -736,6 +744,7 @@ mod tests {
     /// configuration too — the flag flips true so the value bypasses the
     /// ceiling (a per-model override of a built-in model is the #755
     /// shape with no custom provider involved).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_per_model_override_marks_max_tokens_explicit() {
         let base: Model = serde_json::from_value(serde_json::json!({
@@ -759,6 +768,7 @@ mod tests {
         assert!(!untouched.max_tokens_explicit);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn model_overrides_merge() {
         let base = serde_json::from_value(serde_json::json!({

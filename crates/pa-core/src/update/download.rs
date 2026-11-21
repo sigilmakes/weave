@@ -586,6 +586,7 @@ mod tests {
         (archive, sha256_hex(&bytes))
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stages_and_revalidates_a_release() {
         let dir = tempfile::tempdir().unwrap();
@@ -624,6 +625,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn never_reuses_a_damaged_release() {
         let dir = tempfile::tempdir().unwrap();
@@ -661,6 +663,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn stages_a_local_payload_directory() {
         let dir = tempfile::tempdir().unwrap();
         let payload = fixture_payload(dir.path(), "payload", "9.9.9");
@@ -709,6 +712,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_permission_change_stages_a_new_release() {
         use std::os::unix::fs::PermissionsExt;
         let dir = tempfile::tempdir().unwrap();
@@ -753,6 +757,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn stages_a_local_archive_and_probes_the_binary() {
         let dir = tempfile::tempdir().unwrap();
         let (archive, _archive_file_sha) =
@@ -779,6 +784,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn refuses_a_local_payload_without_a_release_version() {
         let dir = tempfile::tempdir().unwrap();
         let payload = fixture_payload(dir.path(), "payload", "not a version");
@@ -789,6 +795,7 @@ mod tests {
             .is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tree_digests_are_deterministic_and_content_sensitive() {
         let dir = tempfile::tempdir().unwrap();
@@ -848,6 +855,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn downloads_verify_the_archive_digest_and_refuse_a_mismatch() {
         let payload: Vec<u8> = b"release archive bytes".to_vec();
         let sha = sha256_hex(&payload);

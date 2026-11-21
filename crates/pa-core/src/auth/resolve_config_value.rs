@@ -116,12 +116,14 @@ fn hidden_spawn(_command: &str) -> Result<Option<std::process::Output>> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn env_or_literal_semantics() {
         let key = "PA_TEST_DEFINITELY_UNSET_VAR";
         assert_eq!(resolve_env_or_literal(key), Some(key.to_string()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn command_resolution_and_cache() {
         let value = resolve_config_value("!echo resolved-value");
