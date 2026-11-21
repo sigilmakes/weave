@@ -30,8 +30,8 @@ event.
 | `execute` | `{"type":"execute","id":str,"code":str}` |
 | `interrupt` | `{"type":"interrupt","id"?:str}` — no reply |
 | `host_reply` | `{"type":"host_reply","id":str,"data":{"status":"ok","result":{...}}}` or an error envelope — no reply |
-| `snapshot` | `{"type":"snapshot","id":str,"path":str,"manifest_path":str,"max_bytes"?:int,"max_variable_bytes"?:int,"prune_oversized"?:bool}` |
-| `restore` | `{"type":"restore","id":str,"path":str}` |
+| `snapshot` | `{"type":"snapshot","id":str,"path":str,"manifest_path":str,"max_bytes"?:int,"max_variable_bytes"?:int}` |
+| `restore` | `{"type":"restore","id":str,"path":str,"manifest_path"?:str}` |
 | `list_names` | `{"type":"list_names","id":str}` |
 | `mcp_status` | `{"type":"mcp_status","id":str,"servers":[str,...],"timeout_ms"?:number}` — host-side view query: per-server tool listing (opens each server on demand, bounded by `timeout_ms` per server; default 10s); the `done` frame carries `connections: [{server, tools: [{name, description}] | null, error: str | null}]` |
 | `bash_activity` | `{"type":"bash_activity","id":str,"action":"list"|"tail"|"kill","activityId"?:str,"lines"?:int}` — out-of-band even during a running cell; tail lines 1–200, response capped at 16 KiB; opaque IDs resolve only against this kernel’s handles |
@@ -75,7 +75,8 @@ runtime keeps serving. Closing stdin is equivalent to `shutdown`.
   cap, same trailing marker).
 - `{"event":"done","id":str,"status":"ok"|"error"}` — exactly one per id'd
   request, always after all of that request's other events. A snapshot `done`
-  adds `saved`, `skipped`, `pruned`, `bytes`; a restore `done` adds `restored`,
+  adds `saved`, `skipped`, `pruned`, `bytes` (`pruned` is always empty now; it
+  stays in the frame for the manifest schema); a restore `done` adds `restored`,
   `failed`; a `list_names` `done` adds `names`; a failed snapshot/restore adds
   `reason`. Bash activity `done` carries `activities` (list), `tail` (tail),
   or `killed` (kill); `status:"error"` with `reason` on unknown IDs.
@@ -162,22 +163,35 @@ process is serving the protocol (importing the module does not count).
 
 `snapshot` serializes the user namespace with `dill` (recurse mode), one name
 at a time: `_`-prefixed names and
-`{rlm, mcp, bash, asyncio, In, Out, get_ipython, exit, quit, open}` are always
-skipped; a name whose pickle exceeds `max_variable_bytes` or would push the
-total over `max_bytes` is skipped and reported. With `prune_oversized`, only
-names exceeding the per-variable cap (`max_variable_bytes`) are also deleted
-from the namespace and listed in `pruned`; names skipped for the aggregate
-`max_bytes` cap are reported in `skipped` but kept in the namespace. The
-payload is written atomically (tmp file + `os.replace`) and a JSON manifest
-(`version`, `savedNames`, `skipped`, `pruned`, `bytes`, `pythonVersion`,
-`timestamp`) is written to `manifest_path`. A manifest write failure fails the
-snapshot (and nothing is pruned).
+`{rlm, mcp, bash, plugin, vars, asyncio, In, Out, get_ipython, exit, quit, open}`
+are always skipped; a name whose pickle exceeds `max_variable_bytes` or would
+push the total over `max_bytes` is skipped and reported. A skipped name stays
+in the kernel namespace: the byte limits bound the write, never the session,
+so only a restart can leave such a value behind. The payload is written
+atomically (tmp file + `os.replace`) and a JSON manifest (`version`,
+`savedNames`, `skipped`, `pruned`, `bytes`, `pythonVersion`, `timestamp`) is
+written to `manifest_path`; `pruned` keeps its place in the schema and is
+always empty. A manifest write failure fails the snapshot.
 
 `restore` loads the payload and revives each name independently; a missing
 file yields an ok empty restore with `reason:"snapshot not found"`, a corrupt
 file fails with a `reason`, and per-name failures are listed in `failed`.
-Names `In`, `Out`, and `get_ipython` in a payload are never restored. `dill` is imported lazily; when unavailable, snapshot and restore
+Names `In`, `Out`, and `get_ipython` in a payload are never restored. When the
+request carries `manifest_path`, the runtime keeps that manifest so `vars()`
+can still report the names it skipped (and the restart therefore did not
+restore). `dill` is imported lazily; when unavailable, snapshot and restore
 fail with `status:"error"` and a `reason`.
+
+## Namespace listing
+
+The runtime binds `vars` in `__main__` beside `plugin`. `vars()` prints one row
+per user name: whether the last committed manifest wrote it, its type and
+shape, a shallow size (`sys.getsizeof`, plus array `nbytes` and frame
+`memory_usage(deep=False)`), and the manifest's reason when it was skipped. A
+name the manifest skipped stays listed after a restart even though the
+namespace no longer holds it. The final line is resident memory from
+`/proc/self/statm`, not the sum of the estimates. `vars(x)` is the builtin
+`vars(x)`; `vars` itself is never snapshotted or restored.
 
 `list_names` replies with `done` carrying `names`: the sorted user-defined
 top-level names under the same filter the snapshot applies.

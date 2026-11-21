@@ -33,8 +33,7 @@ use crate::kernel::shared::{
     RESTORE_EXECUTION_TIMEOUT_MS, SNAPSHOT_EXECUTION_TIMEOUT_MS,
 };
 use crate::kernel::state_snapshot::{
-    RestoreResult, SnapshotResult, SnapshotSkip, DEFAULT_SNAPSHOT_MAX_BYTES,
-    DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES,
+    RestoreResult, SnapshotResult, SnapshotSkip, SNAPSHOT_MAX_BYTES, SNAPSHOT_MAX_VARIABLE_BYTES,
 };
 
 const READY_TIMEOUT_MS: u64 = 30_000;
@@ -263,12 +262,8 @@ struct CaptureFreshness {
     payload_stat: Option<ManifestStat>,
     /// The manifest stat right after the commit, re-checked at every consult.
     manifest_stat: Option<ManifestStat>,
-    /// The committed capture's result, replayed to callers while fresh: a
-    /// fresh capture reports the same lists, except the prune, which finds nothing.
+    /// The committed capture's result, replayed to callers while fresh.
     result: SnapshotResult,
-    /// Live names above the per-variable cap survived the commit: a pruning
-    /// capture must still run to remove and disclose them.
-    live_over_cap: bool,
 }
 
 // The mirrored TS API shape is deliberate (the booleans are the product's own surface).
@@ -707,13 +702,7 @@ impl ReplKernelManager {
     /// `None` when the kernel isn\'t running or no snapshot target was
     /// configured. Never fails on kernel errors; they land in diagnostics.
     pub async fn snapshot_state(&self) -> Option<SnapshotResult> {
-        self.capture_snapshot(None, false).await
-    }
-
-    /// Persist the namespace, then remove variables above the per-variable cap.
-    pub async fn prune_oversized_variables(&self) -> Option<SnapshotResult> {
-        self.capture_snapshot(Some(SNAPSHOT_EXECUTION_TIMEOUT_MS), true)
-            .await
+        self.capture_snapshot(None).await
     }
 
     /// Revive a previously snapshotted namespace into the kernel. Call right after `start()` and

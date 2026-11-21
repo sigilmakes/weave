@@ -1,7 +1,7 @@
 //! The post-compaction kernel-state notice (`ipython_state`): the Python kernel survives
 //! compaction with its namespace intact, so after every compaction that commits while a kernel
 //! runs the session appends a hidden `ipython_state` row telling the model which names are
-//! still defined and what pruning removed.
+//! still defined.
 
 use std::future::Future;
 use std::pin::Pin;
@@ -26,11 +26,6 @@ pub const KERNEL_STATE_LISTING_TIMEOUT_MS: u64 = 5_000;
 pub trait CompactionKernelProbe: Send + Sync {
     /// Whether a kernel has finished starting and is currently running.
     fn has_running_kernel(&self) -> bool;
-    /// Remove variables above the per-variable snapshot limit; the
-    /// pruned names, or `None` when no kernel/snapshot target exists.
-    fn prune_oversized_variables(
-        &self,
-    ) -> Pin<Box<dyn Future<Output = Option<Vec<String>>> + Send + '_>>;
     /// Live user-defined top-level names, or `None` on a failed listing.
     fn list_namespace_names(
         &self,
@@ -67,16 +62,6 @@ impl CompactionKernelProbe for EngineOwnedProbe {
             .is_some_and(crate::kernel::provisioner::IpythonKernelProvisioner::has_running_kernel)
     }
 
-    fn prune_oversized_variables(
-        &self,
-    ) -> Pin<Box<dyn Future<Output = Option<Vec<String>>> + Send + '_>> {
-        let owned = self.owned();
-        Box::pin(async move {
-            let owned = owned?;
-            owned.prune_oversized_variables().await
-        })
-    }
-
     fn list_namespace_names(
         &self,
         signal: Option<crate::kernel::cancellation::AbortSignal>,
@@ -93,11 +78,6 @@ impl CompactionKernelProbe for crate::kernel::provisioner::IpythonKernelProvisio
     fn has_running_kernel(&self) -> bool {
         IpythonKernelProvisioner::has_running_kernel(self)
     }
-    fn prune_oversized_variables(
-        &self,
-    ) -> Pin<Box<dyn Future<Output = Option<Vec<String>>> + Send + '_>> {
-        Box::pin(async move { IpythonKernelProvisioner::prune_oversized_variables(self).await })
-    }
     fn list_namespace_names(
         &self,
         signal: Option<crate::kernel::cancellation::AbortSignal>,
@@ -113,10 +93,10 @@ fn now_millis() -> u64 {
         .unwrap_or_default()
 }
 
-/// The notice text: the `[python-state]` header, the persistence statement, the pruning
-/// disclosure, and the live-names detail. `names` is `None` on a failed listing.
+/// The notice text: the `[python-state]` header, the persistence statement, and the
+/// live-names detail. `names` is `None` on a failed listing.
 #[must_use]
-pub fn notice_content(pruned: Option<&[String]>, names: Option<&[String]>) -> String {
+pub fn notice_content(names: Option<&[String]>) -> String {
     let detail = match names {
         None => String::new(),
         Some(names) if !names.is_empty() => {
@@ -124,17 +104,10 @@ pub fn notice_content(pruned: Option<&[String]>, names: Option<&[String]>) -> St
         }
         Some(_) => " You have not defined any names yet.".to_string(),
     };
-    let pruned_detail = match pruned {
-        Some(pruned) if !pruned.is_empty() => format!(
-            " Variables above the per-variable snapshot limit were removed: {}.",
-            pruned.join(", ")
-        ),
-        _ => String::new(),
-    };
     format!(
         "[python-state]
 
-Your Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available.{pruned_detail}{detail}"
+Your Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available.{detail}"
     )
 }
 
@@ -151,20 +124,13 @@ pub fn notice_message(content: String) -> CustomMessage {
     }
 }
 
-/// Prune, list the live names under the listing timeout, and decide
-/// whether the notice lands; `None` when no kernel is running or the
-/// listing outlived the kernel.
+/// List the live names under the listing timeout and decide whether the
+/// notice lands; `None` when no kernel is running or the listing outlived
+/// the kernel.
 pub async fn capture_notice_content(probe: &dyn CompactionKernelProbe) -> Option<String> {
     if !probe.has_running_kernel() {
         return None;
     }
-    let pruned = probe.prune_oversized_variables().await;
-    super::compaction_trace::trace(
-        "compact.kernel_pruned",
-        &serde_json::json!({
-            "pruned": pruned.as_ref().map(std::vec::Vec::len),
-        }),
-    );
     let signal = crate::kernel::cancellation::AbortSignal::new();
     let timer = {
         let signal = signal.clone();
@@ -187,7 +153,7 @@ pub async fn capture_notice_content(probe: &dyn CompactionKernelProbe) -> Option
     if names.is_none() && !probe.has_running_kernel() {
         return None;
     }
-    Some(notice_content(pruned.as_deref(), names.as_deref()))
+    Some(notice_content(names.as_deref()))
 }
 
 /// Append the notice everywhere it belongs: the durable row first, then the live loop
@@ -251,17 +217,15 @@ mod tests {
     /// A scripted kernel probe.
     struct ScriptedProbe {
         running: std::sync::atomic::AtomicBool,
-        pruned: Option<Vec<String>>,
         names: Option<Vec<String>>,
         /// `None` keeps reporting `running` on the post-listing recheck.
         stopped_during_listing: bool,
     }
 
     impl ScriptedProbe {
-        fn running(pruned: Option<Vec<String>>, names: Option<Vec<String>>) -> Self {
+        fn running(names: Option<Vec<String>>) -> Self {
             Self {
                 running: std::sync::atomic::AtomicBool::new(true),
-                pruned,
                 names,
                 stopped_during_listing: false,
             }
@@ -269,7 +233,6 @@ mod tests {
         fn idle() -> Self {
             Self {
                 running: std::sync::atomic::AtomicBool::new(false),
-                pruned: None,
                 names: None,
                 stopped_during_listing: false,
             }
@@ -279,12 +242,6 @@ mod tests {
     impl CompactionKernelProbe for ScriptedProbe {
         fn has_running_kernel(&self) -> bool {
             self.running.load(std::sync::atomic::Ordering::SeqCst)
-        }
-        fn prune_oversized_variables(
-            &self,
-        ) -> Pin<Box<dyn Future<Output = Option<Vec<String>>> + Send + '_>> {
-            let pruned = self.pruned.clone();
-            Box::pin(async move { pruned })
         }
         fn list_namespace_names(
             &self,
@@ -301,34 +258,27 @@ mod tests {
 
     #[test]
     fn notice_content_matches_the_ts_text() {
-        // The full TS text: prune disclosure first, then the
-        // live-names detail.
         assert_eq!(
-            notice_content(
-                Some(&["large_text".to_string()]),
-                Some(&["small_value".to_string()]),
-            ),
-            "[python-state]\n\nYour Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available. Variables above the per-variable snapshot limit were removed: large_text. These names are still defined: small_value."
+            notice_content(Some(&["small_value".to_string()])),
+            "[python-state]\n\nYour Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available. These names are still defined: small_value."
         );
         assert_eq!(
-            notice_content(None, Some(&[])),
+            notice_content(Some(&[])),
             "[python-state]\n\nYour Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available. You have not defined any names yet."
         );
         assert_eq!(
-            notice_content(Some(&["large_text".to_string()]), None),
-            "[python-state]\n\nYour Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available. Variables above the per-variable snapshot limit were removed: large_text."
+            notice_content(None),
+            "[python-state]\n\nYour Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available."
         );
         assert_eq!(
-            notice_content(None, Some(&["alpha".to_string(), "beta".to_string()])),
+            notice_content(Some(&["alpha".to_string(), "beta".to_string()])),
             "[python-state]\n\nYour Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available. These names are still defined: alpha, beta."
         );
-        assert!(notice_content(Some(&[]), Some(&["v".to_string()]))
-            .contains("still available. These names"));
     }
 
     #[test]
     fn notice_row_is_display_false_without_details() {
-        let row = notice_message(notice_content(None, Some(&["v".to_string()])));
+        let row = notice_message(notice_content(Some(&["v".to_string()])));
         assert_eq!(row.custom_type, IPYTHON_STATE_CUSTOM_TYPE);
         assert!(!row.display);
         assert_eq!(row.details, None);
@@ -350,10 +300,10 @@ mod tests {
         let stopped = ScriptedProbe {
             names: None,
             stopped_during_listing: true,
-            ..ScriptedProbe::running(None, None)
+            ..ScriptedProbe::running(None)
         };
         assert_eq!(capture_notice_content(&stopped).await, None);
-        let listing_failed = ScriptedProbe::running(None, None);
+        let listing_failed = ScriptedProbe::running(None);
         let content = capture_notice_content(&listing_failed).await;
         assert_eq!(
             content,
@@ -462,11 +412,11 @@ mod tests {
             ),
         )]);
         let model = registration.get_model();
-        let (engine, agent) = session_with_probe(ScriptedProbe::running(
-            Some(vec!["large_text".to_string()]),
-            Some(vec!["small_value".to_string()]),
-        ))
-        .await;
+        let (engine, agent) =
+            session_with_probe(ScriptedProbe::running(Some(
+                vec!["small_value".to_string()],
+            )))
+            .await;
         let outcome = compact_once(&engine, &model).await.unwrap();
         let CompactOutcome::Ran(run) = outcome else {
             panic!("expected the compaction to run");
@@ -475,7 +425,7 @@ mod tests {
         assert_eq!(row.custom_type, IPYTHON_STATE_CUSTOM_TYPE);
         assert_eq!(
             row.content.text(),
-            "[python-state]\n\nYour Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available. Variables above the per-variable snapshot limit were removed: large_text. These names are still defined: small_value."
+            "[python-state]\n\nYour Python kernel persisted through compaction; its remaining variables, imports, and helpers are still available. These names are still defined: small_value."
         );
         let entries = engine.entries().await;
         let last = entries.last().expect("entries");
@@ -515,7 +465,7 @@ mod tests {
             recording_step(seen.clone(), "the third compaction summary"),
         ]);
         let model = registration.get_model();
-        let probe = ScriptedProbe::running(None, Some(vec!["v".to_string()]));
+        let probe = ScriptedProbe::running(Some(vec!["v".to_string()]));
         let (engine, _agent) = session_with_probe(probe).await;
         let outcome = compact_once(&engine, &model).await.unwrap();
         assert!(matches!(outcome, CompactOutcome::Ran(_)));

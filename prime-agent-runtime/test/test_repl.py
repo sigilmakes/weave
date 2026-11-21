@@ -751,9 +751,8 @@ class ReplTest(unittest.TestCase):
                 {"boom": Landmine(), "keep": 7},
                 path,
                 manifest_path,
-                repl_module.DEFAULT_SNAPSHOT_MAX_BYTES,
-                repl_module.DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES,
-                False,
+                repl_module.SNAPSHOT_MAX_BYTES,
+                repl_module.SNAPSHOT_MAX_VARIABLE_BYTES,
             )
             self.assertEqual(result["saved"], ["boom", "keep"])
 
@@ -978,7 +977,7 @@ class ReplTest(unittest.TestCase):
             self.assertEqual(done["skipped"][0]["name"], "\ud800")
             self.assertIn("UnicodeEncodeError", done["skipped"][0]["reason"])
 
-    def test_snapshot_prune_oversized(self):
+    def test_snapshot_keeps_an_over_cap_value_and_vars_reports_it_unsaved(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "kernel-state.dill")
             manifest_path = os.path.join(tmp, "kernel-state.json")
@@ -990,32 +989,96 @@ class ReplTest(unittest.TestCase):
                     "path": path,
                     "manifest_path": manifest_path,
                     "max_variable_bytes": 1024,
-                    "prune_oversized": True,
                 }
             )
             done = one(self.repl.until_done("p2"), "done")
             self.assertEqual(done["status"], "ok")
             self.assertEqual(done["saved"], ["small"])
-            self.assertEqual(done["pruned"], ["big"])
+            self.assertEqual(done["pruned"], [])
             events = self.repl.execute("p3", "'big' in dir()")
-            self.assertEqual(one(events, "result")["text"], "False")
+            self.assertEqual(one(events, "result")["text"], "True")
 
-    def test_prune_measures_the_current_value_2478(self):
-        # Redefinition or in-place shrink after an oversized skip: prune must re-measure.
-        for cell in ("def big(): pass", "big.clear()"):
-            with self.subTest(cell=cell):
-                with tempfile.TemporaryDirectory() as tmp:
-                    base = {"type": "snapshot", "path": os.path.join(tmp, "kernel-state.dill"),
-                            "manifest_path": os.path.join(tmp, "kernel-state.json"), "max_variable_bytes": 1024}
-                    self.repl.execute("pk1", "big = bytearray(b'x' * 100_000)\nkeep = 1")
-                    self.repl.send({"id": "pk2", **base})
-                    self.assertEqual(one(self.repl.until_done("pk2"), "done")["status"], "ok")
-                    self.repl.execute("pk3", cell)
-                    self.repl.send({"id": "pk4", "prune_oversized": True, **base})
-                    done = one(self.repl.until_done("pk4"), "done")
-                    self.assertEqual(done["status"], "ok")
-                    self.assertEqual(done["pruned"], [])
-                    self.assertEqual(done["saved"], ["big", "keep"])
+            events = self.repl.execute("p4", "vars()")
+            out = stream_text(events, "stdout")
+            saved_row = next(line for line in out.splitlines() if " small " in line)
+            unsaved_row = next(line for line in out.splitlines() if " big " in line)
+            self.assertTrue(saved_row.startswith("saved"))
+            self.assertTrue(unsaved_row.startswith("unsaved"))
+            self.assertIn("bytes", unsaved_row)
+            self.assertIn("97.7 KB", unsaved_row)
+            self.assertIn("over save limit", unsaved_row)
+
+            # The total is resident memory, not the sum of the shallow estimates.
+            pages = int(
+                one(
+                    self.repl.execute(
+                        "p5", "int(open('/proc/self/statm').read().split()[1])"
+                    ),
+                    "result",
+                )["text"]
+            )
+            resident = pages * os.sysconf("SC_PAGE_SIZE")
+            total_line = next(line for line in out.splitlines() if line.startswith("total"))
+            amount, unit, _label = total_line.split()[1:]
+            scale = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3, "TB": 1024**4}[unit]
+            self.assertLess(abs(float(amount) * scale - resident) / resident, 0.05)
+
+    def test_vars_with_an_argument_is_the_builtin_and_vars_is_never_snapshotted(self):
+        setup = "import builtins\nclass Subject:\n    pass\nsubject = Subject()\nmatched = vars(subject) is builtins.vars(subject)"
+        self.assertEqual(one(self.repl.execute("v1", setup), "done")["status"], "ok")
+        self.assertEqual(one(self.repl.execute("v2", "matched"), "result")["text"], "True")
+        self.assertEqual(one(self.repl.execute("v3", "'vars' in dir()"), "result")["text"], "True")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.repl.send(
+                {
+                    "type": "snapshot",
+                    "id": "v4",
+                    "path": os.path.join(tmp, "kernel-state.dill"),
+                    "manifest_path": os.path.join(tmp, "kernel-state.json"),
+                }
+            )
+            done = one(self.repl.until_done("v4"), "done")
+            self.assertEqual(done["status"], "ok")
+            self.assertNotIn("vars", done["saved"])
+            self.assertNotIn("vars", [entry["name"] for entry in done["skipped"]])
+
+    def test_vars_reports_a_skipped_name_after_a_restart(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "kernel-state.dill")
+            manifest_path = os.path.join(tmp, "kernel-state.json")
+            self.repl.execute("r1", "small = 1\nbig = b'x' * 100_000")
+            self.repl.send(
+                {
+                    "type": "snapshot",
+                    "id": "r2",
+                    "path": path,
+                    "manifest_path": manifest_path,
+                    "max_variable_bytes": 1024,
+                }
+            )
+            self.assertEqual(one(self.repl.until_done("r2"), "done")["status"], "ok")
+
+            fresh = ReplProcess()
+            self.addCleanup(fresh.close)
+            fresh.ready()
+            fresh.send(
+                {
+                    "type": "restore",
+                    "id": "r3",
+                    "path": path,
+                    "manifest_path": manifest_path,
+                }
+            )
+            done = one(fresh.until_done("r3"), "done")
+            self.assertEqual(done["status"], "ok")
+            self.assertEqual(done["restored"], ["small"])
+
+            events = fresh.execute("r4", "vars()")
+            out = stream_text(events, "stdout")
+            unsaved_row = next(line for line in out.splitlines() if " big " in line)
+            self.assertTrue(unsaved_row.startswith("unsaved"))
+            self.assertIn("over save limit", unsaved_row)
+            self.assertIn("saved", next(line for line in out.splitlines() if " small " in line))
 
     def test_emit_display(self):
         payloads = {
@@ -1844,26 +1907,11 @@ class ReplTest(unittest.TestCase):
         self.assertEqual(one(events, "result")["text"], "'done'")
         self.assertEqual(one(events, "done")["status"], "ok")
 
-    def test_snapshot_rejects_non_boolean_and_non_integer_options(self):
+    def test_snapshot_rejects_non_integer_options(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "kernel-state.dill")
             manifest_path = os.path.join(tmp, "kernel-state.json")
             self.repl.execute("v1", "big = b'x' * 100_000")
-            self.repl.send(
-                {
-                    "type": "snapshot",
-                    "id": "v2",
-                    "path": path,
-                    "manifest_path": manifest_path,
-                    "max_variable_bytes": 1024,
-                    "prune_oversized": "false",
-                }
-            )
-            done = one(self.repl.until_done("v2"), "done")
-            self.assertEqual(done["status"], "error")
-            self.assertIn("boolean", done["reason"])
-            events = self.repl.execute("v3", "'big' in dir()")
-            self.assertEqual(one(events, "result")["text"], "True")
 
             self.repl.send(
                 {"type": "snapshot", "id": "v4", "path": path, "manifest_path": manifest_path, "max_bytes": "10"}
@@ -1893,8 +1941,8 @@ class ReplTest(unittest.TestCase):
             self.assertEqual(done["status"], "error")
             self.assertIn("max_variable_bytes must be a non-negative integer", done["reason"])
 
-            # A negative cap with prune_oversized would delete every user variable: reject it
-            # before the snapshot runs, leaving the namespace untouched.
+            # A negative cap cannot bound the write: reject it before the snapshot
+            # runs, leaving the namespace untouched.
             self.repl.send(
                 {
                     "type": "snapshot",
@@ -1902,7 +1950,6 @@ class ReplTest(unittest.TestCase):
                     "path": path,
                     "manifest_path": manifest_path,
                     "max_variable_bytes": -1,
-                    "prune_oversized": True,
                 }
             )
             done = one(self.repl.until_done("v7"), "done")
@@ -1937,7 +1984,7 @@ class ReplTest(unittest.TestCase):
         follow = self.repl.execute("after-brk", "1+1")
         self.assertEqual(one(follow, "result")["text"], "2")
 
-    def test_snapshot_manifest_write_failure_fails_without_pruning(self):
+    def test_snapshot_manifest_write_failure_leaves_the_namespace_untouched(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "kernel-state.dill")
             manifest_path = os.path.join(tmp, "missing-dir", "kernel-state.json")
@@ -1949,7 +1996,6 @@ class ReplTest(unittest.TestCase):
                     "path": path,
                     "manifest_path": manifest_path,
                     "max_variable_bytes": 1024,
-                    "prune_oversized": True,
                 }
             )
             done = one(self.repl.until_done("m2"), "done")
@@ -2073,7 +2119,7 @@ class FinishRequestTest(unittest.TestCase):
     def test_sigint_in_post_run_guarded_window_reports_snapshot_ok(self):
         # A finishing-targeted SIGINT between _run_guarded's return and
         # _finish_request raises KeyboardInterrupt into _handle_state; the
-        # completed destructive snapshot must still report done status ok.
+        # committed snapshot must still report done status ok.
         import signal
         from unittest import mock
 
@@ -2103,7 +2149,6 @@ class FinishRequestTest(unittest.TestCase):
                 "path": os.path.join(tmp, "kernel-state.dill"),
                 "manifest_path": os.path.join(tmp, "kernel-state.json"),
                 "max_variable_bytes": 1024,
-                "prune_oversized": True,
             }
 
             async def main():
@@ -2117,9 +2162,9 @@ class FinishRequestTest(unittest.TestCase):
 
         done = next(e for e in sent if e.get("event") == "done")
         self.assertEqual(done["status"], "ok")
-        self.assertEqual(done["pruned"], ["big"])
-        # The prune ran (destructive success) and the request is fully finished.
-        self.assertEqual(ns, {})
+        self.assertEqual(done["skipped"], [{"name": "big", "reason": "exceeds per-variable snapshot size cap"}])
+        # The commit stands and the request is fully finished; nothing left the namespace.
+        self.assertEqual(ns, {"big": b"x" * 100_000})
         self.assertNotIn("snap", repl._inflight)
 
     def test_protocol_interrupt_during_restore_commit_is_consumed_and_next_request_runs(self):
@@ -2147,7 +2192,7 @@ class FinishRequestTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "kernel-state.dill")
             manifest = os.path.join(tmp, "kernel-state.json")
-            snap = repl._snapshot_state({"a": 1, "b": 2}, path, manifest, 1 << 20, 1 << 20, False)
+            snap = repl._snapshot_state({"a": 1, "b": 2}, path, manifest, 1 << 20, 1 << 20)
             self.assertNotIn("error", snap)
 
             async def main():
@@ -2211,7 +2256,7 @@ class FinishRequestTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "kernel-state.dill")
             manifest = os.path.join(tmp, "kernel-state.json")
-            snap = repl._snapshot_state({"a": 1, "b": 2}, path, manifest, 1 << 20, 1 << 20, False)
+            snap = repl._snapshot_state({"a": 1, "b": 2}, path, manifest, 1 << 20, 1 << 20)
             self.assertNotIn("error", snap)
 
             async def main():
@@ -2256,7 +2301,7 @@ class FinishRequestTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "kernel-state.dill")
             manifest = os.path.join(tmp, "kernel-state.json")
-            snap = repl._snapshot_state({"a": 1, "b": 2}, path, manifest, 1 << 20, 1 << 20, False)
+            snap = repl._snapshot_state({"a": 1, "b": 2}, path, manifest, 1 << 20, 1 << 20)
             self.assertNotIn("error", snap)
 
             async def main():
@@ -2273,9 +2318,9 @@ class FinishRequestTest(unittest.TestCase):
         self.assertEqual(done["status"], "error")
         self.assertEqual(done["reason"], "interrupted")
 
-    def test_protocol_interrupt_after_destructive_snapshot_returned_reports_ok(self):
-        # Same post-return window for snapshot: the pruning commit already ran,
-        # so the interrupt must not misreport the destructive snapshot as failed.
+    def test_protocol_interrupt_after_snapshot_returned_reports_ok(self):
+        # Same post-return window for snapshot: the commit already ran, so the
+        # interrupt must not misreport the completed snapshot as failed.
         import signal
         from unittest import mock
 
@@ -2300,7 +2345,6 @@ class FinishRequestTest(unittest.TestCase):
                 "id": "snap",
                 "path": os.path.join(tmp, "kernel-state.dill"),
                 "manifest_path": os.path.join(tmp, "kernel-state.json"),
-                "prune_oversized": True,
                 "max_variable_bytes": 1024,
             }
 
@@ -2316,8 +2360,8 @@ class FinishRequestTest(unittest.TestCase):
         done = next(e for e in sent if e.get("event") == "done" and e["id"] == "snap")
         self.assertEqual(done["status"], "ok")
         self.assertEqual(done["saved"], ["small"])
-        self.assertEqual(done["pruned"], ["big"])
-        self.assertEqual(ns, {"small": 1})
+        self.assertEqual(done["skipped"], [{"name": "big", "reason": "exceeds per-variable snapshot size cap"}])
+        self.assertEqual(ns, {"small": 1, "big": "x" * 100000})
         self.assertIsNone(repl._sigint_target)
 
     def test_untargeted_interrupt_in_done_task_handoff_is_not_parked(self):
@@ -2351,81 +2395,6 @@ class FinishRequestTest(unittest.TestCase):
         self.assertIn("other", repl._inflight)
 
 
-class SnapshotPruneShieldTest(unittest.TestCase):
-    """The prune-deletion window must not be split by a SIGINT-raised KeyboardInterrupt."""
-
-    def test_sigint_mid_prune_is_consumed_after_all_deletions_ran(self):
-        import signal
-
-        sys.path.insert(0, SRC)
-        self.addCleanup(sys.path.remove, SRC)
-        from rlm.repl import _snapshot_state
-
-        class SigintOnFirstPop(dict):
-            fired = False
-
-            def pop(self, key, default=None):
-                if not self.fired:
-                    self.fired = True
-                    # Synchronous SIGINT on the main thread: lands exactly mid-loop.
-                    signal.raise_signal(signal.SIGINT)
-                return super().pop(key, default)
-
-        ns = SigintOnFirstPop(big1=b"x" * 100_000, big2=b"y" * 100_000)
-        with tempfile.TemporaryDirectory() as tmp:
-            result = _snapshot_state(
-                ns,
-                os.path.join(tmp, "kernel-state.dill"),
-                os.path.join(tmp, "kernel-state.json"),
-                max_bytes=1 << 20,
-                max_variable_bytes=1024,
-                prune_oversized=True,
-            )
-        # The parked SIGINT is consumed: the committed snapshot reports success.
-        self.assertEqual(result["pruned"], ["big1", "big2"])
-        self.assertNotIn("error", result)
-        # Both deletions ran: ns matches the manifest.
-        self.assertEqual(dict(ns), {})
-
-    def test_sigint_after_manifest_commit_before_deletions_is_consumed(self):
-        import signal
-        from unittest import mock
-
-        sys.path.insert(0, SRC)
-        self.addCleanup(sys.path.remove, SRC)
-        from rlm.repl import _snapshot_state
-
-        real_replace = os.replace
-
-        ns = {"big1": b"x" * 100_000, "big2": b"y" * 100_000}
-        with tempfile.TemporaryDirectory() as tmp:
-            manifest_path = os.path.join(tmp, "kernel-state.json")
-
-            def replace_then_sigint(src, dst):
-                real_replace(src, dst)
-                # Synchronous SIGINT right after the manifest commit, before any deletion.
-                if dst == manifest_path:
-                    signal.raise_signal(signal.SIGINT)
-
-            with mock.patch("os.replace", replace_then_sigint):
-                result = _snapshot_state(
-                    ns,
-                    os.path.join(tmp, "kernel-state.dill"),
-                    manifest_path,
-                    max_bytes=1 << 20,
-                    max_variable_bytes=1024,
-                    prune_oversized=True,
-                )
-            # The parked SIGINT is consumed: the committed destructive snapshot
-            # reports success instead of surfacing KeyboardInterrupt.
-            self.assertEqual(result["pruned"], ["big1", "big2"])
-            self.assertNotIn("error", result)
-            # The deletions still ran: ns is consistent with the committed manifest.
-            self.assertEqual(ns, {})
-            with open(manifest_path) as fh:
-                self.assertEqual(json.load(fh)["pruned"], ["big1", "big2"])
-
-
 class RestoreApplyShieldTest(unittest.TestCase):
     """The restore assignment loop must not be split by a SIGINT-raised KeyboardInterrupt."""
 
@@ -2439,7 +2408,6 @@ class RestoreApplyShieldTest(unittest.TestCase):
             os.path.join(tmp, "kernel-state.json"),
             max_bytes=1 << 20,
             max_variable_bytes=1 << 20,
-            prune_oversized=False,
         )
         self.assertNotIn("error", result)
         return path
@@ -2617,7 +2585,6 @@ class SnapshotTempCleanupTest(unittest.TestCase):
                         os.path.join(tmp, "manifest.json"),
                         max_bytes=1 << 20,
                         max_variable_bytes=1 << 20,
-                        prune_oversized=False,
                     )
             self.assertEqual(os.listdir(tmp), [])  # no temp (or final) files survive
 
@@ -2640,7 +2607,6 @@ class SnapshotTempCleanupTest(unittest.TestCase):
                 os.path.join(tmp, "manifest.json"),
                 max_bytes=1 << 20,
                 max_variable_bytes=1 << 20,
-                prune_oversized=False,
             )
         self.assertNotIn("error", result)
         self.assertEqual(result["saved"], ["kept"])
@@ -2776,7 +2742,7 @@ class SnapshotPairConsistencyTest(unittest.TestCase):
         self.manifest_path = os.path.join(self.dir, "kernel-state.json")
 
     def _snap(self, ns, path=None, manifest_path=None, **kw):
-        args = dict(max_bytes=1 << 20, max_variable_bytes=1 << 20, prune_oversized=False)
+        args = dict(max_bytes=1 << 20, max_variable_bytes=1 << 20)
         args.update(kw)
         return self.snapshot(ns, path or self.path, manifest_path or self.manifest_path, **args)
 
@@ -2837,11 +2803,11 @@ class SnapshotPairConsistencyTest(unittest.TestCase):
         old_payload, old_manifest = self._old_pair()
         ns = {"keep": 1, "big": b"x" * 100_000}
         with mock.patch("json.dump", side_effect=OSError("disk full")):
-            result = self._snap(ns, max_variable_bytes=1024, prune_oversized=True)
+            result = self._snap(ns, max_variable_bytes=1024)
         self.assertTrue(result["error"].startswith("manifest write failed"))
         self._assert_pair(old_payload, old_manifest)
         self._assert_only_pair_files()
-        self.assertIn("big", ns)  # not pruned
+        self.assertIn("big", ns)  # nothing leaves the namespace
 
     def test_payload_replace_failure_preserves_prior_pair(self):
         old_payload, old_manifest = self._old_pair()
@@ -2894,7 +2860,7 @@ class SnapshotPairConsistencyTest(unittest.TestCase):
         self._assert_only_pair_files()
 
     def test_sigint_after_payload_replace_is_parked_and_consumed(self):
-        # SIGINT is parked from before the payload replace through the deletions.
+        # SIGINT is parked from before the payload replace through the manifest commit.
         real_replace = os.replace
         ns = {"keep": 1, "big": b"x" * 100_000}
 
@@ -2904,13 +2870,13 @@ class SnapshotPairConsistencyTest(unittest.TestCase):
                 signal.raise_signal(signal.SIGINT)
 
         with mock.patch("os.replace", replace_then_sigint):
-            result = self._snap(ns, max_variable_bytes=1024, prune_oversized=True)
+            result = self._snap(ns, max_variable_bytes=1024)
         self.assertNotIn("error", result)
-        self.assertEqual(result["pruned"], ["big"])
-        self.assertNotIn("big", ns)  # the prune still ran; the SIGINT was consumed
+        self.assertEqual(result["pruned"], [])
+        self.assertIn("big", ns)  # the SIGINT was consumed; nothing was removed
         self._assert_only_pair_files()
         with open(self.manifest_path) as fh:
-            self.assertEqual(json.load(fh)["pruned"], ["big"])
+            self.assertEqual(json.load(fh)["pruned"], [])
 
     def test_signal_install_failure_propagates_and_cleans_temps(self):
         # A SIGINT-handler install failure (e.g. off-main-thread) must not leak temps.
@@ -2952,14 +2918,14 @@ class SnapshotPairConsistencyTest(unittest.TestCase):
             return real_replace(src, dst)
 
         with mock.patch("os.replace", failing_manifest_replace):
-            result = self._snap(ns, max_variable_bytes=1024, prune_oversized=True)
+            result = self._snap(ns, max_variable_bytes=1024)
         self.assertTrue(result["error"].startswith("manifest write failed"))
         with open(self.path, "rb") as fh:
             self.assertNotEqual(fh.read(), old_payload)  # new payload committed
         with open(self.manifest_path, "rb") as fh:
             self.assertEqual(fh.read(), old_manifest)  # old manifest intact
         self._assert_only_pair_files()
-        self.assertIn("big", ns)  # not pruned
+        self.assertIn("big", ns)  # the failed write touched no name
 
     def test_sigint_during_final_temp_cleanup_is_parked_and_consumed(self):
         # The handler must stay parked through discard_temps and restore last.
@@ -2975,10 +2941,10 @@ class SnapshotPairConsistencyTest(unittest.TestCase):
             return real_remove(name)
 
         with mock.patch("os.remove", remove_then_sigint):
-            result = self._snap(ns, max_variable_bytes=1024, prune_oversized=True)
+            result = self._snap(ns, max_variable_bytes=1024)
         self.assertNotIn("error", result)  # no KeyboardInterrupt escaped
-        self.assertEqual(result["pruned"], ["big"])
-        self.assertNotIn("big", ns)  # pruning completed
+        self.assertEqual(result["pruned"], [])
+        self.assertIn("big", ns)  # the namespace is untouched
         self.assertTrue(fired)  # the SIGINT really fired during cleanup
         self.assertIs(signal.getsignal(signal.SIGINT), original)  # handler restored
         self._assert_only_pair_files()

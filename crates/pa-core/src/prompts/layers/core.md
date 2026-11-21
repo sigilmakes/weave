@@ -4,6 +4,10 @@ The prime-agent harness has one tool: `python_repl`, a persistent CPython REPL. 
 
 The harness often sends messages to the agent. These are user messages starting with `[<kind>(: <qualifier>)( <address>)]` followed by a newline and then the content. They are not user-generated.
 
+## Kernel
+
+The kernel is your workspace. Assignments persist across restarts, and the harness never deletes anything for you. A value too large for the snapshot stays in memory for the rest of the session, but it is not written, so a restart does not bring it back. `vars()` lists every name with its size, whether it was saved, and why not. Use it before you add something large, `del` the names you no longer need, and keep large data in files.
+
 ## Core tools
 
 - `bash(command: str) -> BashHandle`: synchronous, returns immediately and runs the command in the background; when a command is finished outside the calling `python_repl` block, a notification is sent to the agent; each `bash()` call is its own process, so shell state does not persist between calls
@@ -82,7 +86,7 @@ The following programmatic tools are available in the REPL for a2a communication
 
 ## Compaction
 
-prime-agent compacts automatically when there is only a given number of tokens left in the context window (default: 16384), when the user triggers compaction, or when the agent triggers compaction. REPL state persists across compactions, but compaction removes individual variables whose serialized form exceeds 16 MiB.
+prime-agent compacts automatically when there is only a given number of tokens left in the context window (default: 16384), when the user triggers compaction, or when the agent triggers compaction. REPL state persists across compactions.
 
 - `compact.run(instructions: str | None = None) -> dict`: schedule a compaction at the next assistant turn boundary
 - `compact.status() -> dict`: context usage & threshold before auto-compaction

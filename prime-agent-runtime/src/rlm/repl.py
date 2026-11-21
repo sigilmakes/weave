@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import ast
 import asyncio
+import builtins
 import codecs
 import contextvars
 import ctypes
@@ -36,8 +37,8 @@ from .bash import _kill_live_handles
 
 PROTOCOL_VERSION = 3
 
-DEFAULT_SNAPSHOT_MAX_BYTES = 256 * 1024 * 1024
-DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES = 16 * 1024 * 1024
+SNAPSHOT_MAX_BYTES = 256 * 1024 * 1024
+SNAPSHOT_MAX_VARIABLE_BYTES = 16 * 1024 * 1024
 
 # Plain ASCII, never a pickle start: _restore_state sniffs it to tell v2 framed
 # payloads from legacy (single dill-pickled dict) ones.
@@ -55,15 +56,32 @@ _RESULT_TRUNCATION_MARKER = f"\n[... result truncated at {_RESULT_TEXT_CAP} char
 _PAYLOAD_CAP = 16 * 1024 * 1024
 
 # Names the session bootstrap re-creates on every start; never snapshotted.
-_ALWAYS_SKIP = {"rlm", "mcp", "bash", "plugin", "asyncio", "In", "Out", "get_ipython", "exit", "quit", "open"}
+_ALWAYS_SKIP = {
+    "rlm",
+    "mcp",
+    "bash",
+    "plugin",
+    "vars",
+    "asyncio",
+    "In",
+    "Out",
+    "get_ipython",
+    "exit",
+    "quit",
+    "open",
+}
 # Legacy IPython names and live plugin bindings are never restored from snapshot data.
-_RESTORE_SKIP = {"In", "Out", "get_ipython", "plugin", "_prime_agent_plugin_namespace"}
+_RESTORE_SKIP = {"In", "Out", "get_ipython", "plugin", "vars", "_prime_agent_plugin_namespace"}
 # The target of the last successful snapshot, remembered so an EOF shutdown
 # (the host process died without a graceful dispose) can flush the final
 # namespace before exit. `None` until this process has committed a snapshot:
 # an EOF before that must not overwrite the on-disk payload with a namespace
 # the host never considered durable.
 _last_snapshot_target: dict[str, Any] | None = None
+# The manifest the last committed snapshot wrote (or the one restore read), kept in
+# memory so vars() reports saved/unsaved state without re-measuring the namespace.
+_last_manifest: dict[str, Any] | None = None
+_user_namespace: dict[str, Any] | None = None
 
 _protocol_fd: int = -1
 # The host's stderr before _setup_fds captures fd 2: the only channel that can
@@ -799,10 +817,11 @@ def _snapshot_state(
     manifest_path: str,
     max_bytes: int,
     max_variable_bytes: int,
-    prune_oversized: bool,
     committed: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     import datetime
+
+    global _last_manifest
 
     try:
         import dill
@@ -817,7 +836,6 @@ def _snapshot_state(
 
     saved: list[str] = []
     skipped: list[dict[str, str]] = []
-    oversized: list[str] = []
     missing = object()
 
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
@@ -878,27 +896,24 @@ def _snapshot_state(
                         continue
                     # Record header: 4-byte name length + 8-byte blob length, plus the name itself.
                     budget = max_bytes - total - 12 - len(encoded)
-                    # Prune mode measures at the full per-variable cap: only that cap decides
-                    # pruned-ness, and the write always re-measures — in-place mutation
-                    # defeats any name-based size tracking from an earlier dump.
-                    limit = max_variable_bytes if prune_oversized else min(max_variable_bytes, budget)
+                    # The write bound is whichever of the two byte limits is smaller: the
+                    # per-variable cap, or what the aggregate cap still allows. A value over
+                    # it stays in the namespace and is only left out of the payload.
+                    limit = min(max_variable_bytes, budget)
                     buffer = io.BytesIO()
                     try:
                         SnapshotPickler(_CappedWriter(buffer, limit)).dump(value)
                         blob = buffer.getvalue()
                     except _SnapshotSizeLimitExceeded:
-                        if not prune_oversized and budget < max_variable_bytes:
-                            skipped.append({"name": name, "reason": "exceeds aggregate snapshot size cap"})
-                        else:
-                            skipped.append({"name": name, "reason": "exceeds per-variable snapshot size cap"})
-                            oversized.append(name)
+                        reason = (
+                            "exceeds aggregate snapshot size cap"
+                            if budget < max_variable_bytes
+                            else "exceeds per-variable snapshot size cap"
+                        )
+                        skipped.append({"name": name, "reason": reason})
                         continue
                     except Exception as err:  # noqa: BLE001 - one unpicklable name must not abort the snapshot
                         skipped.append({"name": name, "reason": f"{type(err).__name__}: {_safe_str(err)[:200]}"})
-                        continue
-                    if total + 12 + len(encoded) + len(blob) > max_bytes:
-                        # Only reachable in prune mode, where the measurement cap ignores the budget.
-                        skipped.append({"name": name, "reason": "exceeds aggregate snapshot size cap"})
                         continue
                     fh.write(len(encoded).to_bytes(4, "little"))
                     fh.write(encoded)
@@ -907,12 +922,12 @@ def _snapshot_state(
                     total += 12 + len(encoded) + len(blob)
                     saved.append(name)
                 saved.sort()
-                pruned = sorted(name for name in oversized if name in ns) if prune_oversized else []
                 manifest = {
                     "version": 1,
                     "savedNames": saved,
                     "skipped": skipped,
-                    "pruned": pruned,
+                    # The manifest schema keeps its pruning key; nothing prunes any more.
+                    "pruned": [],
                     "bytes": total,
                     "pythonVersion": sys.version.split()[0],
                     "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -938,11 +953,9 @@ def _snapshot_state(
         try:
             os.replace(manifest_tmp, manifest_path)
         except OSError as err:
-            # Fail before the prune deletions so a bad manifest path never destroys state.
             return {"error": f"manifest write failed: {err}"}
-        for name in pruned:
-            ns.pop(name, None)
-        result = {"saved": saved, "skipped": skipped, "pruned": pruned, "bytes": total}
+        _last_manifest = manifest
+        result = {"saved": saved, "skipped": skipped, "pruned": [], "bytes": total}
         # Publish while still parked: a later KeyboardInterrupt into this task finds the committed result (see _handle_state).
         if committed is not None:
             committed.append(result)
@@ -956,10 +969,9 @@ def _snapshot_state(
         finally:
             if handler_installed:
                 signal.signal(signal.SIGINT, previous)
-                # The parked SIGINT is consumed, not re-raised: with the manifest committed and
-                # the namespace pruned, the destructive snapshot has succeeded, and re-raising
-                # would misreport it as failed and risk the host discarding the only copy of
-                # the pruned variables. The interrupt targeted this now-complete request.
+                # The parked SIGINT is consumed, not re-raised: the manifest and payload are
+                # committed, and re-raising would misreport a completed snapshot as failed.
+                # The interrupt targeted this now-complete request.
     return result
 
 
@@ -1124,13 +1136,35 @@ def _snapshot_unpickler(dill: Any) -> type:
     return GuardedUnpickler
 
 
+# The manifest is small JSON; the cap only stops a corrupt or swapped file from
+# forcing a large allocation into the restore path.
+_MANIFEST_READ_CAP = 4 * 1024 * 1024
+
+
+def _read_manifest(path: str) -> dict[str, Any] | None:
+    try:
+        with open(path, "rb") as fh:
+            raw = fh.read(_MANIFEST_READ_CAP + 1)
+    except OSError:
+        return None
+    if len(raw) > _MANIFEST_READ_CAP:
+        return None
+    try:
+        manifest = json.loads(raw)
+    except (UnicodeDecodeError, ValueError):
+        return None
+    return manifest if isinstance(manifest, dict) else None
+
+
 def _restore_state(
     ns: dict[str, Any],
     path: str,
     committed: list[dict[str, Any]] | None = None,
     max_bytes: int | None = None,
     max_variable_bytes: int | None = None,
+    manifest_path: str | None = None,
 ) -> dict[str, Any]:
+    global _last_manifest
     if not os.path.exists(path):
         return {"restored": [], "failed": [], "reason": "snapshot not found"}
     try:
@@ -1143,11 +1177,11 @@ def _restore_state(
             if fh.read(len(_SNAPSHOT_MAGIC)) == _SNAPSHOT_MAGIC:
                 payload = _read_snapshot_records(
                     fh,
-                    max_bytes if max_bytes is not None else DEFAULT_SNAPSHOT_MAX_BYTES,
+                    max_bytes if max_bytes is not None else SNAPSHOT_MAX_BYTES,
                     (
                         max_variable_bytes
                         if max_variable_bytes is not None
-                        else DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES
+                        else SNAPSHOT_MAX_VARIABLE_BYTES
                     ),
                 )
             else:
@@ -1158,6 +1192,10 @@ def _restore_state(
         return {"error": f"load failed: {_safe_str(err)}"}
     if not isinstance(payload, dict):
         return {"error": "corrupt snapshot: not a dict"}
+    if manifest_path is not None:
+        # The manifest that produced this payload: names it skipped were never
+        # restored, so vars() still reports them as unsaved, with the reason.
+        _last_manifest = _read_manifest(manifest_path)
 
     staged: dict[str, Any] = {}
     failed: list[dict[str, str]] = []
@@ -1209,12 +1247,9 @@ async def _handle_state(req: dict[str, Any], ns: dict[str, Any]) -> None:
 
     async def run() -> dict[str, Any]:
         if req["type"] == "snapshot":
-            prune = req.get("prune_oversized", False)
-            if not isinstance(prune, bool):
-                return {"error": "prune_oversized must be a boolean"}
             for field in ("max_bytes", "max_variable_bytes"):
                 # Any present value must be a non-negative int; a JSON null is not a valid way to ask
-                # for the default, and a negative cap would prune every user variable from ns.
+                # for the default, and a negative cap cannot bound the write.
                 if field in req and (
                     isinstance(req[field], bool) or not isinstance(req[field], int) or req[field] < 0
                 ):
@@ -1226,17 +1261,20 @@ async def _handle_state(req: dict[str, Any], ns: dict[str, Any]) -> None:
                 ns,
                 req["path"],
                 req["manifest_path"],
-                req.get("max_bytes", DEFAULT_SNAPSHOT_MAX_BYTES),
-                req.get("max_variable_bytes", DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES),
-                prune,
+                req.get("max_bytes", SNAPSHOT_MAX_BYTES),
+                req.get("max_variable_bytes", SNAPSHOT_MAX_VARIABLE_BYTES),
                 committed,
             )
+        manifest_path = req.get("manifest_path")
+        if manifest_path is not None and not isinstance(manifest_path, str):
+            return {"error": "manifest_path must be a string"}
         return _restore_state(
             ns,
             req["path"],
             committed,
-            req.get("max_bytes", DEFAULT_SNAPSHOT_MAX_BYTES),
-            req.get("max_variable_bytes", DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES),
+            req.get("max_bytes", SNAPSHOT_MAX_BYTES),
+            req.get("max_variable_bytes", SNAPSHOT_MAX_VARIABLE_BYTES),
+            manifest_path=manifest_path,
         )
 
     assert _loop is not None
@@ -1286,8 +1324,8 @@ async def _handle_state(req: dict[str, Any], ns: dict[str, Any]) -> None:
         _last_snapshot_target = {
             "path": req["path"],
             "manifest_path": req["manifest_path"],
-            "max_bytes": req.get("max_bytes", DEFAULT_SNAPSHOT_MAX_BYTES),
-            "max_variable_bytes": req.get("max_variable_bytes", DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES),
+            "max_bytes": req.get("max_bytes", SNAPSHOT_MAX_BYTES),
+            "max_variable_bytes": req.get("max_variable_bytes", SNAPSHOT_MAX_VARIABLE_BYTES),
         }
     _send({"event": "done", "id": rid, "status": "ok", **result})
 
@@ -1312,7 +1350,6 @@ def _flush_final_snapshot(ns: dict[str, Any]) -> None:
             target["manifest_path"],
             target["max_bytes"],
             target["max_variable_bytes"],
-            False,
             None,
         )
     except BaseException:  # noqa: BLE001 - never block or crash the shutdown path
@@ -1325,6 +1362,123 @@ def _list_names(ns: dict[str, Any]) -> list[str]:
     return sorted(
         name for name in ns if isinstance(name, str) and not name.startswith("_") and name not in _ALWAYS_SKIP
     )
+
+
+_SAVE_REASON_TEXT = {
+    "exceeds per-variable snapshot size cap": "over save limit",
+    "exceeds aggregate snapshot size cap": "over total save limit",
+}
+_SIZE_UNITS = (("TB", 1024**4), ("GB", 1024**3), ("MB", 1024**2), ("KB", 1024))
+
+
+def _format_bytes(count: int, *, tenths: bool = False) -> str:
+    for unit, scale in _SIZE_UNITS:
+        if count >= scale:
+            text = f"{count / scale:.1f}"
+            return f"{text if tenths else text.removesuffix('.0')} {unit}"
+    return f"{count} B"
+
+
+def _shallow_size(value: Any) -> int:
+    """sys.getsizeof, plus array data and frame columns: never a deep walk."""
+    size = sys.getsizeof(value)
+    nbytes = getattr(value, "nbytes", None)
+    if isinstance(nbytes, int):
+        size += nbytes
+    memory_usage = getattr(value, "memory_usage", None)
+    if callable(memory_usage):
+        try:
+            used = memory_usage(deep=False)
+            size += int(used.sum() if hasattr(used, "sum") else used)
+        except Exception:  # noqa: BLE001 - a broken accessor must not break the listing
+            pass
+    return size
+
+
+def _value_label(value: Any) -> str:
+    label = type(value).__name__
+    shape = getattr(value, "shape", None)
+    if shape is None:
+        return label
+    try:
+        dims = tuple(shape)
+    except TypeError:
+        return label
+    if not dims:
+        return label
+    if callable(getattr(value, "memory_usage", None)):
+        return f"{label} {'x'.join(str(dim) for dim in dims)}"
+    return f"{label} {dims}"
+
+
+def _resident_bytes() -> int | None:
+    try:
+        with open("/proc/self/statm", encoding="ascii") as statm:
+            resident_pages = int(statm.read().split()[1])
+        return resident_pages * os.sysconf("SC_PAGE_SIZE")
+    except (AttributeError, IndexError, OSError, ValueError):
+        return None
+
+
+def _reason_text(reason: str) -> str:
+    return _SAVE_REASON_TEXT.get(reason, reason)
+
+
+def _namespace_listing(ns: dict[str, Any]) -> str:
+    manifest = _last_manifest or {}
+    saved = set(manifest.get("savedNames") or ())
+    skipped: dict[str, str] = {}
+    for entry in manifest.get("skipped") or ():
+        if isinstance(entry, dict) and isinstance(entry.get("name"), str):
+            skipped[entry["name"]] = str(entry.get("reason") or "")
+
+    rows: list[tuple[str, str, str, int | None, str]] = []
+    live = _list_names(ns)
+    for name in live:
+        try:
+            value = ns[name]
+        except KeyError:  # a background thread deleted it after the key listing
+            continue
+        if name in saved:
+            reason = ""
+        elif name in skipped:
+            reason = _reason_text(skipped[name])
+        else:
+            reason = "not in last snapshot" if manifest else "no snapshot yet"
+        rows.append(
+            ("saved" if name in saved else "unsaved", name, _value_label(value), _shallow_size(value), reason)
+        )
+    for name in sorted(skipped):
+        if name in live:
+            continue
+        # A skipped name the restart did not bring back: keep reporting it.
+        rows.append(("unsaved", name, "-", None, _reason_text(skipped[name])))
+
+    name_width = max((len(row[1]) for row in rows), default=0) + 2
+    label_width = max((len(row[2]) for row in rows), default=0) + 2
+    lines: list[str] = []
+    for status, name, label, size, reason in rows:
+        size_text = "-" if size is None else _format_bytes(size)
+        line = f"{status:<9}{name:<{name_width}}{label:<{label_width}}{size_text:>10}"
+        if reason:
+            line = f"{line}  {reason}"
+        lines.append(line.rstrip())
+    resident = _resident_bytes()
+    if resident is None:
+        estimated = sum(row[3] for row in rows if row[3] is not None)
+        lines.append(f"{'total':<9}{_format_bytes(estimated, tenths=True)} estimated")
+    else:
+        lines.append(f"{'total':<9}{_format_bytes(resident, tenths=True)} resident")
+    return "\n".join(lines)
+
+
+def kernel_vars(*args: Any) -> Any:
+    """`vars()` lists the kernel namespace; `vars(x)` is the builtin."""
+    if args:
+        return builtins.vars(*args)
+    namespace = _user_namespace
+    if namespace is not None:
+        print(_namespace_listing(namespace))
 
 
 async def _handle_list_names(req: dict[str, Any], ns: dict[str, Any]) -> None:
@@ -1728,7 +1882,7 @@ def _setup_fds() -> int:
 
 
 def main() -> None:
-    global _loop, _serve_task
+    global _loop, _serve_task, _user_namespace
     stdin_fd = _setup_fds()
     _start_owner_watchdog()
 
@@ -1738,6 +1892,8 @@ def main() -> None:
     # A real __main__ module makes dill pickle user functions/classes by value.
     user_module = types.ModuleType("__main__")
     user_module.__dict__["__builtins__"] = __builtins__
+    user_module.__dict__["vars"] = kernel_vars
+    _user_namespace = user_module.__dict__
     sys.modules["__main__"] = user_module
 
     _loop = asyncio.new_event_loop()
