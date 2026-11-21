@@ -50,20 +50,22 @@ pub const COMMAND_SPECS: &[CommandSpec] = &[
     CommandSpec::new(&["agents"], "agents", "Search and open sessions"),
     CommandSpec::new(
         &["list"],
-        "list [--all] [--json]",
+        "list [--all] [--check] [--json]",
         "List agents",
     )
     .options(&[
         "-a, --all  Include saved agents",
+        "--check     Report nested session-artifacts roots",
         "--json      Print JSON",
     ]),
     CommandSpec::new(
         &["sessions"],
-        "sessions [--all] [--json]",
+        "sessions [--all] [--check] [--json]",
         "Show agent status, activity, and usage",
     )
     .options(&[
         "-a, --all  Include saved agents",
+        "--check     Report nested session-artifacts roots",
         "--json      Print JSON",
     ]),
     CommandSpec::new(

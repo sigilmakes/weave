@@ -814,13 +814,12 @@ pub(crate) fn session_message_to_loop(message: &SessionAgentMessage) -> Option<A
     serde_json::from_value(serde_json::to_value(message).ok()?).ok()
 }
 
-/// Session artifact directory implied by a conversation-log path
-/// (`dirname(dirname(file))/session-artifacts/<id>`).
+/// Session artifact directory implied by a conversation-log path: the agent's artifacts tree,
+/// keyed by the log's session id.
 #[must_use]
 pub fn session_artifact_dir_for_log(log: &std::path::Path) -> Option<std::path::PathBuf> {
-    let id = log.file_stem()?.to_string_lossy().to_string();
-    let artifacts_root = log.parent()?.parent()?.join("session-artifacts");
-    Some(artifacts_root.join(id))
+    let id = log.file_stem()?.to_string_lossy();
+    crate::session::artifacts::session_artifact_dir(log.parent()?, &id)
 }
 
 /// Rows that fail the conversion drop.

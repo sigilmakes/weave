@@ -19,6 +19,7 @@ use crate::daemon_session_list::{
 struct ParsedDaemonCommand {
     socket_path: PathBuf,
     json: bool,
+    check: bool,
     positionals: Vec<String>,
     /// `--help`/`-h` becomes the internal no-op `help` command, exactly like the TS
     /// `runDaemonClientCommand` fallthrough.
@@ -30,6 +31,10 @@ struct ParsedDaemonCommand {
 pub(crate) fn run_daemon_command(command: &str, args: &[String]) -> Result<()> {
     let parsed = parse_daemon_command(command, args)?;
     if parsed.help {
+        return Ok(());
+    }
+    if parsed.check {
+        run_artifacts_check(parsed.json);
         return Ok(());
     }
     let mut client = DaemonClient::connect(&parsed.socket_path)?;
@@ -49,6 +54,7 @@ pub(crate) fn run_daemon_command(command: &str, args: &[String]) -> Result<()> {
 fn parse_daemon_command(command: &str, args: &[String]) -> Result<ParsedDaemonCommand> {
     let mut socket_path = default_socket_path();
     let mut json = false;
+    let mut check = false;
     let mut positionals: Vec<String> = Vec::new();
     let mut passthrough = false;
     let mut index = 0;
@@ -71,6 +77,7 @@ fn parse_daemon_command(command: &str, args: &[String]) -> Result<ParsedDaemonCo
             return Ok(ParsedDaemonCommand {
                 socket_path,
                 json,
+                check,
                 positionals,
                 help: true,
             });
@@ -87,14 +94,87 @@ fn parse_daemon_command(command: &str, args: &[String]) -> Result<ParsedDaemonCo
             json = true;
             continue;
         }
+        if arg == "--check" && (command == "list" || command == "sessions") {
+            check = true;
+            continue;
+        }
         positionals.push(arg.to_string());
     }
     Ok(ParsedDaemonCommand {
         socket_path,
         json,
+        check,
         positionals,
         help: false,
     })
+}
+
+/// `list --check` / `sessions --check`: the read-only report of nested artifacts trees, so an
+/// operator can size up what the old artifact-dir formula duplicated before removing anything by
+/// hand. Nothing under the tree is created, renamed, or removed.
+fn run_artifacts_check(json: bool) {
+    let root = crate::config::get_agent_dir().join("session-artifacts");
+    let nested = pa_core::session::artifacts::nested_artifacts_roots(&root);
+    // A root inside another root is already counted by its ancestor.
+    let on_disk: u64 = nested
+        .iter()
+        .filter(|entry| {
+            !nested
+                .iter()
+                .any(|other| other.path != entry.path && entry.path.starts_with(&other.path))
+        })
+        .map(|entry| entry.bytes)
+        .sum();
+    if json {
+        print_json(&json!({
+            "root": root.display().to_string(),
+            "nestedRoots": nested
+                .iter()
+                .map(|entry| json!({
+                    "path": entry.path.display().to_string(),
+                    "bytes": entry.bytes,
+                }))
+                .collect::<Vec<_>>(),
+            "totalBytes": on_disk,
+        }));
+        return;
+    }
+    if nested.is_empty() {
+        println!("No nested session-artifacts roots under {}", root.display());
+        return;
+    }
+    println!(
+        "Nested session-artifacts roots under {}: {}",
+        root.display(),
+        nested.len()
+    );
+    for entry in &nested {
+        println!(
+            "{:>10}  {}",
+            format_bytes(entry.bytes),
+            entry.path.display()
+        );
+    }
+    println!(
+        "\n{:>10}  on disk in {} nested roots",
+        format_bytes(on_disk),
+        nested.len()
+    );
+}
+
+/// A byte count with a binary unit, two decimals above a kibibyte.
+fn format_bytes(bytes: u64) -> String {
+    const UNITS: [&str; 4] = ["KiB", "MiB", "GiB", "TiB"];
+    if bytes < 1024 {
+        return format!("{bytes} B");
+    }
+    let mut value = bytes as f64 / 1024.0;
+    let mut unit = 0;
+    while value >= 1024.0 && unit + 1 < UNITS.len() {
+        value /= 1024.0;
+        unit += 1;
+    }
+    format!("{value:.2} {}", UNITS[unit])
 }
 
 fn default_socket_path() -> PathBuf {
