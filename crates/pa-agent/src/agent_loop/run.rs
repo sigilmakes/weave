@@ -108,6 +108,11 @@ pub(crate) async fn run_loop(
                         .push(AgentMessage::from(result.clone()));
                     new_messages.push(AgentMessage::from(result.clone()));
                 }
+                if let Some(refresh) = config.refresh_context.as_ref() {
+                    if let Some(messages) = (refresh)().await? {
+                        current_context.messages = messages;
+                    }
+                }
             }
 
             emit(AgentEvent::TurnEnd {

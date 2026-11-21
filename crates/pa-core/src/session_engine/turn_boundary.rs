@@ -58,11 +58,22 @@ pub struct ContextUsage {
     pub percent: Option<f64>,
 }
 
-/// Rebuilds the loop's model-facing messages from the canonical session after a
-/// history edit: the same assembly a rebuild uses, so a pinned context strategy
-/// still shapes the view.
-pub type LiveContextRebuild = Arc<
-    dyn Fn() -> Pin<Box<dyn Future<Output = anyhow::Result<Vec<AgentMessage>>> + Send>>
+/// One assembled live view: the messages a request is built from, and the
+/// correction the newest usage anchor needs for the edits on that path.
+#[derive(Debug, Clone)]
+pub struct LiveViewSnapshot {
+    pub messages: Vec<AgentMessage>,
+    pub drift: crate::session::UsageDrift,
+    /// The newest session message the assembly covered: the cut a transcript
+    /// refresh keeps, so a message that arrives mid-assembly is not lost and a
+    /// dropped row is not resurrected.
+    pub through: Option<AgentMessage>,
+}
+
+/// Assembles the live view from the canonical session, through the same path a
+/// send uses, so a pinned context strategy still shapes it.
+pub type LiveView = Arc<
+    dyn Fn() -> Pin<Box<dyn Future<Output = anyhow::Result<LiveViewSnapshot>> + Send>>
         + Send
         + Sync,
 >;
@@ -75,7 +86,11 @@ pub struct TurnBoundaryRequests {
     /// swaps the model facts after a live model switch.
     runtime: std::sync::RwLock<Option<Arc<TurnBoundaryRuntime>>>,
     compaction: Mutex<Option<PendingCompaction>>,
-    context_rebuild: std::sync::RwLock<Option<LiveContextRebuild>>,
+    live_view: std::sync::RwLock<Option<LiveView>>,
+    /// Set by `history.edit` and taken by the turn loop: the running loop still
+    /// streams from a private copy of the view, so its next request must be
+    /// rebuilt before the provider sees it.
+    pending_refresh: std::sync::atomic::AtomicBool,
 }
 
 impl TurnBoundaryRequests {
@@ -144,21 +159,47 @@ impl TurnBoundaryRequests {
         self.compaction.lock().await.is_some()
     }
 
-    /// Install the live-view rebuild a canonical-history write uses.
-    pub fn set_context_rebuild(&self, rebuild: LiveContextRebuild) {
+    /// Install the live-view assembly a canonical-history write uses.
+    pub fn set_live_view(&self, live_view: LiveView) {
         *self
-            .context_rebuild
+            .live_view
             .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(rebuild);
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(live_view);
     }
 
-    /// The installed live-view rebuild, when the embedding supplied one.
+    /// The installed live-view assembly, when the embedding supplied one.
     #[must_use]
-    pub fn context_rebuild(&self) -> Option<LiveContextRebuild> {
-        self.context_rebuild
+    pub fn live_view(&self) -> Option<LiveView> {
+        self.live_view
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
+    }
+
+    /// Mark the running loop's view stale after a canonical-history write.
+    pub fn mark_refresh(&self) {
+        self.pending_refresh
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    /// Consume the stale marker; `true` means the loop must re-read the view
+    /// before its next stream request.
+    pub fn take_refresh(&self) -> bool {
+        self.pending_refresh
+            .swap(false, std::sync::atomic::Ordering::SeqCst)
+    }
+
+    /// Assemble the live view, when an embedding installed one.
+    ///
+    /// # Errors
+    ///
+    /// Returns the assembly failure, and reports a missing seam rather than
+    /// silently serving a direct walk.
+    pub async fn assemble_live_view(&self) -> anyhow::Result<LiveViewSnapshot> {
+        let live_view = self
+            .live_view()
+            .ok_or_else(|| anyhow::anyhow!("the session has no live-view assembly"))?;
+        live_view().await
     }
 
     /// The scheduled compaction without consuming it (the consumer
@@ -170,6 +211,8 @@ impl TurnBoundaryRequests {
     /// Drop pending requests so an aborted turn cannot leak them into the next turn.
     pub async fn clear_pending(&self) {
         *self.compaction.lock().await = None;
+        self.pending_refresh
+            .store(false, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// Register `model.info` (always present, like the TS `_hostHandlers`

@@ -82,7 +82,16 @@ if _prime_agent_plugin_session:
     elif _prime_agent_plugin_namespace.session != _prime_agent_plugin_session:
         raise RuntimeError("plugin namespace belongs to another session")
     plugin = _prime_agent_plugin_namespace
-    from rlm.history import HistoryNamespace as _PrimeAgentHistoryNamespace
+    try:
+        from rlm.history import HistoryNamespace as _PrimeAgentHistoryNamespace
+    except ImportError as _prime_agent_history_error:
+        raise RuntimeError(
+            "prime-agent-runtime in this kernel predates the history namespace. "
+            "Repair the dedicated Rust environment ~/.prime/agent/kernel-venv-rust "
+            "(or your PRIME_AGENT_KERNEL_VENV override), preserving the TypeScript runtime, so it "
+            "carries the prime-agent-runtime this binary ships. "
+            f"Import error: {_prime_agent_history_error}"
+        )
     if "_prime_agent_history_namespace" not in globals():
         _prime_agent_history_namespace = _PrimeAgentHistoryNamespace(_prime_agent_plugin_session)
     elif _prime_agent_history_namespace.session != _prime_agent_plugin_session:

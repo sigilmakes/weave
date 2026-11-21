@@ -316,6 +316,64 @@ pub(super) async fn assemble_for_strategy(
     }
 }
 
+/// Assemble one model-facing view from the canonical session through the
+/// selected strategy. The caller publishes the archive and drift it returns.
+///
+/// # Errors
+///
+/// Returns the strategy's failure, or the missing-strategy error for a
+/// non-standard archive with no strategy to read it.
+pub(crate) async fn assemble_session_view(
+    plugins: Option<&std::sync::Arc<SessionPlugins>>,
+    session: &std::sync::Arc<tokio::sync::Mutex<crate::session::manager::SessionManager>>,
+    model: Option<&pa_types::ai::Model>,
+) -> anyhow::Result<(
+    Vec<AgentMessage>,
+    Option<ContextArchive>,
+    crate::session::UsageDrift,
+    Option<AgentMessage>,
+)> {
+    let (context, leaf) = if let Some(plugins) = plugins {
+        let snapshot = {
+            let session = session.lock().await;
+            context_snapshot(plugins, &session)?
+        };
+        snapshot.await?
+    } else {
+        let session = session.lock().await;
+        (
+            session.active_context(),
+            session.get_leaf_id().map(str::to_owned),
+        )
+    };
+    let drift = context.usage_drift;
+    let archive = context.archive;
+    let through = context.through.clone();
+    let messages = match plugins {
+        Some(plugins) => {
+            assemble_at(
+                plugins,
+                context.messages,
+                archive.as_ref(),
+                model,
+                leaf.as_deref(),
+            )
+            .await
+        }
+        None if archive.as_ref().is_some_and(|archive| {
+            !matches!(
+                archive.representation,
+                ContextRepresentation::Standard { .. }
+            )
+        }) =>
+        {
+            bail!("context archive needs an active context strategy")
+        }
+        None => Ok(context.messages),
+    }?;
+    Ok((messages, archive, drift, through))
+}
+
 impl AgentSession {
     pub(crate) async fn context_messages(&self) -> anyhow::Result<Vec<AgentMessage>> {
         let model = self
@@ -337,42 +395,9 @@ impl AgentSession {
         &self,
         model: Option<&pa_types::ai::Model>,
     ) -> anyhow::Result<(Vec<AgentMessage>, Option<ContextArchive>)> {
-        let (context, leaf) = if let Some(plugins) = &self.plugins {
-            let snapshot = {
-                let session = self.session.lock().await;
-                context_snapshot(plugins, &session)?
-            };
-            snapshot.await?
-        } else {
-            let session = self.session.lock().await;
-            (
-                session.active_context(),
-                session.get_leaf_id().map(str::to_owned),
-            )
-        };
-        let messages = match &self.plugins {
-            Some(plugins) => {
-                assemble_at(
-                    plugins,
-                    context.messages,
-                    context.archive.as_ref(),
-                    model,
-                    leaf.as_deref(),
-                )
-                .await
-            }
-            None if context.archive.as_ref().is_some_and(|archive| {
-                !matches!(
-                    archive.representation,
-                    ContextRepresentation::Standard { .. }
-                )
-            }) =>
-            {
-                bail!("context archive needs an active context strategy")
-            }
-            None => Ok(context.messages),
-        }?;
-        Ok((messages, context.archive))
+        let (messages, archive, _, _) =
+            assemble_session_view(self.plugins.as_ref(), &self.session, model).await?;
+        Ok((messages, archive))
     }
 
     /// Re-assemble and publish the non-canonical loop view for a model switch.

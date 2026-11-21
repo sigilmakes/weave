@@ -227,6 +227,35 @@ pub struct ContextTokensEstimate {
     pub last_usage_index: Option<usize>,
 }
 
+/// Whether a message carries a provider-reported usage anchor.
+#[must_use]
+pub(crate) fn has_usage(message: &AgentMessage) -> bool {
+    assistant_usage(message).is_some()
+}
+
+/// The token figure for one view: [`estimate_context_tokens`], corrected for
+/// context edits that changed the messages before the newest usage anchor.
+///
+/// A dropped or replaced row was counted by the provider when the anchor was
+/// reported, so its own chars/4 estimate is subtracted (an inserted row is
+/// added). When the anchor itself stopped being sent, no observation covers
+/// the view and the estimate falls back to the whole-message char count.
+#[must_use]
+pub fn context_tokens_with_drift(
+    messages: &[AgentMessage],
+    drift: crate::session::UsageDrift,
+) -> u64 {
+    let estimate = estimate_context_tokens(messages);
+    if estimate.last_usage_index.is_none() {
+        return estimate.tokens;
+    }
+    if drift.anchor_lost {
+        return messages.iter().map(estimate_tokens).sum();
+    }
+    let corrected = i128::from(estimate.tokens) + i128::from(drift.tokens);
+    u64::try_from(corrected.max(0)).unwrap_or(u64::MAX)
+}
+
 /// Estimate the context tokens: the last valid assistant usage plus
 /// chars/4 estimates for the messages that trail it.
 ///
@@ -277,6 +306,25 @@ pub fn threshold_compaction_due(
     max_output_tokens: u64,
     settings: &CompactionSettings,
 ) -> bool {
+    threshold_compaction_due_with_drift(
+        messages,
+        crate::session::UsageDrift::default(),
+        context_window,
+        max_output_tokens,
+        settings,
+    )
+}
+
+/// [`threshold_compaction_due`] for a view whose newest usage anchor an edit
+/// has corrected; see [`context_tokens_with_drift`].
+#[must_use]
+pub fn threshold_compaction_due_with_drift(
+    messages: &[AgentMessage],
+    drift: crate::session::UsageDrift,
+    context_window: u64,
+    max_output_tokens: u64,
+    settings: &CompactionSettings,
+) -> bool {
     if !settings.enabled || context_window == 0 {
         return false;
     }
@@ -292,7 +340,7 @@ pub fn threshold_compaction_due(
         {
             return false;
         }
-        estimate.tokens
+        context_tokens_with_drift(messages, drift)
     }
     // No valid usage: the last assistant's raw usage decides; error
     // turns never trigger.

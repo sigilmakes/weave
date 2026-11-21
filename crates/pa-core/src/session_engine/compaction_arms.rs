@@ -20,6 +20,12 @@ impl AgentSession {
             .max()
     }
 
+    /// How far the newest provider-reported usage has drifted from the view
+    /// because context edits changed what came before it.
+    pub async fn context_usage_drift(&self) -> crate::session::UsageDrift {
+        self.session.lock().await.active_context().usage_drift
+    }
+
     /// Whether an automatic threshold compaction is due at a turn boundary:
     /// the live loop context over the model's context window against the
     /// effective threshold; usage before the latest compaction never re-triggers.
@@ -34,8 +40,9 @@ impl AgentSession {
             .filter_map(|message| serde_json::to_value(message).ok())
             .filter_map(|value| serde_json::from_value(value).ok())
             .collect();
-        compaction::threshold_compaction_due(
+        compaction::threshold_compaction_due_with_drift(
             &messages,
+            self.context_usage_drift().await,
             model.context_window,
             // The live thinking level decides whether the request folds a
             // thinking budget on top of the base output budget.

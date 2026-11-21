@@ -46,6 +46,26 @@ pub struct EditCounts {
     pub inserted: usize,
 }
 
+/// How far the newest provider-reported usage has drifted from what the view
+/// now costs, because a context edit changed what came before it. Entries a
+/// replaced or dropped row contributed are estimated per entry, so the
+/// correction is bounded by that entry's own estimate.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct UsageDrift {
+    /// Signed token delta from edits applied above the newest usage anchor.
+    pub tokens: i64,
+    /// Set when the anchor itself stopped being sent, so no observed usage
+    /// describes this view any more.
+    pub anchor_lost: bool,
+}
+
+impl UsageDrift {
+    #[must_use]
+    pub fn is_clean(self) -> bool {
+        self == Self::default()
+    }
+}
+
 /// The state one root-to-leaf walk carries: the live view plus the settings
 /// resolved on the same pass.
 #[derive(Debug, Clone)]
@@ -65,6 +85,15 @@ pub struct HistoryWalk {
     session_ids: HashSet<String>,
     turn: usize,
     next_seq: usize,
+    /// The compaction entry whose archive this walk accepted.
+    archive_source: Option<usize>,
+    /// Edits on the path that no longer resolved and were left out of the view.
+    pub skipped_edits: usize,
+    /// Correction the newest usage anchor needs because edits changed the view.
+    pub usage_drift: UsageDrift,
+    /// The newest message the record holds, whether or not the view still shows
+    /// it: the cut a transcript refresh keeps.
+    pub through: Option<AgentMessage>,
 }
 
 /// Walk the root-to-leaf path and apply every substitution on it.
@@ -95,6 +124,10 @@ pub fn walk_history(entries: &[FileEntry], leaf_id: Option<&str>) -> HistoryWalk
             .collect(),
         turn: 0,
         next_seq: 0,
+        archive_source: None,
+        skipped_edits: 0,
+        usage_drift: UsageDrift::default(),
+        through: None,
     };
     let Some(leaf_index) = leaf_index else {
         return walk;
@@ -183,7 +216,9 @@ impl HistoryWalk {
             FileEntry::ContextEdit { payload, .. } => {
                 let payload = payload.clone();
                 let timestamp = timestamp_to_millis(entries[index].timestamp());
-                let _ = self.apply(&payload, timestamp);
+                if self.apply(&payload, timestamp).is_err() {
+                    self.skipped_edits += 1;
+                }
             }
             _ => self.push(entries, index),
         }
@@ -198,6 +233,7 @@ impl HistoryWalk {
     }
 
     fn push_message(&mut self, id: Option<String>, source: Option<usize>, message: AgentMessage) {
+        self.through = Some(message.clone());
         let role = role_of(&message);
         let turn = self.advance_turn(role);
         let seq = self.next_seq;
@@ -223,6 +259,7 @@ impl HistoryWalk {
 
     fn apply_compaction(&mut self, entries: &[FileEntry], index: usize, payload: &CompactionEntry) {
         self.archive.clone_from(&payload.context_archive);
+        self.archive_source = Some(index);
         let portable = self.archive.as_ref().is_none_or(|archive| {
             matches!(
                 archive.representation,
@@ -270,6 +307,26 @@ impl HistoryWalk {
             .count();
         self.turn = 0;
         self.entries = Vec::new();
+        if !portable && self.archive.is_some() {
+            // A native archive is expanded at the stream boundary, so its
+            // summary is part of what the model reads without being one message
+            // in the view: expose it as a view-only entry, so the model can
+            // address it and dropping it clears the archive.
+            let turn = self.advance_turn(ContextRole::Assistant);
+            let summary = payload.summary.clone();
+            self.entries.push(HistoryEntry {
+                id: entries[index].id().map(str::to_owned),
+                source: Some(index),
+                role: ContextRole::Assistant,
+                tokens: text_tokens(&summary),
+                text: summary,
+                message: None,
+                turn,
+                seq: self.next_seq,
+            });
+            self.next_seq += 1;
+            self.turn = 0;
+        }
         if portable {
             let message = AgentMessage::CompactionSummary(CompactionSummaryMessage {
                 rest: pa_types::JsonMap::new(),
@@ -300,6 +357,9 @@ impl HistoryWalk {
     /// op does not use.
     pub fn apply(&mut self, edit: &ContextEditEntry, timestamp: u64) -> Result<EditCounts, String> {
         let snapshot = self.entries.clone();
+        let anchor = last_usage_anchor(&snapshot);
+        let mut drift = self.usage_drift;
+        let mut anchor_lost = drift.anchor_lost;
         let mut dropped: HashSet<usize> = HashSet::new();
         let mut replaced: HashMap<usize, String> = HashMap::new();
         let mut inserted: Vec<(usize, HistoryEntry)> = Vec::new();
@@ -307,11 +367,22 @@ impl HistoryWalk {
             match change {
                 ContextChange::Drop { at } => {
                     for position in self.resolve_target(&snapshot, at)? {
+                        if anchor.is_some_and(|anchor| position == anchor) {
+                            anchor_lost = true;
+                        } else if anchor.is_some_and(|anchor| position < anchor) {
+                            drift.tokens -= token_delta(&snapshot[position]);
+                        }
                         dropped.insert(position);
                     }
                 }
                 ContextChange::Replace { at, text } => {
                     let position = self.resolve_point(&snapshot, at)?;
+                    if dropped.contains(&position) {
+                        return Err(format!(
+                            "context_edit drop and replace name the same entry: {}",
+                            describe(&snapshot[position], position)
+                        ));
+                    }
                     let entry = &snapshot[position];
                     if entry.role == ContextRole::Assistant
                         && assistant_has_tool_calls(entry.message.as_ref())
@@ -320,6 +391,11 @@ impl HistoryWalk {
                             "context_edit replaces the tool calls of assistant entry {}",
                             entry.id.as_deref().unwrap_or("<inserted>")
                         ));
+                    }
+                    if anchor.is_some_and(|anchor| position == anchor) {
+                        anchor_lost = true;
+                    } else if anchor.is_some_and(|anchor| position < anchor) {
+                        drift.tokens -= token_delta(entry);
                     }
                     replaced.insert(position, text.clone());
                 }
@@ -330,10 +406,21 @@ impl HistoryWalk {
                             role.as_str()
                         ));
                     }
-                    let anchor = self.resolve_anchor(&snapshot, after)?;
-                    let entry =
-                        inserted_entry(*role, text, anchor, &snapshot, self.turn.max(1), timestamp);
-                    inserted.push((anchor.map_or(0, |position| position + 1), entry));
+                    let after_position = self.resolve_anchor(&snapshot, after)?;
+                    let entry = inserted_entry(
+                        *role,
+                        text,
+                        after_position,
+                        &snapshot,
+                        self.turn.max(1),
+                        timestamp,
+                    );
+                    if anchor.is_some_and(|anchor| after_position.map_or(0, |at| at + 1) <= anchor)
+                        && entry.message.is_some()
+                    {
+                        drift.tokens += i64::from(u32::try_from(entry.tokens).unwrap_or(u32::MAX));
+                    }
+                    inserted.push((after_position.map_or(0, |position| position + 1), entry));
                 }
             }
         }
@@ -375,6 +462,24 @@ impl HistoryWalk {
         check_tool_calls(&snapshot, &view, &dropped)?;
         self.hidden.extend(hidden);
         self.entries = view;
+        self.usage_drift = UsageDrift {
+            tokens: if anchor_lost { 0 } else { drift.tokens },
+            anchor_lost,
+        };
+        let touched: HashSet<usize> = dropped
+            .iter()
+            .chain(replaced.keys())
+            .filter_map(|position| snapshot[*position].source)
+            .collect();
+        if self
+            .archive_source
+            .is_some_and(|source| touched.contains(&source))
+        {
+            // The archive's own row left the view: stop expanding a prefix whose
+            // summary the model has edited away.
+            self.archive = None;
+            self.archive_source = None;
+        }
         Ok(counts)
     }
 
@@ -433,15 +538,7 @@ impl HistoryWalk {
         match end {
             ContextRangeEnd::PathBound => Ok(path_bound),
             ContextRangeEnd::EntryId(id) => {
-                if let Some(position) = position_of(snapshot, id) {
-                    return Ok(position);
-                }
-                if self.session_ids.contains(id) {
-                    return Err(format!(
-                        "context_edit range ends are on different branches: {id}"
-                    ));
-                }
-                Err(self.off_path(id))
+                position_of(snapshot, id).ok_or_else(|| self.off_path(id))
             }
             ContextRangeEnd::Position(position) => {
                 normalize_bound(*position, snapshot.len()).ok_or_else(|| {
@@ -489,6 +586,28 @@ impl HistoryWalk {
         }
         format!("context_edit selector off the current path: {id} is not in this session")
     }
+}
+
+/// The newest view position whose message carries provider-reported usage.
+fn last_usage_anchor(snapshot: &[HistoryEntry]) -> Option<usize> {
+    snapshot.iter().rposition(|entry| {
+        entry
+            .message
+            .as_ref()
+            .is_some_and(crate::session_engine::compaction::has_usage)
+    })
+}
+
+fn token_delta(entry: &HistoryEntry) -> i64 {
+    i64::from(u32::try_from(entry.tokens).unwrap_or(u32::MAX))
+}
+
+/// Name an entry in a rejection: its id, or its view position for an inserted row.
+fn describe(entry: &HistoryEntry, position: usize) -> String {
+    entry
+        .id
+        .clone()
+        .unwrap_or_else(|| format!("position {position}"))
 }
 
 fn position_of(snapshot: &[HistoryEntry], id: &str) -> Option<usize> {
@@ -1121,5 +1240,343 @@ mod tests {
             .unwrap_err();
         assert!(unknown_id.contains("nope"), "{unknown_id}");
         assert!(unknown_id.contains("not in this session"), "{unknown_id}");
+    }
+
+    fn assistant_row_with_usage(id: &str, parent: &str, input: u64) -> String {
+        serde_json::json!({
+            "type": "message",
+            "id": id,
+            "parentId": parent,
+            "timestamp": "2024-01-01T00:00:02.000Z",
+            "message": {
+                "role": "assistant",
+                "content": [text_block("ok")],
+                "api": "test",
+                "provider": "faux",
+                "model": "faux-1",
+                "usage": {"input": input, "output": 1, "cacheRead": 0, "cacheWrite": 0,
+                    "totalTokens": input + 1,
+                    "cost": {"input": 0.0, "output": 0.0, "cacheRead": 0.0, "cacheWrite": 0.0, "total": 0.0}},
+                "stopReason": "stop",
+                "timestamp": 0
+            }
+        })
+        .to_string()
+    }
+
+    fn archived_compaction_row(id: &str, parent: &str) -> String {
+        compaction_row_with_archive(id, parent, "standard")
+    }
+
+    fn compaction_row_with_archive(id: &str, parent: &str, kind: &str) -> String {
+        let representation = if kind == "responses" {
+            serde_json::json!({
+                "kind": "responses",
+                "provider": "openai",
+                "endpoint": "responses",
+                "model": "m",
+                "archive": "body"
+            })
+        } else {
+            serde_json::json!({"kind": "standard"})
+        };
+        serde_json::json!({
+            "type": "compaction",
+            "id": id,
+            "parentId": parent,
+            "timestamp": "2024-01-01T00:00:05.000Z",
+            "summary": "the story so far",
+            "firstKeptEntryId": parent,
+            "tokensBefore": 1234,
+            "contextArchive": {
+                "version": 1,
+                "strategy": "standard",
+                "compactor": "c",
+                "creatorGeneration": "g",
+                "preparedLeaf": parent,
+                "coveredEntryIds": ["u0"],
+                "representation": representation
+            },
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn dropping_the_compaction_row_clears_its_archive() {
+        let lines = [
+            header(),
+            user_row("u0", "", "old"),
+            user_row("u1", "u0", "kept"),
+            archived_compaction_row("c0", "u1"),
+            user_row("u2", "c0", "after"),
+            edit_row("e0", "u2", &serde_json::json!([{"op": "drop", "at": 0}])),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        assert!(walk.archive.is_none(), "the archive's row left the view");
+        assert_eq!(
+            walk.entries
+                .iter()
+                .map(|entry| entry.text.as_str())
+                .collect::<Vec<_>>(),
+            vec!["kept", "after"],
+            "the dropped summary is hidden"
+        );
+        assert!(walk
+            .hidden
+            .iter()
+            .any(|entry| entry.source.is_some() && entry.role == ContextRole::User));
+    }
+
+    #[test]
+    fn a_native_archive_is_an_addressable_view_entry() {
+        let lines = [
+            header(),
+            user_row("u0", "", "old"),
+            user_row("u1", "u0", "kept"),
+            compaction_row_with_archive("c0", "u1", "responses"),
+            user_row("u2", "c0", "after"),
+            edit_row("e1", "u2", &serde_json::json!([{"op": "drop", "at": "c0"}])),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        assert!(
+            walk.archive.is_none(),
+            "dropping the archive's view entry stops its expansion"
+        );
+        assert_eq!(
+            walk.entries
+                .iter()
+                .map(|entry| entry.text.as_str())
+                .collect::<Vec<_>>(),
+            vec!["kept", "after"]
+        );
+        assert_eq!(walk.messages().len(), 2, "a view-only entry is never sent");
+    }
+
+    #[test]
+    fn an_untouched_archive_survives_the_walk() {
+        let lines = [
+            header(),
+            user_row("u0", "", "old"),
+            user_row("u1", "u0", "kept"),
+            archived_compaction_row("c0", "u1"),
+            user_row("u2", "c0", "after"),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        assert!(walk.archive.is_some());
+    }
+
+    #[test]
+    fn dropping_a_row_before_the_usage_anchor_moves_the_estimate() {
+        let big = "x".repeat(40_000);
+        let lines = [
+            header(),
+            user_row("u0", "", &big),
+            user_row("u1", "u0", "kept"),
+            assistant_row_with_usage("a0", "u1", 20_000),
+            user_row("u2", "a0", "after"),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let mut walk = walk_history(&entries, None);
+        let before = crate::session_engine::compaction::context_tokens_with_drift(
+            &walk.messages(),
+            walk.usage_drift,
+        );
+        walk.apply(&edit(vec![ContextChange::Drop { at: point(0) }]), 0)
+            .unwrap();
+        assert_eq!(walk.usage_drift.tokens, -10_000, "40_000 chars / 4");
+        let after = crate::session_engine::compaction::context_tokens_with_drift(
+            &walk.messages(),
+            walk.usage_drift,
+        );
+        assert_eq!(after, before - 10_000, "{before} -> {after}");
+    }
+
+    #[test]
+    fn an_edit_that_removes_the_usage_anchor_falls_back_to_the_char_count() {
+        let big = "x".repeat(40_000);
+        let lines = [
+            header(),
+            user_row("u0", "", &big),
+            user_row("u1", "u0", "kept"),
+            assistant_row_with_usage("a0", "u1", 1_000),
+            user_row("u2", "a0", "after"),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let mut walk = walk_history(&entries, None);
+        walk.apply(&edit(vec![ContextChange::Drop { at: point(2) }]), 0)
+            .unwrap();
+        assert!(walk.usage_drift.anchor_lost);
+        let estimate = crate::session_engine::compaction::context_tokens_with_drift(
+            &walk.messages(),
+            walk.usage_drift,
+        );
+        let chars: u64 = walk.messages().iter().map(estimate_tokens).sum();
+        assert_eq!(estimate, chars, "no anchor: the whole view is estimated");
+        assert!(estimate > 10_000, "{estimate}");
+    }
+
+    #[test]
+    fn deleting_below_the_threshold_stops_compaction_from_firing() {
+        let big = "x".repeat(400_000);
+        let lines = [
+            header(),
+            user_row("u0", "", &big),
+            user_row("u1", "u0", "kept"),
+            assistant_row_with_usage("a0", "u1", 90_000),
+            edit_row("e0", "a0", &serde_json::json!([{"op": "drop", "at": 0}])),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        let settings = crate::session_engine::compaction::CompactionSettings {
+            threshold_percent: 90.0,
+            enabled: true,
+            reserve_tokens: 0,
+            keep_recent_tokens: 1_000,
+        };
+        let messages = walk.messages();
+        assert!(
+            crate::session_engine::compaction::threshold_compaction_due(
+                &messages, 100_000, 0, &settings
+            ),
+            "the uncorrected anchor still reports the dropped row"
+        );
+        assert!(
+            !crate::session_engine::compaction::threshold_compaction_due_with_drift(
+                &messages,
+                walk.usage_drift,
+                100_000,
+                0,
+                &settings
+            ),
+            "the edited view fits"
+        );
+    }
+
+    #[test]
+    fn drop_and_replace_naming_one_entry_is_rejected() {
+        let (entries, _ids) = chain(4);
+        let mut walk = walk_history(&entries, None);
+        let error = walk
+            .apply(
+                &edit(vec![
+                    ContextChange::Drop { at: range(0, 3) },
+                    ContextChange::Replace {
+                        at: ContextSelector::Position(1),
+                        text: "rewritten".to_string(),
+                    },
+                ]),
+                0,
+            )
+            .unwrap_err();
+        assert!(error.contains("drop and replace"), "{error}");
+        assert_eq!(walk.entries.len(), 4, "a rejected edit mutates nothing");
+    }
+
+    #[test]
+    fn a_range_end_an_earlier_edit_dropped_uses_the_off_path_rule() {
+        let (entries, _ids) = chain(5);
+        let mut walk = walk_history(&entries, None);
+        walk.apply(&edit(vec![ContextChange::Drop { at: point(1) }]), 0)
+            .unwrap();
+        let error = walk
+            .apply(
+                &edit(vec![ContextChange::Drop {
+                    at: ContextTarget::Range(ContextRange {
+                        start: ContextRangeEnd::PathBound,
+                        end: ContextRangeEnd::EntryId("u1".to_string()),
+                    }),
+                }]),
+                0,
+            )
+            .unwrap_err();
+        assert!(error.contains("no longer live"), "{error}");
+        assert!(error.contains("u1"), "{error}");
+    }
+
+    #[test]
+    fn an_insert_anchored_to_a_dropped_row_still_resolves() {
+        let (entries, _ids) = chain(6);
+        let mut walk = walk_history(&entries, None);
+        walk.apply(
+            &edit(vec![
+                ContextChange::Drop { at: point(2) },
+                ContextChange::Insert {
+                    text: "STATE".to_string(),
+                    role: ContextRole::Notes,
+                    after: ContextAnchor::Position(2),
+                },
+            ]),
+            0,
+        )
+        .unwrap();
+        let ids: Vec<Option<&str>> = walk
+            .entries
+            .iter()
+            .map(|entry| entry.id.as_deref())
+            .collect();
+        assert_eq!(
+            ids,
+            vec![
+                Some("u0"),
+                Some("u1"),
+                None,
+                Some("u3"),
+                Some("u4"),
+                Some("u5")
+            ]
+        );
+    }
+
+    #[test]
+    fn an_edit_that_no_longer_resolves_is_counted_rather_than_silently_skipped() {
+        let lines = [
+            header(),
+            user_row("u0", "", "one"),
+            user_row("u1", "u0", "two"),
+            user_row("u2", "u1", "three"),
+            edit_row(
+                "e0",
+                "u2",
+                &serde_json::json!([{"op": "drop", "at": [0, 2]}]),
+            ),
+            edit_row("e1", "e0", &serde_json::json!([{"op": "drop", "at": 3}])),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        assert_eq!(walk.skipped_edits, 1, "e1 addresses a row e0 removed");
+        assert_eq!(
+            walk.entries
+                .iter()
+                .map(|entry| entry.text.as_str())
+                .collect::<Vec<_>>(),
+            vec!["three"]
+        );
+    }
+
+    #[test]
+    fn an_inserted_note_can_be_dropped_by_position_and_survives_compaction() {
+        let lines = [
+            header(),
+            user_row("u0", "", "one"),
+            edit_row(
+                "e0",
+                "u0",
+                &serde_json::json!([{"op": "insert", "text": "STATE", "after": 0}]),
+            ),
+            compaction_row("c0", "e0", Some("u0")),
+        ];
+        let entries = parse_session_entries(&lines.join("\n"));
+        let walk = walk_history(&entries, None);
+        let notes: Vec<&HistoryEntry> = walk
+            .entries
+            .iter()
+            .filter(|entry| entry.role == ContextRole::Notes)
+            .collect();
+        assert_eq!(notes.len(), 1, "a note is not a covered record");
+        assert!(notes[0].id.is_none());
+        assert_eq!(walk.messages().len(), 2, "summary plus the kept row");
     }
 }

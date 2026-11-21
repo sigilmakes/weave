@@ -99,6 +99,8 @@ class HistoryNamespaceTest(unittest.TestCase):
             "over_by": 0,
             "hidden": 29,
             "hidden_tokens": 4_100,
+            "skipped_edits": 1,
+            "shown": 1,
             "rows": [{"id": "a1b2c3d4", "turn": 12, "role": "assistant", "tokens": 4_100,
                       "share": 0.046, "preview": "review: 28 frames"}],
         }})
@@ -107,17 +109,31 @@ class HistoryNamespaceTest(unittest.TestCase):
         self.assertEqual(index.live_tokens, 89_000)
         self.assertEqual(index.over_by, 0)
         self.assertEqual(index.hidden, 29)
+        self.assertEqual(index.skipped_edits, 1)
+        self.assertEqual(index.shown, 1)
         self.assertEqual(index.rows[0], IndexRow(
             id="a1b2c3d4", turn=12, role="assistant", tokens=4_100, share=0.046,
             preview="review: 28 frames",
         ))
 
-    def test_path_returns_entries_in_order(self):
-        second = {"id": "", "turn": 4, "role": "notes", "tokens": 2, "text": "STATE"}
-        history, _ = history_namespace({"history.path": {"entries": [ENTRY, second]}})
-        entries = asyncio.run(history.path())
+    def test_path_previews_entries_and_reports_the_remainder(self):
+        second = {"turn": 4, "role": "notes", "tokens": 2, "text": "STATE", "truncated": False}
+        history, recorder = history_namespace({"history.path": {
+            "entries": [ENTRY, second], "total": 12, "shown": 2,
+        }})
+        entries = asyncio.run(history.path(limit=2))
         self.assertEqual([entry.role for entry in entries], ["user", "notes"])
-        self.assertEqual(entries[1].id, "")
+        self.assertIsNone(entries[1].id, "an inserted entry has no id")
+        self.assertEqual(entries.remainder, 10)
+        self.assertEqual(recorder.calls[0][1], {"session": "session-a", "limit": 2})
+
+    def test_an_insert_without_a_role_leaves_the_role_to_the_host(self):
+        history, recorder = history_namespace({"history.edit": {"status": "inserted 1"}})
+        asyncio.run(history.edit([{"op": "insert", "text": "STATE"}]))
+        self.assertEqual(
+            recorder.calls[0][1]["changes"],
+            [{"op": "insert", "text": "STATE", "after": -1}],
+        )
 
 
 class HistorySnapshotTest(unittest.TestCase):

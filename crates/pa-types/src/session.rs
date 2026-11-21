@@ -389,10 +389,13 @@ impl ContextChange {
             }),
             "insert" => Ok(Self::Insert {
                 text: text()?,
-                role: serde_json::from_value(required("role")?.clone()).map_err(|_| {
-                    "context_edit insert needs a role of user, assistant, tool, or notes"
-                        .to_string()
-                })?,
+                role: match object.get("role") {
+                    None => ContextRole::Notes,
+                    Some(role) => serde_json::from_value(role.clone()).map_err(|_| {
+                        "context_edit insert needs a role of user, assistant, tool, or notes"
+                            .to_string()
+                    })?,
+                },
                 after: match object.get("after") {
                     None => ContextAnchor::default(),
                     Some(anchor) => parse_anchor(anchor)?,
@@ -1194,6 +1197,29 @@ mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn insert_without_a_role_is_a_note_and_rejects_other_ops_keys() {
+        let change =
+            ContextChange::parse(&serde_json::json!({"op": "insert", "text": "STATE"})).unwrap();
+        assert_eq!(
+            change,
+            ContextChange::Insert {
+                text: "STATE".to_string(),
+                role: ContextRole::Notes,
+                after: ContextAnchor::Position(-1),
+            }
+        );
+        let error =
+            ContextChange::parse(&serde_json::json!({"op": "insert", "text": "x", "at": 1}))
+                .unwrap_err();
+        assert!(error.contains("does not use key 'at'"), "{error}");
+        let error = ContextChange::parse(
+            &serde_json::json!({"op": "insert", "text": "x", "role": "system"}),
+        )
+        .unwrap_err();
+        assert!(error.contains("role of user"), "{error}");
     }
 
     #[test]

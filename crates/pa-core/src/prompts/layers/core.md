@@ -12,12 +12,32 @@ The kernel is your workspace. Assignments persist across restarts when the snaps
 
 Your context is a session tree. Every turn is an entry, and the request you receive is the path from the root to the newest entry.
 
-- `history.index()`: how full the context is and which entries use it
-- `history.path()`: the live view in order, with ids
-- `history.get(selector)`: entries; `-1` is the newest, `slice(12, 41)` is a region
-- `history.edit(changes)`: drop, replace, or insert entries
+All four methods are coroutines: await them, or nothing happens.
 
-An edit removes a turn from what you see, never from the record: `history.get` still returns it.
+- `history.index(order="tokens", limit=20, role=None, query=None, include_hidden=False)`: the token figure of the request about to be sent, the window, and the entries that use it, each with id, turn, role, tokens, share of the total, and a preview
+- `history.path(limit=500)`: the live view in order; each entry previews its text and says whether it was cut, so use get for one entry in full
+- `history.get(selector, limit=200)`: one entry by id or position, or a region; -1 is the newest entry, slice(12, 41) is positions 12 through 40, slice(-20, None) is the last twenty. A region longer than limit returns the first limit entries and reports the remainder as total, shown, remainder, and note
+- `history.edit(changes)`: drop, replace, or insert entries, then report what changed and the new live figure
+
+A change is one dict:
+
+```python
+{"op": "drop", "at": 41}                                  # one entry
+{"op": "drop", "at": slice(12, 41)}                      # positions 12 through 40
+{"op": "replace", "at": 41, "text": "review: 28 frames admitted"}
+{"op": "insert", "text": "STATE: reading native.rs:417"} # role defaults to "notes"
+{"op": "insert", "text": "first twenty", "role": "user", "after": -20}
+```
+
+A drop or a replace takes at: a position, an entry id, or a slice, where null as a slice end means that end of the path. A replace takes one entry, not a region.
+
+An insert takes text, an optional role of user or notes, and an optional after anchor (a position or an id, default -1, the end of the view). A notes entry stays in the view you read and is never sent to the provider; a user entry is sent. Inserted entries have no id: address them by position. If role is left out, the entry is a note.
+
+Positions and slices address the live view; ids address the record. An edit removes a turn from what you see, never from the record, so an id an earlier edit dropped still returns its text from get.
+
+All changes in one call resolve against the path as it stood before the call, so they cannot invalidate each other. A call that breaks a rule writes nothing and names the rule and the entry.
+
+The next request carries the edit, in the same run, not only after the next prompt.
 
 Every edit changes text before the end of the context, so the next request re-reads everything after it. Edits near the end are nearly free; edits near the beginning cost a full re-read.
 

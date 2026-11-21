@@ -2,6 +2,7 @@
 pub mod artifacts;
 pub mod discovery;
 mod history;
+pub use history::UsageDrift;
 pub(crate) use history::{walk_history, HistoryEntry, HistoryWalk};
 pub mod manager;
 pub mod manager_ext;
@@ -309,6 +310,11 @@ pub struct SessionContext {
     pub thinking_level: String,
     pub service_tier: Option<pa_types::ai::ServiceTier>,
     pub model: Option<(String, String)>,
+    /// Correction the newest usage anchor needs because context edits changed
+    /// the view; [`UsageDrift::default`] for an unedited session.
+    pub usage_drift: UsageDrift,
+    /// The newest message the record holds, whether or not the view shows it.
+    pub through: Option<AgentMessage>,
 }
 
 #[must_use]
@@ -321,6 +327,8 @@ pub fn build_session_context(entries: &[FileEntry], leaf_id: Option<&str>) -> Se
         thinking_level: walk.thinking_level,
         service_tier: walk.service_tier,
         model: walk.model,
+        usage_drift: walk.usage_drift,
+        through: walk.through,
     }
 }
 

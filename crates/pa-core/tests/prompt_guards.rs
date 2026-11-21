@@ -287,6 +287,9 @@ fn kernel_bound_names() -> BTreeSet<String> {
         if line.starts_with("plugin = ") {
             names.insert("plugin".to_string());
         }
+        if line.starts_with("history = ") {
+            names.insert("history".to_string());
+        }
         if let Some(rest) = line.strip_prefix("import rlm.mcp as ") {
             names.insert(rest.trim().to_string());
         }
@@ -421,7 +424,13 @@ fn documented_surface_tokens() -> BTreeSet<String> {
         let Some(end) = rest.find('`') else {
             continue;
         };
-        let token = rest[..end].split('(').next().unwrap_or_default().trim();
+        let token = rest[..end]
+            .split('(')
+            .next()
+            .unwrap_or_default()
+            .trim()
+            .trim_start_matches("await ")
+            .trim();
         let valid = token
             .chars()
             .next()

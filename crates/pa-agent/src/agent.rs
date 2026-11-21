@@ -378,6 +378,9 @@ struct AgentInner {
     /// The natural-turn-end continuation hook: settable after construction so the session engine
     /// can install it. A plain mutex: cloned at run-config build, never held across an await.
     get_continuation_messages: Mutex<Option<GetContinuationMessagesFn>>,
+    /// The per-tool-batch view refresh a canonical-history write installs. A plain
+    /// mutex: cloned at run-config build, never held across an await.
+    refresh_context: Mutex<Option<crate::agent_loop::RefreshContextFn>>,
     /// Per-run model override; the owner sets it right before starting a routed run and clears it
     /// before the next dispatch. A plain mutex: read at run-config build, never held across an
     /// await.
@@ -606,6 +609,12 @@ impl AgentInner {
         config.get_steering_messages = Some(steering);
         config.get_follow_up_messages = Some(follow_up);
         config.get_continuation_messages = continuation;
+        config.refresh_context.clone_from(
+            &self
+                .refresh_context
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
+        );
         config.tool_execution = self.tool_execution;
         config.before_tool_call.clone_from(&self.before_tool_call);
         config.after_tool_call.clone_from(&self.after_tool_call);
@@ -903,6 +912,7 @@ impl Agent {
             should_stop_after_turn: options.should_stop_after_turn,
             should_stop_before_turn: options.should_stop_before_turn,
             get_continuation_messages: Mutex::new(options.get_continuation_messages),
+            refresh_context: Mutex::new(None),
             model_override: Mutex::new(None),
             session_id: options.session_id,
             transport: options.transport,
@@ -1065,6 +1075,17 @@ impl Agent {
     /// Panics if the `get_continuation_messages` mutex is poisoned.
     pub fn set_continuation_hook(&self, hook: Option<GetContinuationMessagesFn>) {
         *self.inner.get_continuation_messages.lock().unwrap() = hook;
+    }
+
+    /// Install or replace the per-tool-batch view refresh: a tool that rewrites
+    /// canonical history returns the new model-facing messages so the next
+    /// stream request in this run carries them. `None` uninstalls the hook.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `refresh_context` mutex is poisoned.
+    pub fn set_refresh_context(&self, hook: Option<crate::agent_loop::RefreshContextFn>) {
+        *self.inner.refresh_context.lock().unwrap() = hook;
     }
 
     /// # Panics

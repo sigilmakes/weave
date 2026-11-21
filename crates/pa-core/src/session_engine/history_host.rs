@@ -9,10 +9,13 @@ use pa_types::session::{ContextEditEntry, ContextRole, ContextSelector, ContextT
 
 use crate::kernel::shared::{host_handler, HostRequestHandlers};
 use crate::session::{HistoryEntry, HistoryWalk};
-use crate::session_engine::compaction::estimate_context_tokens;
 use pa_types::session::FileEntry;
 
 use super::turn_boundary::{TurnBoundaryRequests, TurnBoundaryRuntime};
+
+/// Largest per-entry text `history.path` sends back; a path previews its
+/// entries and `history.get` returns one entry in full.
+const PATH_PREVIEW_CHARS: usize = 200;
 
 /// Register `history.index`, `history.path`, `history.get`, and
 /// `history.edit` against a turn-boundary runtime.
@@ -27,22 +30,54 @@ pub fn register_history_handlers(
             let weak = weak.clone();
             Box::pin(async move {
                 let runtime = bound_runtime(&weak)?;
+                let requests = weak.upgrade().ok_or_else(|| {
+                    anyhow::anyhow!("the session ended before the request could be served")
+                })?;
                 let walk = load_walk(&runtime).await?;
+                let live = requests.assemble_live_view().await?;
                 let window = runtime.context_window.unwrap_or_default();
-                Ok(index_payload(&walk, &payload.data, window))
+                Ok(index_payload(&walk, &payload.data, window, &live))
             })
         }),
     );
     let weak = Arc::downgrade(requests);
     handlers.register(
         "history.path",
-        host_handler(move |_payload| {
+        host_handler(move |payload| {
             let weak = weak.clone();
             Box::pin(async move {
                 let runtime = bound_runtime(&weak)?;
                 let walk = load_walk(&runtime).await?;
+                let limit = payload
+                    .data
+                    .get("limit")
+                    .and_then(Value::as_u64)
+                    .map_or(500, |limit| limit.max(1) as usize);
+                let total = walk.entries.len();
+                let entries: Vec<Value> = walk
+                    .entries
+                    .iter()
+                    .take(limit)
+                    .map(|entry| {
+                        let mut value = entry_payload(entry);
+                        if let Some(object) = value.as_object_mut() {
+                            let text = entry
+                                .text
+                                .chars()
+                                .take(PATH_PREVIEW_CHARS)
+                                .collect::<String>();
+                            let truncated = text.len() < entry.text.len();
+                            object.insert("text".to_string(), Value::String(text));
+                            object.insert("truncated".to_string(), Value::Bool(truncated));
+                        }
+                        value
+                    })
+                    .collect();
                 Ok(json!({
-                    "entries": walk.entries.iter().map(entry_payload).collect::<Vec<_>>(),
+                    "entries": entries,
+                    "total": total,
+                    "shown": entries.len(),
+                    "skipped_edits": walk.skipped_edits,
                 }))
             })
         }),
@@ -72,6 +107,43 @@ pub fn register_history_handlers(
     );
 }
 
+/// The refresh the turn loop calls after every tool batch: when `history.edit`
+/// marked the view stale, re-assemble it, publish it to the transcript without
+/// dropping a message that arrived meanwhile, and hand it to the loop.
+#[must_use]
+pub fn refresh_hook(
+    requests: Arc<TurnBoundaryRequests>,
+    agent: std::sync::Weak<pa_agent::agent::Agent>,
+) -> pa_agent::agent_loop::RefreshContextFn {
+    Arc::new(move || {
+        let requests = Arc::clone(&requests);
+        let agent = agent.clone();
+        Box::pin(async move {
+            if !requests.take_refresh() {
+                return Ok(None);
+            }
+            let live = requests.assemble_live_view().await?;
+            let messages: Vec<pa_agent::types::AgentMessage> = live
+                .messages
+                .iter()
+                .filter_map(super::session_message_to_loop)
+                .collect();
+            let through = live
+                .through
+                .as_ref()
+                .and_then(super::session_message_to_loop);
+            if let Some(agent) = agent.upgrade() {
+                let next = messages.clone();
+                agent
+                    .mutate_messages(move |current| super::merge_refreshed(current, next, through))
+                    .await;
+            }
+            Ok(Some(messages))
+        })
+            as pa_agent::BoxFut<'static, anyhow::Result<Option<Vec<pa_agent::types::AgentMessage>>>>
+    })
+}
+
 fn bound_runtime(
     weak: &std::sync::Weak<TurnBoundaryRequests>,
 ) -> anyhow::Result<Arc<TurnBoundaryRuntime>> {
@@ -96,13 +168,18 @@ async fn load_walk(runtime: &TurnBoundaryRuntime) -> anyhow::Result<HistoryWalk>
 }
 
 fn entry_payload(entry: &HistoryEntry) -> Value {
-    json!({
-        "id": entry.id.clone().unwrap_or_default(),
+    let mut value = json!({
         "turn": entry.turn,
         "role": entry.role.as_str(),
         "tokens": entry.tokens,
         "text": entry.text,
-    })
+    });
+    if let Some(id) = entry.id.as_deref() {
+        if let Some(object) = value.as_object_mut() {
+            object.insert("id".to_string(), Value::String(id.to_string()));
+        }
+    }
+    value
 }
 
 fn preview(text: &str) -> String {
@@ -113,7 +190,12 @@ fn preview(text: &str) -> String {
     flat.chars().take(160).collect()
 }
 
-fn index_payload(walk: &HistoryWalk, data: &Value, window: u64) -> Value {
+fn index_payload(
+    walk: &HistoryWalk,
+    data: &Value,
+    window: u64,
+    live: &super::turn_boundary::LiveViewSnapshot,
+) -> Value {
     let order = data
         .get("order")
         .and_then(Value::as_str)
@@ -132,8 +214,8 @@ fn index_payload(walk: &HistoryWalk, data: &Value, window: u64) -> Value {
         .and_then(Value::as_bool)
         .unwrap_or(false);
 
-    let messages = walk.messages();
-    let live_tokens = estimate_context_tokens(&messages).tokens;
+    let live_tokens =
+        crate::session_engine::compaction::context_tokens_with_drift(&live.messages, live.drift);
     let hidden_tokens = walk.hidden.iter().map(|entry| entry.tokens).sum::<u64>();
 
     let mut rows: Vec<&HistoryEntry> = walk
@@ -182,6 +264,8 @@ fn index_payload(walk: &HistoryWalk, data: &Value, window: u64) -> Value {
         "over_by": live_tokens.saturating_sub(window),
         "hidden": walk.hidden.len(),
         "hidden_tokens": hidden_tokens,
+        "skipped_edits": walk.skipped_edits,
+        "shown": rows.len(),
         "rows": rows,
     })
 }
@@ -310,23 +394,13 @@ async fn edit(
         let mut session = runtime.session.lock().await;
         session.append_context_edit(entry)?;
     }
-    let messages = match weak
+    let requests = weak
         .upgrade()
-        .and_then(|requests| requests.context_rebuild())
-    {
-        Some(rebuild) => rebuild().await?,
-        None => walk.messages(),
-    };
-    runtime
-        .agent
-        .set_messages(
-            messages
-                .iter()
-                .filter_map(super::session_message_to_loop)
-                .collect(),
-        )
-        .await;
-    let live = estimate_context_tokens(&messages).tokens;
+        .ok_or_else(|| anyhow::anyhow!("the session ended before the edit could be served"))?;
+    requests.mark_refresh();
+    let live = requests.assemble_live_view().await?;
+    let live_tokens =
+        crate::session_engine::compaction::context_tokens_with_drift(&live.messages, live.drift);
     let window = runtime.context_window.unwrap_or_default();
     Ok(json!({
         "status": format!(
@@ -334,10 +408,10 @@ async fn edit(
             counts.dropped,
             counts.replaced,
             counts.inserted,
-            thousands(live),
+            thousands(live_tokens),
             thousands(window)
         ),
-        "live_tokens": live,
+        "live_tokens": live_tokens,
         "window": window,
     }))
 }
@@ -365,6 +439,7 @@ mod tests {
     use super::*;
     use crate::kernel::shared::HostRequestPayload;
     use crate::session::manager::SessionManager;
+    use crate::session_engine::compaction::estimate_context_tokens;
     use crate::session_engine::turn_boundary::{
         ModelInfo, TurnBoundaryRequests, TurnBoundaryRuntime,
     };
@@ -417,12 +492,28 @@ mod tests {
     ) -> (
         Arc<TurnBoundaryRequests>,
         HostRequestHandlers,
+        Arc<Mutex<SessionManager>>,
         tempfile::TempDir,
     ) {
         let requests = Arc::new(TurnBoundaryRequests::new());
         let mut handlers = HostRequestHandlers::default();
         register_history_handlers(&requests, &mut handlers);
         let session = Arc::new(Mutex::new(session));
+        requests.set_live_view(Arc::new({
+            let session = Arc::clone(&session);
+            move || {
+                let session = Arc::clone(&session);
+                Box::pin(async move {
+                    let context = { session.lock().await.active_context() };
+                    let through = context.through.clone();
+                    Ok(crate::session_engine::turn_boundary::LiveViewSnapshot {
+                        messages: context.messages,
+                        drift: context.usage_drift,
+                        through,
+                    })
+                })
+            }
+        }));
         requests.bind(TurnBoundaryRuntime {
             agent: Arc::new(Agent::new(AgentOptions {
                 initial_state: AgentInitialState {
@@ -435,7 +526,7 @@ mod tests {
                 stream_fn: None,
                 ..Default::default()
             })),
-            session,
+            session: Arc::clone(&session),
             context_window: Some(200_000),
             model_info: ModelInfo {
                 id: "faux-1".to_string(),
@@ -444,7 +535,7 @@ mod tests {
             },
         });
         let dir = tempfile::TempDir::new().unwrap();
-        (requests, handlers, dir)
+        (requests, handlers, session, dir)
     }
 
     fn handler(handlers: &HostRequestHandlers, name: &str) -> crate::kernel::shared::HostHandlerFn {
@@ -454,7 +545,7 @@ mod tests {
     #[tokio::test]
     async fn index_totals_match_the_request_built_at_send() {
         let (_dir, session) = session_with(40);
-        let (requests, handlers, _tmp) = registered(session);
+        let (requests, handlers, _session, _tmp) = registered(session);
         let response = handler(&handlers, "history.index")(payload(serde_json::json!({
             "order": "tokens",
             "limit": 5,
@@ -474,7 +565,7 @@ mod tests {
     #[tokio::test]
     async fn get_reports_the_remainder_of_an_over_limit_region() {
         let (_dir, session) = session_with(50);
-        let (_requests, handlers, _tmp) = registered(session);
+        let (_requests, handlers, _session, _tmp) = registered(session);
         let get = handler(&handlers, "history.get");
         let region = get(payload(serde_json::json!({
             "selector": {"kind": "range", "start": 0, "end": 45},
@@ -500,7 +591,7 @@ mod tests {
     async fn rejected_edit_names_the_target_and_leaves_the_file_unchanged() {
         let (_dir, session) = session_with(6);
         let file = session.get_session_file().unwrap().to_owned();
-        let (requests, handlers, _tmp) = registered(session);
+        let (requests, handlers, _session, _tmp) = registered(session);
         let before = std::fs::read(&file).unwrap();
         let edit = handler(&handlers, "history.edit");
         let error = edit(payload(serde_json::json!({
@@ -529,7 +620,7 @@ mod tests {
     async fn edit_writes_one_row_and_the_next_request_drops_the_region() {
         let (_dir, session) = session_with(10);
         let file = session.get_session_file().unwrap().to_owned();
-        let (requests, handlers, _tmp) = registered(session);
+        let (requests, handlers, _session, _tmp) = registered(session);
         let status = handler(&handlers, "history.edit")(payload(serde_json::json!({
             "changes": [
                 {"op": "drop", "at": [0, 3]},
@@ -578,5 +669,245 @@ mod tests {
         let live = path["entries"].as_array().unwrap();
         assert_eq!(live.len(), 8);
         assert_eq!(live.last().unwrap()["role"], "notes");
+    }
+
+    fn user_texts(messages: &[pa_agent::types::Message]) -> Vec<String> {
+        messages
+            .iter()
+            .filter_map(|message| match message {
+                pa_agent::types::Message::User(user) => Some(match &user.content {
+                    pa_agent::types::UserContent::Text(text) => text.clone(),
+                    pa_agent::types::UserContent::Parts(_) => String::new(),
+                }),
+                _ => None,
+            })
+            .collect()
+    }
+
+    struct EditTool {
+        edit: crate::kernel::shared::HostHandlerFn,
+        changes: Value,
+    }
+
+    static EDIT_SCHEMA: std::sync::LazyLock<Value> =
+        std::sync::LazyLock::new(|| json!({"type": "object"}));
+
+    impl pa_agent::types::AgentTool for EditTool {
+        fn name(&self) -> &'static str {
+            "history_edit"
+        }
+
+        fn description(&self) -> &'static str {
+            "edit the history view"
+        }
+
+        fn parameters(&self) -> &Value {
+            &EDIT_SCHEMA
+        }
+
+        fn execute(
+            self: Arc<Self>,
+            _tool_call_id: String,
+            _params: Value,
+            _signal: pa_agent::abort::AbortSignal,
+            _on_update: pa_agent::types::AgentToolUpdateCallback,
+        ) -> pa_agent::BoxFut<'static, anyhow::Result<pa_agent::types::AgentToolResult>> {
+            let edit = Arc::clone(&self.edit);
+            let changes = self.changes.clone();
+            Box::pin(async move {
+                let response = edit(payload(json!({ "changes": changes }))).await?;
+                let status = response["status"].as_str().unwrap_or_default().to_string();
+                Ok(pa_agent::types::AgentToolResult::text(status))
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn an_edit_reaches_the_next_request_of_the_same_run() {
+        let (_dir, session) = session_with(6);
+        let (requests, handlers, session, _tmp) = registered(session);
+        let initial = {
+            let context = session.lock().await.active_context();
+            context
+                .messages
+                .iter()
+                .filter_map(super::super::session_message_to_loop)
+                .collect::<Vec<_>>()
+        };
+        let provider = Arc::new(pa_agent::scripted::ScriptedProvider::new(agent_model()));
+        provider.push_tool_call_turn(None, vec![("call-1", "history_edit", json!({}))]);
+        provider.push_text_turn("done");
+        let agent = Arc::new(Agent::new(AgentOptions {
+            initial_state: AgentInitialState {
+                system_prompt: Some("s".to_string()),
+                model: Some(agent_model()),
+                thinking_level: Some(ThinkingLevel::Off),
+                tools: Some(vec![Arc::new(EditTool {
+                    edit: handler(&handlers, "history.edit"),
+                    changes: json!([{"op": "drop", "at": [0, 3]}]),
+                })]),
+                messages: Some(initial),
+            },
+            stream_fn: Some(provider.stream_fn()),
+            ..Default::default()
+        }));
+        let _persistence = agent
+            .subscribe({
+                let session = Arc::clone(&session);
+                move |event, _signal| {
+                    let session = Arc::clone(&session);
+                    Box::pin(async move {
+                        super::super::persist_event(&session, event).await?;
+                        Ok(())
+                    })
+                }
+            })
+            .await;
+        agent.set_refresh_context(Some(refresh_hook(
+            Arc::clone(&requests),
+            Arc::downgrade(&agent),
+        )));
+        agent.prompt("go").await.unwrap();
+
+        let calls = provider.calls();
+        assert_eq!(calls.len(), 2, "one request per turn");
+        let first = user_texts(&calls[0].messages);
+        assert!(first.contains(&"m0".to_string()), "{first:?}");
+        let second = user_texts(&calls[1].messages);
+        assert!(!second.contains(&"m0".to_string()), "{second:?}");
+        assert!(!second.contains(&"m2".to_string()), "{second:?}");
+        assert!(second.contains(&"m3".to_string()), "{second:?}");
+        assert!(second.contains(&"m5".to_string()), "{second:?}");
+        let last_call = &calls[1].messages;
+        assert!(
+            last_call
+                .iter()
+                .any(|message| matches!(message, pa_agent::types::Message::ToolResult(_))),
+            "the edit's own tool result stays in the request"
+        );
+    }
+
+    #[tokio::test]
+    async fn get_by_id_and_by_slice_return_the_same_entry() {
+        let (_dir, session) = session_with(8);
+        let (_requests, handlers, session, _tmp) = registered(session);
+        let id = {
+            let session = session.lock().await;
+            let entries = session.retained_entries().to_vec();
+            crate::session::walk_history(&entries, None).entries[3]
+                .id
+                .clone()
+                .unwrap()
+        };
+        let get = handler(&handlers, "history.get");
+        let by_id = get(payload(json!({"selector": {"kind": "id", "value": id}})))
+            .await
+            .unwrap();
+        let by_slice = get(payload(json!({
+            "selector": {"kind": "range", "start": 3, "end": 4},
+        })))
+        .await
+        .unwrap();
+        assert_eq!(by_id["entries"], by_slice["entries"]);
+        assert_eq!(by_id["entries"][0]["text"], "m3");
+        assert_eq!(by_id["total"], 1);
+
+        let by_position = get(payload(
+            json!({"selector": {"kind": "position", "value": 3}}),
+        ))
+        .await
+        .unwrap();
+        assert_eq!(by_position["entries"], by_id["entries"]);
+    }
+
+    #[tokio::test]
+    async fn a_bounded_path_reports_its_remainder_and_previews() {
+        let (_dir, session) = session_with(4);
+        let (requests, handlers, _session, _tmp) = registered(session);
+        handler(&handlers, "history.edit")(payload(json!({
+            "changes": [{"op": "replace", "at": 1, "text": "x".repeat(300)}],
+        })))
+        .await
+        .unwrap();
+        let path = handler(&handlers, "history.path")(payload(json!({"limit": 2})))
+            .await
+            .unwrap();
+        assert_eq!(path["entries"].as_array().unwrap().len(), 2);
+        assert_eq!(path["total"], 4);
+        assert_eq!(path["shown"], 2);
+        assert_eq!(path["entries"][1]["truncated"], true);
+        assert_eq!(
+            path["entries"][1]["text"].as_str().unwrap().chars().count(),
+            PATH_PREVIEW_CHARS
+        );
+        drop(requests);
+    }
+
+    #[tokio::test]
+    async fn an_inserted_note_carries_no_id_and_addresses_by_position() {
+        let (_dir, session) = session_with(3);
+        let (_requests, handlers, _session, _tmp) = registered(session);
+        handler(&handlers, "history.edit")(payload(json!({
+            "changes": [{"op": "insert", "text": "STATE"}],
+        })))
+        .await
+        .unwrap();
+        let path = handler(&handlers, "history.path")(payload(json!({})))
+            .await
+            .unwrap();
+        let note = path["entries"].as_array().unwrap().last().unwrap();
+        assert_eq!(note["role"], "notes");
+        assert!(note.get("id").is_none(), "{note}");
+        let get = handler(&handlers, "history.get")(payload(json!({
+            "selector": {"kind": "position", "value": -1},
+        })))
+        .await
+        .unwrap();
+        assert_eq!(get["entries"][0]["text"], "STATE");
+    }
+
+    fn user_message(text: &str) -> pa_agent::types::AgentMessage {
+        pa_agent::types::AgentMessage::Standard(pa_agent::types::Message::User(
+            pa_agent::types::UserMessage {
+                content: pa_agent::types::UserContent::Text(text.to_string()),
+                timestamp: 0,
+                rest: pa_types::JsonMap::new(),
+            },
+        ))
+    }
+
+    #[test]
+    fn a_refresh_keeps_a_late_message_and_never_resurrects_a_dropped_row() {
+        // `through` is the newest message the record holds, so a row the view
+        // dropped is behind the cut and stays gone.
+        let mut current = vec![user_message("u0"), user_message("u1"), user_message("u2")];
+        let refreshed = vec![user_message("u0"), user_message("u1")];
+        super::super::merge_refreshed(&mut current, refreshed, Some(user_message("u2")));
+        assert_eq!(user_texts_loop(&current), vec!["u0", "u1"]);
+
+        // A message that arrived after the assembly is past the cut and survives.
+        let mut current = vec![user_message("u0"), user_message("u1"), user_message("late")];
+        let refreshed = vec![user_message("u0")];
+        super::super::merge_refreshed(&mut current, refreshed, Some(user_message("u1")));
+        assert_eq!(user_texts_loop(&current), vec!["u0", "late"]);
+
+        let mut current = vec![user_message("u0")];
+        super::super::merge_refreshed(&mut current, Vec::new(), None);
+        assert!(current.is_empty(), "an emptied view is not refilled");
+    }
+
+    fn user_texts_loop(messages: &[pa_agent::types::AgentMessage]) -> Vec<String> {
+        messages
+            .iter()
+            .filter_map(|message| match message {
+                pa_agent::types::AgentMessage::Standard(pa_agent::types::Message::User(user)) => {
+                    Some(match &user.content {
+                        pa_agent::types::UserContent::Text(text) => text.clone(),
+                        pa_agent::types::UserContent::Parts(_) => String::new(),
+                    })
+                }
+                _ => None,
+            })
+            .collect()
     }
 }

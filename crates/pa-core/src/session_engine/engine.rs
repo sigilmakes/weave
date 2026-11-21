@@ -638,37 +638,48 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
         .or_else(|| super::provider_adapter::native_model(&model).ok());
     let context_archive_state = Arc::new(std::sync::RwLock::new(context_archive.clone()));
     let bootstrap_model = (model.provider.clone(), model.id.clone());
-    // A `history.edit` writes canonical history mid-turn; the loop's view is
-    // rebuilt through the same assembly a resume uses, so a pinned context
-    // strategy still shapes it.
-    let context_rebuild: super::turn_boundary::LiveContextRebuild = {
+    // One accepted-context model slot, shared with the live-view assembly: a
+    // rebuild after a `history.edit` must see a live model switch, not the
+    // model this engine was built with.
+    let context_model = Arc::new(std::sync::RwLock::new(full_model.clone()));
+    // A `history.edit` writes canonical history mid-turn; the view is
+    // assembled through the same path a send uses, so a pinned context strategy
+    // still shapes it, and the accepted archive it publishes stops expanding a
+    // summary the edit removed.
+    let live_view: super::turn_boundary::LiveView = {
         let plugins = Arc::clone(&plugins);
         let session = wiring.session.clone();
-        let model = full_model.clone();
+        let context_model = Arc::clone(&context_model);
+        let archive = Arc::clone(&context_archive_state);
         Arc::new(move || {
             let plugins = Arc::clone(&plugins);
-            let session = session.clone();
-            let model = model.clone();
+            let session = Arc::clone(&session);
+            let context_model = Arc::clone(&context_model);
+            let archive = Arc::clone(&archive);
             Box::pin(async move {
-                let (context, leaf) = {
-                    let session = session.lock().await;
-                    (
-                        session.active_context(),
-                        session.get_leaf_id().map(str::to_owned),
+                let model = context_model
+                    .read()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone();
+                let (messages, accepted, drift, through) =
+                    super::context_strategy::assemble_session_view(
+                        Some(&plugins),
+                        &session,
+                        model.as_ref(),
                     )
-                };
-                super::context_strategy::assemble_at(
-                    &plugins,
-                    context.messages,
-                    context.archive.as_ref(),
-                    model.as_ref(),
-                    leaf.as_deref(),
-                )
-                .await
+                    .await?;
+                *archive
+                    .write()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner) = accepted;
+                Ok(super::turn_boundary::LiveViewSnapshot {
+                    messages,
+                    drift,
+                    through,
+                })
             })
         })
     };
-    turn_boundary.set_context_rebuild(context_rebuild);
+    turn_boundary.set_live_view(live_view);
 
     let thinking_level = config.thinking_level.unwrap_or(ThinkingLevel::Off);
     let initial_context_empty = existing_messages.is_empty();
@@ -805,6 +816,12 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
     });
 
     let agent = Arc::new(agent);
+    // The running loop streams from a private copy of the view, so a mid-run
+    // `history.edit` re-reads the assembled view here before the next request.
+    agent.set_refresh_context(Some(super::history_host::refresh_hook(
+        Arc::clone(&turn_boundary),
+        Arc::downgrade(&agent),
+    )));
     let services = Arc::new(super::plugin_services::PluginServices::new(
         wiring.session.clone(),
         &agent,
@@ -899,7 +916,7 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
     session.plugin_jobs = Some(jobs);
     session.turn_activity = turn_activity;
     session.context_archive = Arc::clone(&context_archive_state);
-    session.context_model = std::sync::RwLock::new(full_model);
+    session.context_model = Arc::clone(&context_model);
     super::plugins::observe_turns(&agent, Arc::clone(&plugins)).await;
     session.ollama_cloud = ollama_cloud;
     session.set_agent_dir(config.agent_dir.clone());

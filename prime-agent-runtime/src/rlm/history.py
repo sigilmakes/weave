@@ -4,8 +4,10 @@
 the session tree; ``edit`` writes one ``context_edit`` row and returns one line.
 
 Wire contract (over the existing ``rlm.host_request`` transport):
-* ``history.index`` receives the index options and returns the totals and rows.
-* ``history.path`` returns every live entry in request order.
+* ``history.index`` receives the index options and returns the totals, the count
+  of edits that no longer applied, and the rows.
+* ``history.path`` receives ``limit`` and returns previewed entries, the total
+  the view holds, and how many were shown.
 * ``history.get`` receives one encoded selector plus ``limit`` and returns the
   entries, the total the selector names, and how many were shown.
 * ``history.edit`` receives the changes and returns the one-line status.
@@ -44,7 +46,7 @@ class Change(TypedDict, total=False):
 
 
 class Entry(NamedTuple):
-    id: str
+    id: str | None
     turn: int
     role: Role
     tokens: int
@@ -67,6 +69,8 @@ class HistoryIndex(NamedTuple):
     over_by: int
     hidden: int
     hidden_tokens: int
+    skipped_edits: int
+    shown: int
     rows: list[IndexRow]
 
 
@@ -163,8 +167,10 @@ def _entry_from_payload(payload: Any) -> Entry:
     role = payload.get("role")
     tokens = payload.get("tokens")
     text = payload.get("text")
-    if not isinstance(entry_id, str) or not isinstance(turn, int) or isinstance(turn, bool):
+    if entry_id is not None and not isinstance(entry_id, str):
         raise RuntimeError("history returned an invalid entry identity")
+    if not isinstance(turn, int) or isinstance(turn, bool):
+        raise RuntimeError("history returned an invalid entry turn")
     if role not in ("user", "assistant", "tool", "notes"):
         raise RuntimeError("history returned an invalid entry role")
     if not isinstance(tokens, int) or isinstance(tokens, bool):
@@ -183,8 +189,10 @@ def _row_from_payload(payload: Any) -> IndexRow:
     tokens = payload.get("tokens")
     share = payload.get("share")
     preview = payload.get("preview")
-    if not isinstance(entry_id, str) or not isinstance(turn, int) or isinstance(turn, bool):
+    if entry_id is not None and not isinstance(entry_id, str):
         raise RuntimeError("history.index returned an invalid row identity")
+    if not isinstance(turn, int) or isinstance(turn, bool):
+        raise RuntimeError("history.index returned an invalid row turn")
     if role not in ("user", "assistant", "tool", "notes"):
         raise RuntimeError("history.index returned an invalid row role")
     if not isinstance(tokens, int) or isinstance(tokens, bool):
@@ -270,15 +278,25 @@ class HistoryNamespace:
             over_by=_int_field(payload, "over_by"),
             hidden=_int_field(payload, "hidden"),
             hidden_tokens=_int_field(payload, "hidden_tokens"),
+            skipped_edits=_int_field(payload, "skipped_edits"),
+            shown=_int_field(payload, "shown"),
             rows=[_row_from_payload(row) for row in rows],
         )
 
-    async def path(self) -> list[Entry]:
-        payload = await self._transport("history.path", {"session": self._session})
+    async def path(self, *, limit: int = 500) -> HistoryEntries:
+        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1:
+            raise ValueError("history.path limit must be a positive int")
+        payload = await self._transport(
+            "history.path", {"session": self._session, "limit": limit}
+        )
         entries = payload.get("entries")
         if not isinstance(entries, list):
             raise RuntimeError("history.path returned an invalid entries list")
-        return [_entry_from_payload(entry) for entry in entries]
+        return HistoryEntries(
+            [_entry_from_payload(entry) for entry in entries],
+            total=_int_field(payload, "total"),
+            shown=_int_field(payload, "shown"),
+        )
 
     async def get(self, selector: Selector, *, limit: int = 200) -> HistoryEntries:
         if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1:
