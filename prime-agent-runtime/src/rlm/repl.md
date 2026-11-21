@@ -163,7 +163,7 @@ process is serving the protocol (importing the module does not count).
 
 `snapshot` serializes the user namespace with `dill` (recurse mode), one name
 at a time: `_`-prefixed names and
-`{rlm, mcp, bash, plugin, vars, asyncio, In, Out, get_ipython, exit, quit, open}`
+`{rlm, mcp, bash, plugin, history, vars, asyncio, In, Out, get_ipython, exit, quit, open}`
 are always skipped; a name whose pickle exceeds `max_variable_bytes` or would
 push the total over `max_bytes` is skipped and reported. A skipped name stays
 in the kernel namespace: the byte limits bound the write, never the session,
@@ -184,7 +184,7 @@ fail with `status:"error"` and a `reason`.
 
 ## Namespace listing
 
-The runtime binds `vars` in `__main__` beside `plugin`. `vars()` prints one row
+The runtime binds `vars` in `__main__` beside `plugin` and `history`. `vars()` prints one row
 per name in the live namespace except the harness bindings and the module's
 dunder attributes (`__name__`, `__builtins__`, and the rest), with whether the
 last committed manifest wrote it, its type and shape, a shallow size

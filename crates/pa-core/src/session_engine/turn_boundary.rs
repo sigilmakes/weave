@@ -3,17 +3,17 @@
 //! `compact.run` only SCHEDULES: executing inside the active turn
 //! would abort the requesting run, so the pending request is stored here.
 
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use pa_agent::agent::Agent;
-use pa_types::session::FileEntry;
+use pa_types::session::{AgentMessage, FileEntry};
 use serde_json::{json, Value};
 use tokio::sync::Mutex;
 
 use crate::kernel::shared::{host_handler, HostRequestHandlers};
 use crate::session::manager::SessionManager;
-
-use pa_types::usage::{calculate_context_tokens, estimate_tokens, valid_assistant_usage};
 
 use super::compact_session::{prepare_compaction, CompactSkip};
 use super::engine::SessionEngine;
@@ -56,6 +56,22 @@ pub struct ContextUsage {
     pub percent: Option<f64>,
 }
 
+/// One assembled live view: the messages a request is built from, and the
+/// correction the newest usage anchor needs for the edits on that path.
+#[derive(Debug, Clone)]
+pub struct LiveViewSnapshot {
+    pub messages: Vec<AgentMessage>,
+    pub drift: crate::session::UsageDrift,
+}
+
+/// Assembles the live view from the canonical session, through the same path a
+/// send uses, so a pinned context strategy still shapes it.
+pub type LiveView = Arc<
+    dyn Fn() -> Pin<Box<dyn Future<Output = anyhow::Result<LiveViewSnapshot>> + Send>>
+        + Send
+        + Sync,
+>;
+
 /// The turn-boundary state: pending requests plus the late-bound runtime,
 /// shared between the host bridge and the turn loop; build it in `Arc` form.
 #[derive(Default)]
@@ -64,6 +80,11 @@ pub struct TurnBoundaryRequests {
     /// swaps the model facts after a live model switch.
     runtime: std::sync::RwLock<Option<Arc<TurnBoundaryRuntime>>>,
     compaction: Mutex<Option<PendingCompaction>>,
+    live_view: std::sync::RwLock<Option<LiveView>>,
+    /// Set by `history.edit` and taken by the turn loop: the running loop still
+    /// streams from a private copy of the view, so its next request must be
+    /// rebuilt before the provider sees it.
+    pending_refresh: std::sync::atomic::AtomicBool,
 }
 
 impl TurnBoundaryRequests {
@@ -130,6 +151,49 @@ impl TurnBoundaryRequests {
     /// Whether a compaction is scheduled (TS `compact.status` `scheduled`).
     pub async fn compaction_scheduled(&self) -> bool {
         self.compaction.lock().await.is_some()
+    }
+
+    /// Install the live-view assembly a canonical-history write uses.
+    pub fn set_live_view(&self, live_view: LiveView) {
+        *self
+            .live_view
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(live_view);
+    }
+
+    /// The installed live-view assembly, when the embedding supplied one.
+    #[must_use]
+    pub fn live_view(&self) -> Option<LiveView> {
+        self.live_view
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    }
+
+    /// Mark the running loop's view stale after a canonical-history write.
+    pub fn mark_refresh(&self) {
+        self.pending_refresh
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    /// Consume the stale marker; `true` means the loop must re-read the view
+    /// before its next stream request.
+    pub fn take_refresh(&self) -> bool {
+        self.pending_refresh
+            .swap(false, std::sync::atomic::Ordering::SeqCst)
+    }
+
+    /// Assemble the live view, when an embedding installed one.
+    ///
+    /// # Errors
+    ///
+    /// Returns the assembly failure, and reports a missing seam rather than
+    /// silently serving a direct walk.
+    pub async fn assemble_live_view(&self) -> anyhow::Result<LiveViewSnapshot> {
+        let live_view = self
+            .live_view()
+            .ok_or_else(|| anyhow::anyhow!("the session has no live-view assembly"))?;
+        live_view().await
     }
 
     /// The scheduled compaction without consuming it (the consumer
@@ -202,8 +266,17 @@ impl TurnBoundaryRequests {
                     };
                     let usage = match requests.bound() {
                         Some(runtime) => {
-                            let entries = runtime.session.lock().await.retained_entries().to_vec();
-                            context_usage(&entries, runtime.context_window)
+                            let (messages, drift) = if let Ok(live) =
+                                requests.assemble_live_view().await
+                            {
+                                (live.messages, live.drift)
+                            } else {
+                                let entries =
+                                    runtime.session.lock().await.retained_entries().to_vec();
+                                let context = crate::session::build_session_context(&entries, None);
+                                (context.messages, context.usage_drift)
+                            };
+                            context_usage(&messages, drift, runtime.context_window)
                         }
                         None => None,
                     };
@@ -340,71 +413,23 @@ fn compaction_request_skip_reason(
         .map(CompactSkip::request_reason)
 }
 
-/// Estimated context usage: the last valid assistant usage anchors the
-/// estimate; messages after it use the chars/4 heuristic. `None` when
-/// the context window is unknown; `tokens`/`percent` `None` right
-/// after a compaction without a usable post-compaction usage.
-///
-/// # Panics
-///
-/// The `expect` on the anchoring usage cannot fire: the index came from a
-/// search restricted to messages with a valid usage.
-pub fn context_usage(entries: &[FileEntry], context_window: Option<u64>) -> Option<ContextUsage> {
+/// Estimated context usage of one assembled view: [`context_tokens_with_drift`],
+/// the figure the request builder and `history.index` use. `None` when the
+/// context window is unknown.
+#[must_use]
+pub fn context_usage(
+    messages: &[AgentMessage],
+    drift: crate::session::UsageDrift,
+    context_window: Option<u64>,
+) -> Option<ContextUsage> {
     let context_window = context_window.filter(|window| *window > 0)?;
-
-    // Only usage from an assistant that responded after the latest
-    // compaction boundary is trustworthy.
-    if let Some(compaction_index) = entries
-        .iter()
-        .rposition(|entry| matches!(entry, FileEntry::Compaction { .. }))
-    {
-        let post_compaction_usage = entries[compaction_index + 1..]
-            .iter()
-            .filter_map(message_value)
-            .find_map(|message| valid_assistant_usage(&message));
-        let usable =
-            post_compaction_usage.is_some_and(|usage| calculate_context_tokens(&usage) > 0);
-        if !usable {
-            return Some(ContextUsage {
-                tokens: None,
-                context_window,
-                percent: None,
-            });
-        }
-    }
-
-    let messages: Vec<Value> = entries.iter().filter_map(message_value).collect();
-    let mut tokens = 0u64;
-    match messages
-        .iter()
-        .rposition(|message| valid_assistant_usage(message).is_some())
-    {
-        Some(last_usage_index) => {
-            let usage = valid_assistant_usage(&messages[last_usage_index]).expect("checked");
-            tokens += calculate_context_tokens(&usage);
-            tokens += messages[last_usage_index + 1..]
-                .iter()
-                .map(estimate_tokens)
-                .sum::<u64>();
-        }
-        None => {
-            tokens += messages.iter().map(estimate_tokens).sum::<u64>();
-        }
-    }
+    let tokens = crate::session_engine::compaction::context_tokens_with_drift(messages, drift);
     let percent = tokens as f64 / context_window as f64 * 100.0;
     Some(ContextUsage {
         tokens: Some(tokens),
         context_window,
         percent: Some(percent),
     })
-}
-
-/// A message entry as raw JSON (the shared usage helpers read the wire shape).
-fn message_value(entry: &FileEntry) -> Option<Value> {
-    match entry {
-        FileEntry::Message { message, .. } => serde_json::to_value(message).ok(),
-        _ => None,
-    }
 }
 
 #[cfg(test)]

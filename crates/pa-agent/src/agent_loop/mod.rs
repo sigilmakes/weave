@@ -88,6 +88,13 @@ pub type AfterToolCallFn = Arc<
         + Sync,
 >;
 
+/// Re-reads the model-facing message list before a stream request. Called once
+/// at run start and after every tool batch: a tool that rewrote canonical
+/// history returns the new view, so the next request carries it.
+pub type RefreshContextFn = Arc<
+    dyn Fn() -> crate::BoxFut<'static, anyhow::Result<Option<Vec<AgentMessage>>>> + Send + Sync,
+>;
+
 #[derive(Clone)]
 pub struct AgentLoopConfig {
     pub model: Model,
@@ -109,6 +116,7 @@ pub struct AgentLoopConfig {
     pub get_steering_messages: Option<PollMessagesFn>,
     pub get_follow_up_messages: Option<PollMessagesFn>,
     pub get_continuation_messages: Option<GetContinuationMessagesFn>,
+    pub refresh_context: Option<RefreshContextFn>,
     pub tool_execution: ToolExecutionMode,
     pub before_tool_call: Option<BeforeToolCallFn>,
     pub after_tool_call: Option<AfterToolCallFn>,
@@ -136,6 +144,7 @@ impl AgentLoopConfig {
             get_steering_messages: None,
             get_follow_up_messages: None,
             get_continuation_messages: None,
+            refresh_context: None,
             tool_execution: ToolExecutionMode::Parallel,
             before_tool_call: None,
             after_tool_call: None,

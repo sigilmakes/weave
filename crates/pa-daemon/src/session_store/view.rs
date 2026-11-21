@@ -171,6 +171,7 @@ impl SessionFile {
                 thinking_level: window.thinking_level.clone(),
                 service_tier: window.service_tier,
                 model: window.model.clone(),
+                usage_drift: pa_core::session::UsageDrift::default(),
             };
             for entry in &self.entries[window.loaded_entries..] {
                 match entry.type_.as_str() {

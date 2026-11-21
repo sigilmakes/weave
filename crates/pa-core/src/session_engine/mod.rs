@@ -16,6 +16,7 @@ pub use context_strategy::ContextStartupBoundary;
 pub mod goal_boundary;
 pub mod goal_driver;
 pub mod headless;
+mod history_host;
 pub mod host_requests;
 pub mod image_model_routing;
 pub(crate) mod inference_capabilities;
@@ -139,7 +140,7 @@ pub struct AgentSession {
     /// gap is agent-idle but turn-busy, so a job waits for the turn boundary.
     turn_activity: Arc<turn_activity::TurnActivitySignal>,
     context_archive: Arc<std::sync::RwLock<Option<pa_types::session::ContextArchive>>>,
-    context_model: std::sync::RwLock<Option<pa_types::ai::Model>>,
+    context_model: Arc<std::sync::RwLock<Option<pa_types::ai::Model>>>,
     accepted_context: std::sync::Mutex<Option<Vec<SessionAgentMessage>>>,
     /// Compaction settings; defaults until the engine wiring resolves
     /// them.
@@ -314,7 +315,7 @@ impl AgentSession {
             plugin_jobs: None,
             turn_activity: Arc::new(turn_activity::TurnActivitySignal::new()),
             context_archive: Arc::default(),
-            context_model: std::sync::RwLock::new(None),
+            context_model: Arc::new(std::sync::RwLock::new(None)),
             accepted_context: std::sync::Mutex::new(None),
             compaction: std::sync::RwLock::new(compaction::CompactionSettings::default()),
             auxiliary_model: None,
@@ -809,7 +810,6 @@ fn user_prompt_message(text: &str, images: &[pa_agent::types::ImageContent]) -> 
     ))
 }
 
-/// Custom rows persist as session custom messages.
 pub(crate) fn session_message_to_loop(message: &SessionAgentMessage) -> Option<AgentMessage> {
     serde_json::from_value(serde_json::to_value(message).ok()?).ok()
 }

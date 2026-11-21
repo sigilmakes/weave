@@ -156,6 +156,14 @@ _Avoid_: Canonical history, session file
 The selected policy that assembles and maintains a session's model-facing context view. It can use compaction, retrieval, or another representation of history.
 _Avoid_: Summary prompt, canonical history store
 
+**Context edit**:
+A session entry recording the agent's own substitution of part of the context view — a drop, a replacement, or an insertion — addressed against the view as it stood before the edit. It changes later requests, not the recorded conversation.
+_Avoid_: Compaction, history deletion
+
+**History view**:
+The ordered entries one leaf's request is built from after every compaction and context edit on the path has applied. A note is in the view but never in the request; a compaction row in an archive representation the provider replays stands for the expanded prefix, not one message. It is the view a context edit addresses; `history.path()` reports a bounded, previewed form of it (500 entries, 200 characters each, by default) and `history.get()` one entry or region in full. It is not the session tree.
+_Avoid_: Session tree, canonical history
+
 **Compaction strategy**:
 A method for producing a smaller representation of selected history. A compaction strategy is narrower than the policy controlling the entire context view.
 _Avoid_: Context strategy, history deletion

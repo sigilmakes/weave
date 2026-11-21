@@ -181,6 +181,7 @@ fn session_context(model: Option<(&str, &str)>) -> SessionContext {
         service_tier: None,
         archive: None,
         model: model.map(|(provider, id)| (provider.to_string(), id.to_string())),
+        usage_drift: pa_core::session::UsageDrift::default(),
     }
 }
 

@@ -8,6 +8,43 @@ The harness often sends messages to the agent. These are user messages starting 
 
 The kernel is your workspace. Assignments persist across restarts when the snapshot can save them; `vars()` lists each name with its size and whether it was saved, and the harness never deletes anything for you. Use it before you add something large, and `del` the names you no longer need. Keep large data in files.
 
+## History
+
+Your context is a session tree. Every turn is an entry, and the request you receive is the view assembled from the path between the root and the newest entry.
+
+All four methods are coroutines: await them, or nothing happens.
+
+- `history.index(order="tokens", *, limit=20, role=None, query=None, include_hidden=False)`: the token figure for the request the next turn would send, the window, the entries that use it, and how many edits no longer applied; each row carries turn, role, tokens, share of the total, and a preview, plus an id when the entry has one
+- `history.path(*, limit=500)`: the live view in order, with the number of entries it holds, how many were shown, and how many edits no longer applied; each entry previews its text and says whether it was cut, so use get for one entry in full
+- `history.get(selector, *, limit=200)`: one entry by id or position, or a region; -1 is the newest entry, slice(12, 41) is positions 12 through 40, slice(-20, None) is the last twenty. A region longer than limit returns the first limit entries and reports the remainder as total, shown, and remainder
+- `history.edit(changes)`: drop, replace, or insert entries, then report what changed and the new live figure
+
+A change is one dict:
+
+```python
+{"op": "drop", "at": 41}                                  # one entry
+{"op": "drop", "at": slice(12, 41)}                      # positions 12 through 40
+{"op": "replace", "at": 41, "text": "review: 28 frames admitted"}
+{"op": "insert", "text": "STATE: reading native.rs:417"} # role defaults to "notes"
+{"op": "insert", "text": "first twenty", "role": "user", "after": -20}
+```
+
+A drop or a replace takes at: a position, an entry id, or a slice, where null as a slice end means that end of the path. A replace takes one entry, not a region.
+
+An insert takes text, an optional role of user or notes, and an optional after anchor (a position or an id, default -1, the end of the view). A notes entry stays in the view you read and is never sent to the provider; a user entry is sent. Inserted entries have no id: address them by position. If role is left out, the entry is a note.
+
+Positions and slices address the live view; ids address the record. An edit removes a turn from what you see, never from the record, so an id an earlier edit dropped still returns its text from get.
+
+All changes in one call resolve against the path as it stood before the call, so they cannot invalidate each other. Naming one entry in a drop and a replace is rejected, in either order. A call that breaks a rule writes nothing and names the rule and the entry.
+
+The next request carries the edit, in the same run, not only after the next prompt.
+
+An edit that changes or removes a turn also changes everything after it, so the next request re-reads from there. Edits near the end are nearly free; edits near the beginning cost a full re-read, and an insert at the end costs only the inserted turn.
+
+The index figure follows the edits: it starts from the newest provider-reported usage and subtracts what a sent drop above it dropped, and adds what a sent replacement or insertion above it contributed. It falls back to a chars/4 count of the whole view whenever no observation describes what is sent: the view has no usage at all, the turn that usage was reported on was removed or replaced, a compaction happened after that usage, or an edit removed or replaced the archive row that carried it. The same figure is what `compact.status` reports and what decides auto-compaction.
+
+A row the provider expands rather than receives, a compaction summary in an archive representation the provider replays, shows the summary text here while the request carries the expanded representation the provider replays.
+
 ## Core tools
 
 - `bash(command: str) -> BashHandle`: synchronous, returns immediately and runs the command in the background; when a command is finished outside the calling `python_repl` block, a notification is sent to the agent; each `bash()` call is its own process, so shell state does not persist between calls

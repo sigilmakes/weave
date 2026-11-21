@@ -1298,8 +1298,9 @@ impl AgentSessionEngine {
                             .filter_map(|message| serde_json::to_value(message).ok())
                             .filter_map(|value| serde_json::from_value(value).ok())
                             .collect::<Vec<_>>();
-                        let due = pa_core::session_engine::compaction::threshold_compaction_due(
+                        let due = pa_core::session_engine::compaction::threshold_compaction_due_with_drift(
                             &messages,
+                            engine.session.context_usage_drift().await,
                             model.context_window,
                             pa_core::session_engine::compaction::request_output_budget(
                                 &model,
