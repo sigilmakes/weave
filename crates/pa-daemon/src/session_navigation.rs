@@ -585,6 +585,45 @@ mod tests {
 
     #[tokio::test]
     #[pa_test_scratch::pa_test]
+    async fn importing_two_sessions_with_the_same_basename_preserves_the_first() {
+        let worker = created_worker().await;
+        let dir = tempfile::tempdir().unwrap();
+        let sessions = dir.path().join("sessions");
+        std::fs::create_dir_all(&sessions).unwrap();
+        let current = sessions.join("current.jsonl");
+        write_import_log(&current);
+        worker.core.lock().unwrap().store = Some(SessionFile::open(&current).unwrap());
+
+        let first = dir.path().join("first").join("shared.jsonl");
+        let second = dir.path().join("second").join("shared.jsonl");
+        std::fs::create_dir_all(first.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(second.parent().unwrap()).unwrap();
+        write_import_log(&first);
+        write_navigation_log(&second, &dir.path().display().to_string());
+        let original = std::fs::read(&first).unwrap();
+        assert_ne!(original, std::fs::read(&second).unwrap());
+
+        let imported = worker
+            .dispatch("import_jsonl", &json!({"inputPath": first}))
+            .await;
+        assert!(imported.success, "{imported:?}");
+        let target = sessions.join("shared.jsonl");
+        assert_eq!(std::fs::read(&target).unwrap(), original);
+
+        let collision = worker
+            .dispatch("import_jsonl", &json!({"inputPath": second}))
+            .await;
+        assert!(!collision.success, "{collision:?}");
+        assert!(collision.error.is_some(), "{collision:?}");
+        assert_eq!(std::fs::read(&target).unwrap(), original);
+        assert_eq!(
+            worker.core.lock().unwrap().store.as_ref().unwrap().path,
+            target
+        );
+    }
+
+    #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn new_session_answers_the_ts_cancelled_shape() {
         let worker = created_worker().await;
         let response = worker
