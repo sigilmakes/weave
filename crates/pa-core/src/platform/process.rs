@@ -364,7 +364,10 @@ pub async fn wait_for_exit(pid: u32) -> std::io::Result<()> {
     };
     // SAFETY: `open_pidfd` returned a fresh descriptor this call owns
     // (and closes on drop, on every path).
-    let fd = AsyncFd::with_interest(unsafe { OwnedFd::from_raw_fd(fd) }, Interest::READABLE)?;
+    let fd = unsafe { OwnedFd::from_raw_fd(fd) };
+    // SAFETY: AsyncFd owns the descriptor; nothing closes or replaces it
+    // before AsyncFd deregisters it and drops the OwnedFd.
+    let fd = unsafe { AsyncFd::register_with_interest(fd, Interest::READABLE) }?;
     // Every wake is confirmed by a zero-timeout poll (AsyncFd readiness
     // can be spurious).
     loop {
@@ -444,7 +447,9 @@ pub async fn wait_for_exit(pid: u32) -> std::io::Result<()> {
             };
         }
     }
-    let kq = AsyncFd::with_interest(kq, Interest::READABLE)?;
+    // SAFETY: AsyncFd owns the descriptor; nothing closes or replaces it
+    // before AsyncFd deregisters it and drops the OwnedFd.
+    let kq = unsafe { AsyncFd::register_with_interest(kq, Interest::READABLE) }?;
     // Only the exit knote is registered, so a drained event is the exit.
     loop {
         let mut ready = kq.readable().await?;
