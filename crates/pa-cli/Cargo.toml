@@ -3,8 +3,8 @@ name = "pa-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "The prime-agent binary."
-default-run = "prime-agent"
+description = "The weave binary."
+default-run = "wv"
 
 [dependencies]
 pa-types = { path = "../pa-types", version = "0.10.0" }
@@ -21,7 +21,7 @@ serde_json = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 
 [[bin]]
-name = "prime-agent"
+name = "wv"
 path = "src/main.rs"
 
 [[bin]]

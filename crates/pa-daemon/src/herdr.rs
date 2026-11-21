@@ -5,7 +5,7 @@
 //! (`HERDR_ENV=1`, `HERDR_PANE_ID`, `HERDR_SOCKET_PATH` — the socket of
 //! its pane-state API) for the processes running inside them. This module
 //! reports this session's lifecycle state (`working` / `blocked` /
-//! `idle`) to that socket, so a Herdr pane shows its Prime Agent session
+//! `idle`) to that socket, so a Herdr pane shows its Weave session
 //! as live, done, or stuck — the in-tree counterpart of the TS
 //! `herdr-agent-state.ts` extension (`herdr integration install pi` also
 //! writes one; the built-in ships so the pane reports out of the box).
@@ -892,7 +892,7 @@ pub(crate) fn valid_resume_argv(target: Option<&str>) -> Option<Vec<String>> {
     if target.is_empty() || target.contains('\'') || target.chars().any(char::is_control) {
         return None;
     }
-    let argv = ["prime-agent", "--resume", target]
+    let argv = ["wv", "--resume", target]
         .into_iter()
         .map(str::to_string)
         .collect::<Vec<String>>();
@@ -1073,18 +1073,14 @@ mod tests {
         assert_eq!(
             argv,
             Some(vec![
-                "prime-agent".to_string(),
+                "wv".to_string(),
                 "--resume".to_string(),
                 "019e71ec-e08a-75a9-b573-000000000001.jsonl".to_string(),
             ])
         );
         assert_eq!(
             valid_resume_argv(Some("  trimmed-id  ")),
-            Some(vec![
-                "prime-agent".into(),
-                "--resume".into(),
-                "trimmed-id".into()
-            ])
+            Some(vec!["wv".into(), "--resume".into(), "trimmed-id".into()])
         );
         // Missing, empty, or hostile targets carry no resume command.
         assert_eq!(valid_resume_argv(None), None);
@@ -1241,11 +1237,7 @@ mod tests {
         );
         assert_eq!(
             params["resume_argv"],
-            json!([
-                "prime-agent",
-                "--resume",
-                "/home/me/.prime/agent/sessions/s1.jsonl"
-            ])
+            json!(["wv", "--resume", "/home/me/.prime/agent/sessions/s1.jsonl"])
         );
         // The id carries the source prefix; the seq is a number.
         assert!(report["id"].as_str().unwrap().starts_with("herdr:pi:"));

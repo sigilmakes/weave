@@ -1,5 +1,5 @@
 Usage:
-  prime-agent sessions [--all] [--json] | sessions --check
+  wv sessions [--all] [--json] | sessions --check
 
 Show agent status, activity, and usage.
 

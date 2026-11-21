@@ -408,7 +408,7 @@ fn nightly_status_and_usage_error_render_the_ts_wording() {
 }
 
 /// `/nightly on` (or bare) saves the nightly channel that `/update` and
-/// `prime-agent update` follow.
+/// `wv update` follow.
 #[pa_test_scratch::pa_test]
 #[test]
 fn nightly_on_saves_the_nightly_channel() {

@@ -1,8 +1,9 @@
-"""Preserve the archive contract enforced by shipped TypeScript installers.
+"""Archive-shape checks shared by the release gates.
 
-The old installer validates these files before invoking the executable. Keep
-authentic assets so its installed-release validation and rollback continue to
-work; the Rust executable uses its own renderer and image implementation.
+The legacy TypeScript installer validated its own archive contract before
+invoking the executable. This build ships under the wv name, so that installer
+is not a supported path for new archives; the authentic assets are kept for
+the shared layout and the manual-repair installer.
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ COMPAT_ASSETS = (
     "PHOTON-LICENSE.md",
 )
 REQUIRED_NATIVE_FILES = (
-    "prime-agent", "package.json", "install.sh",
+    "package.json", "install.sh",
     "prime-agent-runtime/pyproject.toml", "prime-agent-runtime/src/rlm/repl.py",
     *COMPAT_ASSETS,
 )
@@ -37,13 +38,12 @@ def stage_native_compat(staging: Path) -> list[str]:
         target = staging / name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ASSET_DIR / name, target)
-    # This file is validated, not executed, by the already-running TS installer.
     # Ship the maintained Rust installer so manual repair uses current code.
     shutil.copyfile(ASSET_DIR.parents[2] / "install-rust.sh", staging / "install.sh")
     return ["theme", "export-html", "photon_rs_bg.wasm", "PHOTON-LICENSE.md", "install.sh"]
 
 
-def validate_compatibility_archive(path: Path) -> None:
+def validate_compatibility_archive(path: Path) -> str:
     """Raise ValueError for an archive the historical native updater rejects.
 
     Windows never used the POSIX native TS installer. Its archive only needs
@@ -59,19 +59,29 @@ def validate_compatibility_archive(path: Path) -> None:
             if member.name in members:
                 raise ValueError(f"duplicate member in compatibility archive: {member.name}")
             members[member.name] = member
-        windows = "prime-agent.exe" in members
-        required = ("package.json",) if windows else REQUIRED_NATIVE_FILES
+        metadata = members.get("package.json")
+        if metadata is None or not metadata.isfile() or metadata.size == 0:
+            raise ValueError(f"{path}: missing regular compatibility asset: package.json")
+        package = json.load(archive.extractfile("package.json"))
+        name = package.get("name")
+        if not name:
+            raise ValueError(f"{path}: compatibility package.json has no name")
+        if name not in ("prime-agent", "wv"):
+            raise ValueError(f"unsupported compatibility package name: {name}")
+        windows = f"{name}.exe" in members
+        binary = f"{name}.exe" if windows else name
+        required = (binary, "package.json") if windows else (binary, *REQUIRED_NATIVE_FILES)
         for name in required:
             member = members.get(name)
             if member is None or not member.isfile() or member.size == 0:
                 raise ValueError(f"missing regular compatibility asset: {name}")
-        package = json.load(archive.extractfile("package.json"))
         if not isinstance(package.get("version"), str) or not package["version"]:
             raise ValueError("compatibility package.json has no version")
         if not windows:
             photon = archive.extractfile("photon_rs_bg.wasm").read()
             if hashlib.sha256(photon).hexdigest() != PHOTON_SHA256:
                 raise ValueError("legacy Photon compatibility asset checksum mismatch")
+        return binary
 
 
 if __name__ == "__main__":
@@ -80,5 +90,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archives", nargs="+", type=Path)
     for archive_path in parser.parse_args().archives:
-        validate_compatibility_archive(archive_path)
-        print(f"Native compatibility verified: {archive_path}")
+        binary = validate_compatibility_archive(archive_path)
+        print(f"Native compatibility verified: {archive_path} (asset: {binary})")

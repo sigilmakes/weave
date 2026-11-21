@@ -172,7 +172,7 @@ fn dirty_tree_does_not_change_capture() {
 
 /// Byte-parity pin: a session header captured by the installed TS binary (0.9.5) in a fixture repo
 /// parses into the same Rust git context, wire shape included. The line below is the verbatim first
-/// line of `~/.prime/sessions/<id>.jsonl` produced by `prime-agent -p --session-dir ... "say hi"`
+/// line of `~/.prime/sessions/<id>.jsonl` produced by `wv -p --session-dir ... "say hi"`
 /// in that repo (the header is written before any model call).
 #[pa_test_scratch::pa_test]
 #[test]
