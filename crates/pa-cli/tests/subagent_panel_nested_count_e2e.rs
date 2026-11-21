@@ -17,10 +17,11 @@
 #![cfg(unix)]
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::Stdio;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 

@@ -17,10 +17,10 @@
 #![cfg(unix)]
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::Command;
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 const ENV_INSTALLER_URL: &str = "PRIME_AGENT_RUST_INSTALLER_URL";
 const ENV_PREFIX: &str = "PRIME_AGENT_RUST_PREFIX";

@@ -1,5 +1,5 @@
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
-use std::process::Command;
+use pa_test_scratch::Command;
 
 use pa_core::settings::SettingsManager;
 use serde_json::{json, Value};

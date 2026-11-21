@@ -84,10 +84,12 @@ class WorkspaceTestScheduling(unittest.TestCase):
         children[0].wait.side_effect = [subprocess.TimeoutExpired("cargo", 2), 0]
         children[1].wait.side_effect = [subprocess.TimeoutExpired("cargo", 0.5), 0]
         with patch.object(gate.os, "killpg") as killpg, \
-                patch.object(gate.time, "monotonic", side_effect=[100, 100, 101.5]):
+                patch.object(gate.time, "monotonic", side_effect=[100, 100, 101.5, 102, 102, 102.25]):
             gate.cleanup(children)
         self.assertEqual(children[0].wait.call_args_list[0], call(timeout=2))
         self.assertEqual(children[1].wait.call_args_list[0], call(timeout=0.5))
+        self.assertEqual(children[0].wait.call_args_list[1], call(timeout=0.5))
+        self.assertEqual(children[1].wait.call_args_list[1], call(timeout=0.25))
         self.assertEqual(killpg.call_args_list, [
             call(101, gate.signal.SIGTERM), call(102, gate.signal.SIGTERM),
             call(101, gate.signal.SIGKILL), call(102, gate.signal.SIGKILL)])
@@ -210,11 +212,65 @@ class WorkspaceTestScheduling(unittest.TestCase):
                     peer.close()
                 server.close()
 
+    def test_successful_cargo_with_detached_fixture_fails_the_runner(self):
+        with tempfile.TemporaryDirectory(prefix="pa-ws-", dir="/tmp") as tmp:
+            root = Path(tmp)
+            cargo = root / "cargo"
+            fixture = (
+                "import signal; signal.signal(signal.SIGTERM, signal.SIG_IGN); "
+                "print('ready', flush=True); signal.pause()"
+            )
+            cargo.write_text(f"#!{sys.executable}\n" +
+                "import subprocess, sys\n" +
+                f"child=subprocess.Popen([sys.executable, '-c', {fixture!r}], " +
+                "stdout=subprocess.PIPE, text=True, start_new_session=True)\n" +
+                "assert child.stdout.readline().strip() == 'ready'\n")
+            cargo.chmod(0o700)
+            homes = []
+
+            def environment(repo, state, ambient):
+                homes.append(state)
+                return dict(os.environ, PATH=str(root), PA_TEST_SCRATCH_ROOT=str(state))
+
+            with patch.object(gate, "target_environment", side_effect=environment):
+                _, failures = gate.run_groups([("leak", ["--test", "leak"])],
+                    repo=root, state=root, env={}, deadline=time.monotonic()+10, jobs=1)
+            self.assertEqual([(name, code) for name, code, _ in failures],
+                             [("process-leaks", 1)])
+            self.assertEqual(len(homes), 1)
+            self.assertFalse(homes[0].exists())
+
     def test_only_two_targets_run_and_a_slot_is_reused_after_completion(self):
         self.run_probe(False)
 
     def test_a_failure_does_not_cancel_the_remaining_targets(self):
         self.run_probe(True)
+
+    def test_leak_audit_does_not_mask_an_interrupted_run(self):
+        with patch.object(gate, "finish_roots", side_effect=gate.ProcessLeaks("leak")):
+            with self.assertRaisesRegex(TimeoutError, "deadline expired"):
+                gate.run_groups([("pending", ["--test", "pending"])],
+                    repo=Path("/fixture"), state=Path("/private"), env={},
+                    deadline=time.monotonic()-1, jobs=1)
+
+    def test_leaks_do_not_skip_exclusive_groups_or_doctests(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp) / "targets"
+            with patch.object(sys, "argv", ["gate", "--state-root", str(state),
+                                            "--deadline", str(time.monotonic()+30)]), \
+                    patch.object(gate, "run", return_value=json.dumps({})) as run, \
+                    patch.object(gate, "target_groups", return_value=([("ordinary", [])],
+                                                                    [("exclusive", [])])), \
+                    patch.object(gate, "run_groups", side_effect=[
+                        ([], [("process-leaks", 1, ["audit-test-processes"])]),
+                        ([], [])]) as run_groups, \
+                    patch.object(gate, "target_environment", return_value={}), \
+                    patch.object(gate, "finish_roots") as audit:
+                with self.assertRaises(subprocess.CalledProcessError):
+                    gate.main()
+                self.assertEqual(run_groups.call_count, 2)
+                self.assertEqual(run.call_args.args[0][-1], "--doc")
+                audit.assert_called_once_with([state / "doctests"])
 
     def test_exclusive_phase_and_doctests_follow_parallel_phase(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -13,8 +13,9 @@
 #![cfg(unix)]
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::Command;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::Output;
 
 /// The repo root (crates/pa-cli -> crates -> root): install-rust.sh and
 /// install.ps1 live there.

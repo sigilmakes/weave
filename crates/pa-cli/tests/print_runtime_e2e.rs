@@ -15,7 +15,7 @@
 //! CLI parse to headless terminal selection, deterministically.
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
-use std::process::Command;
+use pa_test_scratch::Command;
 
 fn run(args: &[&str], script: &serde_json::Value) -> (String, String, i32) {
     let home = tempfile::TempDir::new().unwrap();

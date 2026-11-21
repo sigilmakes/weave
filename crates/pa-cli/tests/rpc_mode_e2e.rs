@@ -16,8 +16,9 @@
 //! errors, and the stdin-close lifecycle.
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, BufReader, Read, Write};
-use std::process::{Child, Command, Stdio};
+use std::process::Stdio;
 use std::sync::mpsc::{channel, Receiver};
 use std::time::{Duration, Instant};
 
@@ -878,7 +879,7 @@ fn rpc_sigterm_during_replacement_exits_promptly() {
     client.wait_event("message_start", TIMEOUT);
     // The replacement queues behind the settle; SIGTERM must cut through both.
     client.send(&json!({ "type": "new_session", "id": "t-replace" }));
-    let wait_status = std::process::Command::new("kill")
+    let wait_status = pa_test_scratch::Command::new("kill")
         .arg("-TERM")
         .arg(client.child.id().to_string())
         .status()
@@ -1114,7 +1115,7 @@ fn corpus_fixture_has_a_null_root_and_preserves_every_nonroot_parent() {
 
 /// One timestamped RPC child: each frame records the `Instant` its chunk arrived.
 struct TimedRpcChild {
-    child: std::process::Child,
+    child: Child,
     stdin: std::process::ChildStdin,
     frames: Option<std::sync::mpsc::Receiver<(std::time::Instant, Value)>>,
     /// Held while the reader is deferred (the stalled-reader oracle).

@@ -17,9 +17,10 @@
 #![cfg(unix)]
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 use pa_types::daemon::DaemonCommand;

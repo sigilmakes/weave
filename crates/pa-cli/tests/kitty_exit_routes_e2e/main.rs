@@ -15,11 +15,11 @@
 //! stack is empty and a synthetic up arrow echoes back clean.
 #![cfg(unix)]
 
+use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, Read, Write};
 use std::os::fd::{AsRawFd, OwnedFd};
-use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 use nix::fcntl::{fcntl, FcntlArg::F_SETFL, OFlag};

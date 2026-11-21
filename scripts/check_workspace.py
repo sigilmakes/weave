@@ -20,6 +20,8 @@ import tempfile
 import time
 from urllib.parse import unquote, urlparse
 
+from workspace_processes import ProcessLeaks, finish_roots, interrupted
+
 
 # Keep the pinned shell's compiler/linker inputs, not the caller's credentials.
 TOOL_ENV = (
@@ -385,28 +387,38 @@ def main():
         for key in ("HOME", "TMPDIR", "XDG_RUNTIME_DIR", "PRIME_AGENT_CODING_AGENT_DIR"):
             Path(env[key]).mkdir(parents=True, exist_ok=True, mode=0o700)
         deadline = time.monotonic() + args.timeout
-        prepare_kernel(repo, env, deadline, args.kernel_python)
-        # Fetch the complete lockfile, including test-only dependencies, before
-        # the offline all-target Clippy and test commands run in a cold CI cache.
-        run(["cargo", "fetch", "--locked"], repo=repo, env=env, deadline=deadline)
-        vendor_copy, vendor_identity = prepare_vendor_mlua(repo, state, env, deadline)
-        run(["cargo", "build", "--locked", "--workspace", "--bins"],
-            repo=repo, env=env, deadline=deadline)
-        test_env = dict(env, CARGO_NET_OFFLINE="true", UV_OFFLINE="1")
-        check_vendor_mlua(repo, vendor_copy, vendor_identity, test_env, deadline)
-        test_env["WORKSPACE_TEST_COMMAND"] = shlex.join([
-            "python3", "-B", "scripts/check_workspace_tests.py", "--state-root",
-            str(state / "test-targets"), "--deadline", str(deadline),
-        ])
-        gate = "workspace-tests" if args.skip_lint else "workspace-check"
-        run(["make", gate], repo=repo, env=test_env, deadline=deadline)
+        try:
+            prepare_kernel(repo, env, deadline, args.kernel_python)
+            # Fetch the complete lockfile, including test-only dependencies, before
+            # the offline all-target Clippy and test commands run in a cold CI cache.
+            run(["cargo", "fetch", "--locked"], repo=repo, env=env, deadline=deadline)
+            vendor_copy, vendor_identity = prepare_vendor_mlua(repo, state, env, deadline)
+            run(["cargo", "build", "--locked", "--workspace", "--bins"],
+                repo=repo, env=env, deadline=deadline)
+            test_env = dict(env, CARGO_NET_OFFLINE="true", UV_OFFLINE="1")
+            check_vendor_mlua(repo, vendor_copy, vendor_identity, test_env, deadline)
+            test_env["WORKSPACE_TEST_COMMAND"] = shlex.join([
+                "python3", "-B", "scripts/check_workspace_tests.py", "--state-root",
+                str(state / "test-targets"), "--deadline", str(deadline),
+            ])
+            gate = "workspace-tests" if args.skip_lint else "workspace-check"
+            run(["make", gate], repo=repo, env=test_env, deadline=deadline)
+        finally:
+            interrupted_run = sys.exception() is not None
+            try:
+                finish_roots([state])
+            except ProcessLeaks:
+                if not interrupted_run:
+                    raise
     print("Full workspace gate passed", flush=True)
     return 0
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, interrupted)
+    signal.signal(signal.SIGINT, interrupted)
     try:
         raise SystemExit(main())
-    except (OSError, ValueError, subprocess.SubprocessError) as error:
+    except (OSError, ValueError, subprocess.SubprocessError, ProcessLeaks) as error:
         print(f"Workspace gate failed: {error}", file=sys.stderr)
         raise SystemExit(1) from error

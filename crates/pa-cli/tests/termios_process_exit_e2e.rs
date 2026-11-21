@@ -27,10 +27,10 @@ mod harness;
 #[allow(dead_code)]
 mod ledger;
 
+use pa_test_scratch::{Command, OwnedChild as Child};
 use std::os::fd::{AsRawFd, OwnedFd};
-use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 use nix::pty::{openpty, Winsize};

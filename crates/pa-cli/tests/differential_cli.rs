@@ -18,9 +18,9 @@
 #![cfg(unix)]
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::Command;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 const CORPUS: &[&[&str]] = &[
     // Help and version.

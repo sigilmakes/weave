@@ -38,10 +38,10 @@
 //! store reads - is platform-neutral product code.
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::{Command, OwnedChild as Child};
 #[cfg(unix)]
-use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 use pa_tui::interactive::{
@@ -175,6 +175,9 @@ fn spawn_supervisor(dir: &Path) -> Supervisor {
     #[cfg(unix)]
     unsafe {
         command.pre_exec(move || {
+            if libc::setpgid(0, 0) != 0 {
+                return Err(std::io::Error::last_os_error());
+            }
             libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL);
             Ok(())
         });

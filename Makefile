@@ -44,6 +44,7 @@ hooks-check:
 	python3 scripts/test_downstream_hooks.py
 	python3 -B scripts/test_check_workspace.py
 	python3 -B scripts/test_check_workspace_tests.py
+	python3 -B scripts/test_workspace_processes.py
 	python3 -B scripts/release/test_legacy_runtime_restart_options.py
 
 # These are intentional, manual source builds; no upstream release scripts,

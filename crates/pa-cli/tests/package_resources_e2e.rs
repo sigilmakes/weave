@@ -16,8 +16,8 @@
 //! pipeline from CLI parse to event emission.
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::Command;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 struct Sandbox {
     home: tempfile::TempDir,
