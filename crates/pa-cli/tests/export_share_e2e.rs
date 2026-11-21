@@ -256,7 +256,7 @@ async fn export_refuses_unavailable_tools_while_session_log_is_locked() {
         .expect("startup gate");
     std::fs::write(
         agent_dir.join("gate.lua"),
-        r#"
+        r"
 local session=assert(io.open(config.session_file,'r'))
 local initialized=session:read('*a'):find('session_state',1,true)
 session:close()
@@ -271,7 +271,7 @@ return {context_strategies={{name='view',run=function(input)
  if input.stage=='restore' then return {accepted=true} end
  return {policy='full',compactors={}}
 end}}}
-"#,
+",
     )
     .expect("startup plugin");
     std::fs::write(

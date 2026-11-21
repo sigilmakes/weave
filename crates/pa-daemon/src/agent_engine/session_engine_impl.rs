@@ -487,11 +487,7 @@ impl SessionEngine for AgentSessionEngine {
 
     /// The built session's live tool registry mapped to the export's tools
     /// section (TS `state.tools`).
-    fn export_tools(
-        &self,
-    ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = anyhow::Result<Option<Vec<Value>>>> + Send + '_>,
-    > {
+    fn export_tools(&self) -> futures::future::BoxFuture<'_, anyhow::Result<Option<Vec<Value>>>> {
         Box::pin(async move {
             let model = self.resolve_model()?;
             self.ensure_core_session_async(&model).await?;
@@ -514,9 +510,7 @@ impl SessionEngine for AgentSessionEngine {
     fn export_rendered_tools(
         &self,
         entries: &[Value],
-    ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = anyhow::Result<Option<Value>>> + Send + '_>,
-    > {
+    ) -> futures::future::BoxFuture<'_, anyhow::Result<Option<Value>>> {
         let entries = entries.to_vec();
         Box::pin(async move {
             let model = self.resolve_model()?;

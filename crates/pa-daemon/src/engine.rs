@@ -307,11 +307,7 @@ pub trait SessionEngine: Send + Sync {
 
     /// The session's registered tools for the export's tools section: built
     /// now when not yet built; failures must abort the export.
-    fn export_tools(
-        &self,
-    ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = anyhow::Result<Option<Vec<Value>>>> + Send + '_>,
-    > {
+    fn export_tools(&self) -> futures::future::BoxFuture<'_, anyhow::Result<Option<Vec<Value>>>> {
         Box::pin(async { Ok(None) })
     }
 
@@ -320,9 +316,7 @@ pub trait SessionEngine: Send + Sync {
     fn export_rendered_tools(
         &self,
         _entries: &[Value],
-    ) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = anyhow::Result<Option<Value>>> + Send + '_>,
-    > {
+    ) -> futures::future::BoxFuture<'_, anyhow::Result<Option<Value>>> {
         Box::pin(async { Ok(None) })
     }
 
