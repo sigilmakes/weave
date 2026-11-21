@@ -71,6 +71,21 @@ jobs:
                   fi
                   echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
                   echo "Documentation-only change: $docs_only"
+            - name: Identify Rust toolchain
+              id: rust
+              if: steps.scope.outputs.docs_only != 'true'
+              run: echo "version=$(nix develop --no-update-lock-file --command rustc --version | tr ' ' '-')" >> "$GITHUB_OUTPUT"
+            - name: Restore Cargo cache
+              id: cargo-cache
+              if: steps.scope.outputs.docs_only != 'true'
+              continue-on-error: true
+              uses: https://data.forgejo.org/actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      target
+                  key: cargo-v1-${{ runner.os }}-lint-${{ steps.rust.outputs.version }}-${{ hashFiles('Cargo.lock') }}
             - name: Formatting
               if: steps.scope.outputs.docs_only != 'true'
               timeout-minutes: 5
@@ -83,6 +98,16 @@ jobs:
               if: steps.scope.outputs.docs_only != 'true'
               timeout-minutes: 10
               run: nix develop --no-update-lock-file --command cargo clippy --locked --workspace --all-targets -- -D warnings
+            - name: Save Cargo cache
+              if: always() && steps.rust.outputs.version != '' && steps.cargo-cache.outputs.cache-hit != 'true'
+              continue-on-error: true
+              uses: https://data.forgejo.org/actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      target
+                  key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
             - name: Documentation-only change
               if: steps.scope.outputs.docs_only == 'true'
               run: echo "No build-affecting files changed; the gates stay green."
@@ -123,6 +148,21 @@ jobs:
               with:
                   persist-credentials: false
               timeout-minutes: 5
+            - name: Identify Rust toolchain
+              id: rust
+              if: needs.lint.outputs.docs_only != 'true'
+              run: echo "version=$(nix develop --no-update-lock-file --command rustc --version | tr ' ' '-')" >> "$GITHUB_OUTPUT"
+            - name: Restore Cargo cache
+              id: cargo-cache
+              if: needs.lint.outputs.docs_only != 'true'
+              continue-on-error: true
+              uses: https://data.forgejo.org/actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      target
+                  key: cargo-v1-${{ runner.os }}-workspace-${{ steps.rust.outputs.version }}-${{ hashFiles('Cargo.lock') }}
             - name: Checkout pinned TypeScript parity reference
               if: needs.lint.outputs.docs_only != 'true'
               uses: https://data.forgejo.org/actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -142,6 +182,16 @@ jobs:
                   export PA_TS_BINARY="$RUNNER_TEMP/pa-ts-reference/bin/prime-agent"
                   export PA_TS_REFERENCE="$GITHUB_WORKSPACE/ts-reference"
                   nix develop --no-update-lock-file --command python3 -B scripts/check_workspace.py --require-ts-reference --skip-lint --timeout 1740
+            - name: Save Cargo cache
+              if: always() && steps.rust.outputs.version != '' && steps.cargo-cache.outputs.cache-hit != 'true'
+              continue-on-error: true
+              uses: https://data.forgejo.org/actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
+              with:
+                  path: |
+                      ~/.cargo/registry
+                      ~/.cargo/git
+                      target
+                  key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
             - name: Documentation-only change
               if: needs.lint.outputs.docs_only == 'true'
               run: echo "No build-affecting files changed; the workspace tests are unchanged."
