@@ -29,6 +29,7 @@ class NativeCompatibilityTests(unittest.TestCase):
         (runtime / "src/rlm").mkdir(parents=True)
         (runtime / "src/rlm/repl.py").write_text("# runtime fixture\n")
         (runtime / "pyproject.toml").write_text('[project]\nname = "fixture"\n')
+        (runtime / "uv.lock").write_text("version = 1\n")
         for name in BUNDLED_CATALOG_FILES:
             (self.root / name).write_text("{}\n")
         self.binary = self.root / "binary"
@@ -58,6 +59,44 @@ class NativeCompatibilityTests(unittest.TestCase):
         repo = Path(__file__).resolve().parents[2]
         self.assertEqual((staging / "install.sh").read_bytes(), (repo / "install-rust.sh").read_bytes())
 
+    def test_script_derives_old_and_new_asset_names_from_package_metadata(self):
+        staging, archive, facts = self.assemble()
+        script = Path(__file__).with_name("native_compat.py")
+        for name in ("prime-agent", "wv"):
+            with self.subTest(name=name):
+                binary = staging / "wv"
+                if name != "wv":
+                    binary.rename(staging / name)
+                metadata = json.loads((staging / "package.json").read_text())
+                metadata["name"] = name
+                (staging / "package.json").write_text(json.dumps(metadata))
+                payload = [name if entry == "wv" else entry for entry in facts["payload"]]
+                pack_tarball(staging, archive, payload)
+                result = subprocess.run(
+                    ["python3", str(script), str(archive)], capture_output=True, text=True
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(f"(asset: {name})", result.stdout)
+                if name != "wv":
+                    (staging / name).rename(binary)
+
+    def test_script_reports_archive_and_missing_identity_field(self):
+        staging, archive, facts = self.assemble()
+        metadata = json.loads((staging / "package.json").read_text())
+        del metadata["name"]
+        (staging / "package.json").write_text(json.dumps(metadata))
+        script = Path(__file__).with_name("native_compat.py")
+        for missing in ("name", "package.json"):
+            with self.subTest(missing=missing):
+                payload = [entry for entry in facts["payload"] if missing != entry]
+                pack_tarball(staging, archive, payload)
+                result = subprocess.run(
+                    ["python3", str(script), str(archive)], capture_output=True, text=True
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(str(archive), result.stderr)
+                self.assertIn(missing, result.stderr)
+
     def test_continuous_stamp_survives_compatibility_packaging(self):
         stamp = "1.0.0-continuous." + "a" * 40
         staging, archive, _ = self.assemble(stamp=stamp)
@@ -86,7 +125,13 @@ class NativeCompatibilityTests(unittest.TestCase):
 
     @unittest.skipUnless(WORKFLOW.is_file(), "upstream release workflow not present")
     def test_promotion_validates_native_archives_beside_source_distribution(self):
-        _, archive, _ = self.assemble()
+        staging, archive, facts = self.assemble()
+        (staging / "wv").rename(staging / "prime-agent")
+        metadata = json.loads((staging / "package.json").read_text())
+        metadata["name"] = "prime-agent"
+        (staging / "package.json").write_text(json.dumps(metadata))
+        payload = ["prime-agent" if entry == "wv" else entry for entry in facts["payload"]]
+        pack_tarball(staging, archive, payload)
         repo = Path(__file__).resolve().parents[2]
         workflow = WORKFLOW.read_text()
         step = workflow.split(
@@ -99,8 +144,8 @@ class NativeCompatibilityTests(unittest.TestCase):
         source = self.root / "incoming/artifacts-source"
         native.mkdir(parents=True)
         source.mkdir()
-        shutil.copyfile(archive, native / "wv-1.0.0-darwin-arm64.tar.gz")
-        source_archive = source / "wv-1.0.0-src.tar.gz"
+        shutil.copyfile(archive, native / "prime-agent-1.0.0-darwin-arm64.tar.gz")
+        source_archive = source / "prime-agent-1.0.0-src.tar.gz"
         with tarfile.open(source_archive, "w:gz") as tar:
             tar.add(self.root / "README.md", arcname="README.md")
         with self.assertRaisesRegex(ValueError, "missing regular compatibility asset"):
