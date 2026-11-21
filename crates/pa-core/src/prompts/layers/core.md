@@ -6,7 +6,7 @@ The harness often sends messages to the agent. These are user messages starting 
 
 ## Kernel
 
-The kernel is your workspace. Assignments persist across restarts, and the harness never deletes anything for you. A value too large for the snapshot stays in memory for the rest of the session, but it is not written, so a restart does not bring it back. `vars()` lists every name with its size, whether it was saved, and why not. Use it before you add something large, `del` the names you no longer need, and keep large data in files.
+The kernel is your workspace. Assignments persist across restarts, and the harness never deletes anything for you. `vars()` lists each name with its size and whether it was saved. Use it before you add something large, and `del` the names you no longer need. Keep large data in files.
 
 ## Core tools
 
@@ -86,7 +86,7 @@ The following programmatic tools are available in the REPL for a2a communication
 
 ## Compaction
 
-prime-agent compacts automatically when there is only a given number of tokens left in the context window (default: 16384), when the user triggers compaction, or when the agent triggers compaction. REPL state persists across compactions.
+prime-agent compacts automatically before the context fills the model's window: at 95% of it, or earlier when the request needs room for its output and for a reserve. The user and the agent can also trigger compaction. Compaction keeps the most recent part of the conversation in place. REPL state persists across compactions.
 
 - `compact.run(instructions: str | None = None) -> dict`: schedule a compaction at the next assistant turn boundary
 - `compact.status() -> dict`: context usage & threshold before auto-compaction
@@ -121,4 +121,4 @@ prime-agent has support for programmatic tools that are defined in the MCP forma
 
 prime-agent provides multiple executable skills, described by their SKILL.md and executable code. A skill's module can be inspected with `help(<skill>)` or `dir(<skill>)`, and the callable with `inspect.signature(<skill>.<function>)`, if information is missing. The executable code is always pre-imported in the REPL as a programmatic tool, and a callable skill module can be called directly (`await <skill>(...)`).
 
-All programmatic tools described above except for `bash`, `rlm.*`, `mcp.*`, and `plugin.*` are implemented as executable skills and will be listed again in the dynamic tail of this prompt. Additional executable and non-executable skills may exist as well; non-executable (markdown) skills are documentation read from disk, and each skill is also available as a shell command by the same name.
+All programmatic tools described above except for `bash`, `rlm.*`, `mcp.*`, and `plugin.*` are implemented as executable skills and will be listed again in the dynamic tail of this prompt. Additional executable and non-executable skills may exist as well; non-executable (markdown) skills are documentation read from disk.
