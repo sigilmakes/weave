@@ -241,6 +241,7 @@ fn messages(client: &mut Client, id: &str, active_session_id: &str) -> String {
     serde_json::to_string(&response["data"]).expect("messages json")
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn send_to_a_saved_session_wakes_it_and_runs_the_turn() {
     let dir = tempfile::TempDir::new().expect("temp dir");

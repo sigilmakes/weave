@@ -45,6 +45,7 @@ const CHILD_SOCKET_ENV: &str = "PA_LOGIN_PANEL_CHILD_SOCKET";
 
 /// The child half: the real interactive loop against the parent's mock
 /// supervisor, with the scripted provider-auth hook.
+#[pa_test_scratch::pa_test]
 #[test]
 fn login_panel_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -60,6 +61,7 @@ fn login_panel_child_mode() {
 
 /// The `/mcp`-view child half: the same loop with a scripted client-auth
 /// hook and a roster carrying the `linear` service.
+#[pa_test_scratch::pa_test]
 #[test]
 fn login_panel_mcp_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -75,6 +77,7 @@ fn login_panel_mcp_child_mode() {
 
 /// The model-picker sign-in child: the real loop with an unsigned
 /// provider's model in the catalog and a scripted API-key login.
+#[pa_test_scratch::pa_test]
 #[test]
 fn model_sign_in_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -346,6 +349,7 @@ const MOUSE_DISABLE: &str = "\x1b[?1006l\x1b[?1002l";
 /// The terminal-sequence e2e: `/login` drives the inline auth panel, and
 /// the byte stream shows no terminal takeover (the old flow's alt-screen
 /// leave + clear + raw stdin prompt never happen).
+#[pa_test_scratch::pa_test]
 #[test]
 fn prime_login_renders_the_team_picker_without_a_terminal_takeover() {
     let mut harness = LoginPanelHarness::start();
@@ -401,6 +405,7 @@ fn prime_login_renders_the_team_picker_without_a_terminal_takeover() {
 
 /// The `/mcp`-view login e2e: Enter on the connection row runs the login
 /// flow, and the byte stream shows the panel rendering INLINE.
+#[pa_test_scratch::pa_test]
 #[test]
 fn mcp_view_enter_login_renders_inline_without_a_terminal_takeover() {
     let mut harness = LoginPanelHarness::start_mcp();
@@ -441,6 +446,7 @@ fn mcp_view_enter_login_renders_inline_without_a_terminal_takeover() {
 /// The model-picker sign-in e2e (the operator's bug report): the unsigned
 /// provider's row stays visible ("require sign in"), selecting it routes the
 /// sign-in flow, and a successful sign-in applies the model automatically.
+#[pa_test_scratch::pa_test]
 #[test]
 fn model_picker_routes_the_sign_in_flow_and_applies_after_login() {
     let mut harness = LoginPanelHarness::start_model_sign_in();

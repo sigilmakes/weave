@@ -298,6 +298,7 @@ fn read_exact_timeout(stream: &mut UnixStream, buffer: &mut [u8], deadline: Inst
 /// process's late orphan exit must leave the replacement's live socket
 /// alone - a stale-socket unlink there bounces every route to the
 /// replacement until the next relaunch cycle.
+#[pa_test_scratch::pa_test]
 #[test]
 fn orphan_exit_never_unlinks_a_replacement_bound_on_the_worker_path() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -323,6 +324,7 @@ fn orphan_exit_never_unlinks_a_replacement_bound_on_the_worker_path() {
 /// must remove it so a respawn does not wait out the stale-socket path.
 /// The still-ours directions of the other two call sites are pinned by the
 /// in-tree controls named in the module doc.
+#[pa_test_scratch::pa_test]
 #[test]
 fn routed_shutdown_removes_the_workers_own_socket_file() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -343,6 +345,7 @@ fn routed_shutdown_removes_the_workers_own_socket_file() {
 /// (`worker.rs` `exit_after_close`): the same survivor class as the
 /// orphan exit - a file replaced at the path after the bind is never
 /// unlinked by the old owner's exit.
+#[pa_test_scratch::pa_test]
 #[test]
 fn routed_shutdown_never_unlinks_a_replacement_bound_on_the_worker_path() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -372,6 +375,7 @@ fn routed_shutdown_never_unlinks_a_replacement_bound_on_the_worker_path() {
 /// nameless listener. The original's graceful drain must not unlink the
 /// successor's live socket - every new connect would fail ENOENT while
 /// the socket looks alive.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_drained_supervisor_never_unlinks_a_replaced_socket_file() {
     let dir = tempfile::TempDir::new().expect("temp dir");

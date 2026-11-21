@@ -247,6 +247,7 @@ fn options(
 /// Red on the pre-wave head: the opening loop evaluated `app.exit`
 /// against the pre-restore empty editor and exited the run during the
 /// stalled attach (no restore, no draft, empty frames).
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_reopen_restores_the_stash_before_the_queued_exit_key_evaluates() {
     std::env::remove_var("TMUX");

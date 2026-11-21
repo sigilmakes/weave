@@ -489,6 +489,7 @@ impl Client {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn abort_compaction_mid_threshold_run_records_the_cancelled_outcome() {
     let dir = tempfile::tempdir().expect("temp dir");
@@ -800,6 +801,7 @@ fn signal(pid: u32, signal: &str) {
     assert!(status.success(), "kill {signal} {pid} failed");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn wedged_worker_abort_acks_immediately_and_declares_terminal() {
     let dir = tempfile::tempdir().expect("temp dir");

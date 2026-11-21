@@ -181,6 +181,7 @@ fn faux_models_fixture() -> serde_json::Value {
 /// through `set_thinking_level`, invalid values refused, and a real
 /// model switch observable (the plain model drops the effort picker, the
 /// map model accepts `xhigh`, and the turn after a switch settles).
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_config_option_pickers() {
     let home = tempfile::TempDir::new().unwrap();

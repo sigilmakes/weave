@@ -262,6 +262,7 @@ fn session_options(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn down_arrow_focuses_the_dock_and_enter_opens_the_scoped_agents_view() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -447,6 +448,7 @@ async fn down_arrow_focuses_the_dock_and_enter_opens_the_scoped_agents_view() {
 /// The attached parent's top bar bills the ledger-seeded passive child's
 /// spend: the parent's own $1.00 plus the child's $0.30.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_title_bills_a_passive_subagents_spend() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -532,6 +534,7 @@ async fn the_title_bills_a_passive_subagents_spend() {
 /// the top bar; the agents-view row reads the same row through the same
 /// `compute_rollups`, so it bills the same number.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_title_bills_a_deleted_subagents_spend() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

@@ -94,6 +94,7 @@ async fn mock_summary(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn summary_respects_mandatory_thinking() {
     let (model, request, server) = mock_summary(Reply::Complete).await;
     let summary = complete_summary_call(
@@ -114,6 +115,7 @@ async fn summary_respects_mandatory_thinking() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn dropped_summary_closes_hung_transport() {
     for reply in [Reply::HangBeforeHeaders, Reply::HangAfterDelta] {
         let (model, request, server) = mock_summary(reply).await;
@@ -158,6 +160,7 @@ async fn dropped_summary_closes_hung_transport() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn summary_preserves_unspecified_reasoning_when_off_is_supported() {
     for map in [
         json!({"off":"none","low":"low"}),
@@ -186,6 +189,7 @@ async fn summary_preserves_unspecified_reasoning_when_off_is_supported() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn branch_summary_respects_mandatory_thinking() {
     let (model, request, server) = mock_summary(Reply::Complete).await;
     let entries = [FileEntry::Message {

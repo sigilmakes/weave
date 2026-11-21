@@ -382,6 +382,7 @@ fn goal_exit_plan(exit: KeyCode) -> Vec<HeadlessStep> {
 
 /// ESC from the Heartbeats panel lands back on the dock's Heartbeates item: the second Enter
 /// re-opens the same panel (an empty-draft Enter submits nothing).
+#[pa_test_scratch::pa_test]
 #[test]
 fn heartbeats_panel_esc_returns_to_the_dock_item() {
     let outcome = run_plan(heartbeats_exit_plan(KeyCode::Esc));
@@ -399,6 +400,7 @@ fn heartbeats_panel_esc_returns_to_the_dock_item() {
 /// The `/heartbeats` COMMAND path (not the dock's Enter) leaves the dock's Heartbeates item
 /// selected too: with the selection parked on the goal row, submitting `/heartbeats` and leaving
 /// with ESC lands on the Heartbeates item.
+#[pa_test_scratch::pa_test]
 #[test]
 fn heartbeats_command_path_esc_returns_to_the_dock_item() {
     let outcome = run_plan(vec![
@@ -434,6 +436,7 @@ fn heartbeats_command_path_esc_returns_to_the_dock_item() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn heartbeats_panel_left_returns_to_the_dock_item() {
     let outcome = run_plan(heartbeats_exit_plan(KeyCode::Left));
@@ -448,6 +451,7 @@ fn heartbeats_panel_left_returns_to_the_dock_item() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn shells_panel_esc_returns_to_the_dock_item() {
     let outcome = run_plan(shells_exit_plan(KeyCode::Esc));
@@ -462,6 +466,7 @@ fn shells_panel_esc_returns_to_the_dock_item() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn shells_panel_left_returns_to_the_dock_item() {
     let outcome = run_plan(shells_exit_plan(KeyCode::Left));
@@ -476,6 +481,7 @@ fn shells_panel_left_returns_to_the_dock_item() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn goal_panel_esc_returns_to_the_dock_item() {
     let outcome = run_plan(goal_exit_plan(KeyCode::Esc));
@@ -490,6 +496,7 @@ fn goal_panel_esc_returns_to_the_dock_item() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn goal_panel_left_returns_to_the_dock_item() {
     let outcome = run_plan(goal_exit_plan(KeyCode::Left));

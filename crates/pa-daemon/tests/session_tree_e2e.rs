@@ -167,6 +167,7 @@ fn scripted_turn(client: &mut Client, session_id: &str, message: &str, id: &str)
     assert_eq!(response["success"], true, "prompt {id} failed: {response}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn session_tree_commands_over_the_supervisor_wire() {
     fn entry_id(node: &serde_json::Value) -> &str {
@@ -506,6 +507,7 @@ fn read_exact_timeout(stream: &mut UnixStream, buffer: &mut [u8], deadline: Inst
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn session_tree_commands_over_the_direct_worker_link() {
     let dir = tempfile::TempDir::new().expect("temp dir");

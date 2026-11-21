@@ -59,6 +59,7 @@ fn wait_child_exit(child: &mut Child, timeout: Duration) -> Option<std::process:
 
 /// The shutdown must stop every worker and exit the supervisor, cleaning
 /// up its socket: a supervisor parked on its socket blocks replacement.
+#[pa_test_scratch::pa_test]
 #[test]
 fn shutdown_command_exits_the_supervisor_process() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -124,6 +125,7 @@ fn shutdown_command_exits_the_supervisor_process() {
 /// SIGTERM to the live supervisor is the graceful drain, not the default
 /// signal death: the process exits 0 and cleans its socket file up. A
 /// connected client rides the drain.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_sigterm_exits_the_supervisor_through_the_graceful_drain() {
     let dir = tempfile::TempDir::new().expect("temp dir");

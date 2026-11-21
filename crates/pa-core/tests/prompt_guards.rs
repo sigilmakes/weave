@@ -58,6 +58,7 @@ const DYNAMIC_ONLY_MARKERS: &[&str] = &[
     "You are a child agent spawned by",
 ];
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn static_layers_contain_no_dynamic_content() {
     for (name, text) in [
@@ -76,6 +77,7 @@ fn static_layers_contain_no_dynamic_content() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cached_prefix_is_stable_across_sessions() {
     let mut options = BuildSystemPromptOptions {
@@ -446,6 +448,7 @@ fn documented_surface_tokens() -> BTreeSet<String> {
     documented
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn core_layer_documents_the_real_tool_surface() {
     let documented = documented_surface_tokens();
@@ -508,6 +511,7 @@ const TS_PACKAGED_SKILL_SET: &[&str] = &[
 
 /// The loadable skill set is exactly the historical TS set.
 /// The generic `mcp` skill stays markdown-only, and the retired per-service pair stays gone.
+#[pa_test_scratch::pa_test]
 #[test]
 fn bundled_skills_match_the_ts_packaged_set() {
     let skills = sorted_bundled_skills();
@@ -539,6 +543,7 @@ fn bundled_skills_match_the_ts_packaged_set() {
 /// The generic mcp skill loads through the normal markdown discovery and renders in the
 /// `<available_skills>` inventory exactly like any other markdown skill: the `[skill name
 /// location]`-style XML the TS `formatSkillsForPrompt` emits, without a `python_import` line.
+#[pa_test_scratch::pa_test]
 #[test]
 fn generic_mcp_skill_renders_in_the_prompt_inventory() {
     let mut options = BuildSystemPromptOptions {

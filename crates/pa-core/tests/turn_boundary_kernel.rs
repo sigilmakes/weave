@@ -115,6 +115,7 @@ fn registry_model() -> pa_types::ai::Model {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn turn_boundary_host_requests_round_trip_through_a_real_kernel() {
     let Some(kernel_python) = kernel_python() else {
         return;

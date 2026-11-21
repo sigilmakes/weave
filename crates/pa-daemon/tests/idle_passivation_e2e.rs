@@ -206,6 +206,7 @@ fn write_faux_script(dir: &Path, name: &str, responses: &Value) -> PathBuf {
 /// `agent_message.send` WAKES a fresh worker over the child's session
 /// file and delivers.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_settled_child_passivates_stays_listable_and_revives_by_agent_message() {
     let Some(kernel_python) = kernel_python() else {
         return;
@@ -523,6 +524,7 @@ fn root_worker_ids(agent_dir: &Path) -> Vec<String> {
 /// wake retry `prompt_child` carries: the retry's wake launches a fresh
 /// worker over the child's session file and the rename lands there.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_parent_rename_after_a_revival_and_second_passivation_reaches_the_child() {
     let Some(kernel_python) = kernel_python() else {
         return;
@@ -767,6 +769,7 @@ async fn a_parent_rename_after_a_revival_and_second_passivation_reaches_the_chil
 /// by its durable session id: the attach wakes a fresh worker over the
 /// saved file and the snapshot carries the pre-passivation transcript.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_idle_root_passivates_and_resumes_by_its_durable_id_with_its_transcript() {
     let Some(kernel_python) = kernel_python() else {
         return;

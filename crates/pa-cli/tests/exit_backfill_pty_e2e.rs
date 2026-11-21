@@ -56,6 +56,7 @@ const LAST_ROW: &[u8] = b"tail row 8";
 
 /// The child half: runs the real interactive loop against the parent's
 /// mock supervisor; a plain `cargo test` run passes trivially.
+#[pa_test_scratch::pa_test]
 #[test]
 fn exit_backfill_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -86,11 +87,13 @@ fn exit_backfill_child_mode() {
 /// The pty harnesses serialize: concurrent byte-level waits flake on the shared test CPUs.
 static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn exit_does_not_wait_for_a_pending_backfill_page() {
     leave_with_pending_backfill(b"/exit\r");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn resume_does_not_wait_for_a_pending_backfill_page() {
     leave_with_pending_backfill(b"/resume s2\r");

@@ -404,6 +404,7 @@ fn first_user_entry_id(client: &mut Client, session_id: &str, id: &str) -> Strin
 }
 
 /// `new_session` (TS `teardownForReplacement`): the old kernel dies, the fresh kernel is COLD.
+#[pa_test_scratch::pa_test]
 #[test]
 fn new_session_disposes_the_kernel_and_starts_cold() {
     let Some(kernel_python) = kernel_python() else {
@@ -445,6 +446,7 @@ fn new_session_disposes_the_kernel_and_starts_cold() {
 
 /// `switch_session` (TS `teardownForReplacement`): a prepared target replaces the runtime
 /// (cold); a MISSING target fails at the prepare, leaving the live kernel untouched.
+#[pa_test_scratch::pa_test]
 #[test]
 fn switch_session_disposes_the_kernel_and_a_failed_target_keeps_it() {
     let Some(kernel_python) = kernel_python() else {
@@ -527,6 +529,7 @@ fn switch_session_disposes_the_kernel_and_a_failed_target_keeps_it() {
 }
 
 /// `fork` (TS `teardownForReplacement`): a whole-runtime replacement; the fork's kernel boots cold.
+#[pa_test_scratch::pa_test]
 #[test]
 fn fork_disposes_the_kernel_and_starts_cold() {
     let Some(kernel_python) = kernel_python() else {
@@ -578,6 +581,7 @@ fn fork_disposes_the_kernel_and_starts_cold() {
 
 /// The switch cwd rebind (TS `createRuntime({ cwd: sessionManager.getCwd() })`): the
 /// post-switch kernel's `os.getcwd()` is the switched-to session's working directory.
+#[pa_test_scratch::pa_test]
 #[test]
 fn switch_session_rebinds_the_kernel_cwd_onto_the_target_session() {
     let Some(kernel_python) = kernel_python() else {
@@ -681,6 +685,7 @@ fn switch_session_rebinds_the_kernel_cwd_onto_the_target_session() {
 
 /// `navigate_tree` (TS `AgentSession.navigateTree`): a tree move is NOT a runtime replacement;
 /// the namespace stays WARM (the marker set before the move survives it).
+#[pa_test_scratch::pa_test]
 #[test]
 fn navigate_tree_keeps_the_kernel_warm() {
     let Some(kernel_python) = kernel_python() else {

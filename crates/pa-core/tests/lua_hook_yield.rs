@@ -86,6 +86,7 @@ async fn trial(round: usize) {
     }
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[pa_test_scratch::pa_test]
 async fn concurrent_hook_yields_preserve_suspended_lua_frame_locals() {
     tokio::time::timeout(std::time::Duration::from_secs(45), async {
         for batch in 0..1250 {

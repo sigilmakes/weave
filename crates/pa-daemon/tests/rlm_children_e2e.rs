@@ -243,6 +243,7 @@ fn spawn_request(name: &str, prompt: &str) -> RlmSpawnRequest {
 /// Spawn a child through the supervisor, observe it in both rosters, collect its answer,
 /// then delete it (both rosters drop it).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rlm_children_spawn_roster_collect_delete_end_to_end() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("daemon.sock");
@@ -501,6 +502,7 @@ async fn rlm_children_spawn_roster_collect_delete_end_to_end() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rlm_create_session_spawns_a_prompted_depth_zero_session() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("daemon.sock");
@@ -574,6 +576,7 @@ async fn rlm_create_session_spawns_a_prompted_depth_zero_session() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rlm_recursion_bound_is_enforced() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("daemon.sock");
@@ -611,6 +614,7 @@ async fn rlm_recursion_bound_is_enforced() {
 /// reservation for the whole fresh-launch admission; once the winner is gone, the name
 /// admits again.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn parallel_same_name_subagent_creates_admit_exactly_one() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("daemon.sock");

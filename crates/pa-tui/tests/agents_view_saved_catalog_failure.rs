@@ -207,6 +207,7 @@ fn view_options(socket: &std::path::Path) -> AgentsViewOptions {
 /// The terminal saved-catalog failure settles the entry anchor's wait: the status line keeps the
 /// honest error, and an Enter after the failure opens the default row (never the loading hint).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_terminal_saved_catalog_failure_settles_the_anchor_wait() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");
@@ -276,6 +277,7 @@ async fn a_terminal_saved_catalog_failure_settles_the_anchor_wait() {
 /// The failed fetch re-arms on the next query change (TS `rearmSavedSearchFetch`): a typed query
 /// after the failure sends a SECOND saved-catalog request.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_failed_fetch_rearms_on_the_next_query_change() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");

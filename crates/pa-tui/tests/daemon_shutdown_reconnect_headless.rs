@@ -361,6 +361,7 @@ fn options_with_session(socket: PathBuf, session: SessionSelection) -> Interacti
 /// The operator's daemon restart recovers an attached window (TS #2458): the announced non-update
 /// closing arms the bounded shutdown recovery, the pane stays mounted while it waits, and the
 /// restarted daemon's reattach lands.
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_announced_shutdown_reconnects_when_the_daemon_comes_back() {
     // The ambient TMUX variable adds a startup notice; scrub it so runs are the same inside tmux

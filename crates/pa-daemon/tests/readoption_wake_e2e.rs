@@ -374,6 +374,7 @@ fn create_session(client: &mut Client, id: &str, dir: &Path, agent_dir: &Path) -
     (active_id, session_id)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_detached_bash_completion_wakes_the_idle_session_across_a_supervisor_restart() {
     static NEXT: AtomicUsize = AtomicUsize::new(0);
@@ -476,6 +477,7 @@ fn a_detached_bash_completion_wakes_the_idle_session_across_a_supervisor_restart
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_heartbeat_keeps_firing_across_a_supervisor_restart() {
     let root = tempfile::TempDir::new().expect("temp dir");
@@ -594,6 +596,7 @@ fn a_heartbeat_keeps_firing_across_a_supervisor_restart() {
 
 /// Boot-time wake vs the storm gates (the ~200-agent boot crash class): the ADOPTED-ALIVE
 /// worker fires, the KILLED sibling never resurrects (#2592/#2642 gates hold).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_boot_fires_the_adopted_worker_due_job_and_never_resurrects_the_killed_sibling() {
     let root = tempfile::TempDir::new().expect("temp dir");

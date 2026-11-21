@@ -2,6 +2,7 @@ use super::*;
 
 use std::os::unix::fs::PermissionsExt;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn boot_cleanup_preserves_unverifiable_journals_and_waiting_callers_status() {
     let dir = tempfile::tempdir().expect("temp dir");

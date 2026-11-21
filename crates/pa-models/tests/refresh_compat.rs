@@ -89,6 +89,7 @@ fn catalog_json(ids: &[&str]) -> String {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn fresh_fetch_writes_a_validated_0600_snapshot_and_serves_it() {
     let dir = tempfile::tempdir().unwrap();
     let body = catalog_json(&["model-a"]);
@@ -135,6 +136,7 @@ async fn fresh_fetch_writes_a_validated_0600_snapshot_and_serves_it() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn unsupported_future_version_keeps_last_good_silently() {
     let dir = tempfile::tempdir().unwrap();
     let good = catalog_json(&["model-a"]);
@@ -186,6 +188,7 @@ async fn unsupported_future_version_keeps_last_good_silently() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn malformed_model_entry_skips_and_the_refresh_succeeds() {
     let dir = tempfile::tempdir().unwrap();
     let compiled = pa_models::transports::compiled_models();
@@ -220,6 +223,7 @@ async fn malformed_model_entry_skips_and_the_refresh_succeeds() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn network_failure_and_oversize_keep_state_unchanged() {
     let dir = tempfile::tempdir().unwrap();
     let server = common::MockServer::start(vec![
@@ -281,6 +285,7 @@ async fn network_failure_and_oversize_keep_state_unchanged() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn hourly_gating_skips_recent_attempts_and_force_overrides() {
     let dir = tempfile::tempdir().unwrap();
     let server =
@@ -318,6 +323,7 @@ async fn hourly_gating_skips_recent_attempts_and_force_overrides() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn concurrent_refreshes_coalesce_into_one_fetch() {
     let dir = tempfile::tempdir().unwrap();
     let server =
@@ -348,6 +354,7 @@ async fn concurrent_refreshes_coalesce_into_one_fetch() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn not_modified_keeps_snapshot_and_updates_fetched_at() {
     let dir = tempfile::tempdir().unwrap();
     let server = common::MockServer::start(vec![
@@ -385,6 +392,7 @@ async fn not_modified_keeps_snapshot_and_updates_fetched_at() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn prime_inference_cache_is_scope_keyed_and_isolated() {
     let dir = tempfile::tempdir().unwrap();
     let compiled = pa_models::transports::prime_inference_offline_entries();
@@ -481,6 +489,7 @@ async fn prime_inference_cache_is_scope_keyed_and_isolated() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn unauthorized_prime_inference_clears_only_that_scope() {
     let dir = tempfile::tempdir().unwrap();
     let compiled = pa_models::transports::prime_inference_offline_entries();
@@ -547,6 +556,7 @@ async fn unauthorized_prime_inference_clears_only_that_scope() {
         .is_empty());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn prime_inference_parse_and_coverage_gate_use_public_fns() {
     // Sanity for the closure the PrimeInferenceCatalog installs: an empty
@@ -559,6 +569,7 @@ fn prime_inference_parse_and_coverage_gate_use_public_fns() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn mid_session_refresh_never_retargets() {
     let dir = tempfile::tempdir().unwrap();
     let server = common::MockServer::start(vec![
@@ -599,6 +610,7 @@ async fn mid_session_refresh_never_retargets() {
 /// Fire-and-forget safety: a caller that drops its `refresh` mid-fetch
 /// must not poison the coalescing gate.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_dropped_refresh_resolves_the_gate_and_the_next_refresh_starts_fresh() {
     let dir = tempfile::tempdir().unwrap();
     let server = common::MockServer::start_scripted(vec![
@@ -670,6 +682,7 @@ async fn a_dropped_refresh_resolves_the_gate_and_the_next_refresh_starts_fresh()
 /// caches without waiting an hour) and the tick's fetch arms the hourly
 /// gate, so an immediate second attempt stays inside the window.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn facade_refreshes_authorized_layers_and_gates_recent_attempts() {
     let dir = tempfile::tempdir().unwrap();
     let compiled = pa_models::transports::prime_inference_offline_entries();

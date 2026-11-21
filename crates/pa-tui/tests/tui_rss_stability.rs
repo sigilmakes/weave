@@ -305,6 +305,7 @@ fn stream_turn(writer: &mut UnixStream) {
 
 /// A long scripted session must not grow the TUI's resident memory without bound: the transcript
 /// grows with the session (as designed), but no per-frame or per-event class may accumulate.
+#[pa_test_scratch::pa_test]
 #[test]
 fn interactive_session_rss_plateaus_over_long_stream() {
     const TURNS: usize = 40;

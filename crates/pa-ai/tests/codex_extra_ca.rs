@@ -29,6 +29,7 @@ impl Drop for FixtureEnvironment {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 // Keep the fixture, first-use precondition and public-path assertions in one
 // test so no other test/client can initialize the process-default TLS provider.
 // tungstenite dictates the upgrade callback's Response-sized error type.

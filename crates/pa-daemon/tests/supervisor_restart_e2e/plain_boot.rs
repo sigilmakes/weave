@@ -5,6 +5,7 @@ use super::*;
 /// evidence: the idle-at-exit session's journal settled to `busy: false`
 /// (`turn_end`); the busy-at-crash session is killed mid-turn with a
 /// `busy: true` record.
+#[pa_test_scratch::pa_test]
 #[test]
 fn plain_boot_revives_only_journal_busy_workers() {
     let dir = tempfile::TempDir::new().expect("temp dir");

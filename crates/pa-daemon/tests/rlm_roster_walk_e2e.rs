@@ -247,6 +247,7 @@ fn write_synthetic_family(agent_dir: &Path, children: usize) -> (PathBuf, usize)
     (root_path, live)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn list_all_returns_the_full_synthetic_thousand_child_roster() {
     const CHILDREN: usize = 1_000;
@@ -298,6 +299,7 @@ fn list_all_returns_the_full_synthetic_thousand_child_roster() {
 /// stop (no tombstone) the child survives as a seeded passive row, in the
 /// existing subscriber's push and in a fresh subscriber's snapshot.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn subscribe_after_spawn_then_shutdown_seeds_the_passive_child() {
     use pa_core::session_engine::rlm_host::{RlmSpawnRequest, RlmSubagentHost};
     use pa_daemon::rlm_children::{ParentIdentity, SupervisorChildSessions};

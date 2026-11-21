@@ -385,6 +385,7 @@ fn run_plan(steps: Vec<HeadlessStep>) -> Vec<String> {
 
 /// `/nightly status` reports the inferred channel (the harness has no settings seam, so no
 /// preferred channel is set) and the running version; a bad argument gets the TS usage error.
+#[pa_test_scratch::pa_test]
 #[test]
 fn nightly_status_and_usage_error_render_the_ts_wording() {
     let steps = vec![
@@ -408,6 +409,7 @@ fn nightly_status_and_usage_error_render_the_ts_wording() {
 
 /// `/nightly on` (or bare) saves the nightly channel that `/update` and
 /// `prime-agent update` follow.
+#[pa_test_scratch::pa_test]
 #[test]
 fn nightly_on_saves_the_nightly_channel() {
     let steps = vec![
@@ -428,6 +430,7 @@ fn nightly_on_saves_the_nightly_channel() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn nightly_off_renders_the_stable_pin_note() {
     let steps = vec![

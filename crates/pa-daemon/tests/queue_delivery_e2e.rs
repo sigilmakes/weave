@@ -535,6 +535,7 @@ fn action_updates_with(events: &[Value], steering: &[&str], follow_ups: &[&str])
         .collect()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn queue_pickup_projection_reaches_clients_before_the_delivered_turn_starts() {
     let (_dir, mock, _supervisor, mut client, session_id) = setup("queue-pickup");
@@ -641,6 +642,7 @@ fn queue_pickup_projection_reaches_clients_before_the_delivered_turn_starts() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn multi_item_queue_delivers_every_item_in_lane_order() {
     let (_dir, mock, _supervisor, mut client, session_id) = setup("queue-multi");
@@ -725,6 +727,7 @@ fn multi_item_queue_delivers_every_item_in_lane_order() {
 
 /// TS #2063 (RES-1306): a queue-visible delivery's active action rides the turn through
 /// its client-rendered phases; the settle's projection carries no active action.
+#[pa_test_scratch::pa_test]
 #[test]
 fn queue_delivery_projects_the_active_action_phases_around_the_turn() {
     let (_dir, mock, _supervisor, mut client, session_id) = setup("active-action-phases");

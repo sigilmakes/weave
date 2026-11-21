@@ -340,6 +340,7 @@ fn wait_gone(needle: &str) -> HeadlessStep {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn up_walks_backward_down_forward_and_the_draft_returns() {
     let mut steps = Vec::new();
@@ -368,6 +369,7 @@ fn up_walks_backward_down_forward_and_the_draft_returns() {
 /// operator's 2026-10-01 consistency ruling — here one heartbeat and no
 /// subagents), and the recall stays one press away: the Up after that
 /// Down returns the focus to the prompt, and the next Up recalls.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_drafts_down_enters_the_dock_and_up_returns_before_the_recall() {
     let mut steps = Vec::new();
@@ -401,6 +403,7 @@ fn the_drafts_down_enters_the_dock_and_up_returns_before_the_recall() {
 /// Coexistence: the right arrow walks to the heartbeats group (the 2026-09-26 dock-arrows
 /// directive), and Escape closes the panel onto the dock's own item (the 2026-09-26 panel-exit
 /// ruling): the history recall works right after the round trip.
+#[pa_test_scratch::pa_test]
 #[test]
 fn alt_a_arrows_and_enter_still_open_the_dock_group_view_and_recall_survives_it() {
     let mut steps = Vec::new();

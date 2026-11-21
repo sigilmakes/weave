@@ -363,6 +363,7 @@ fn create_parent(
     created["data"].clone()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn new_session_closes_the_spawned_child_and_empties_the_roster() {
     let Some(kernel_python) = kernel_python() else {
@@ -493,6 +494,7 @@ fn new_session_closes_the_spawned_child_and_empties_the_roster() {
 
 /// `rlm.create_session` root sessions are NOT parent-linked, so
 /// `closeChildSessions` never matches them.
+#[pa_test_scratch::pa_test]
 #[test]
 fn new_session_keeps_a_created_root_session_running() {
     let Some(kernel_python) = kernel_python() else {
@@ -574,11 +576,13 @@ fn new_session_keeps_a_created_root_session_running() {
 
 /// A daemon restart must not lose the parent's RLM children: the
 /// reattached parent lists its child again and messaging it wakes the child.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_daemon_restart_relists_and_wakes_the_parents_child() {
     restart_relists_child(0, "completed");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_daemon_restart_marks_a_still_running_child_as_failed() {
     restart_relists_child(30_000, "running");

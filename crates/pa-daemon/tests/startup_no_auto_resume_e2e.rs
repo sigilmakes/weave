@@ -399,6 +399,7 @@ fn write_models_json(agent_dir: &Path, url: &Path) {
 
 /// The positive half: once the USER resumes the session, its schedule
 /// arms and the due heartbeat fires through the live worker's scheduler.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_due_scheduled_job_never_boots_its_session_at_daemon_start() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -514,6 +515,7 @@ fn a_due_scheduled_job_never_boots_its_session_at_daemon_start() {
 }
 
 /// The archived-state file (a session TS stopped on purpose) stays down and out of the catalog.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_stale_ts_era_heartbeat_stays_dormant_across_daemon_restarts() {
     let dir = tempfile::TempDir::new().expect("temp dir");

@@ -55,6 +55,7 @@ const CHILD_SOCKET_ENV: &str = "PA_KITTY_CHILD_SOCKET";
 
 /// The child half of the e2e: runs the real chat surface against the mock
 /// supervisor, then hands off like the CLI composition (a plain `cargo test` passes).
+#[pa_test_scratch::pa_test]
 #[test]
 fn kitty_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -108,6 +109,7 @@ fn kitty_child_mode() {
 /// The pty harnesses serialize: concurrent process-group signals and raw ptys flake on shared CPUs.
 static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn releases_around_the_handoff_never_become_visible() {
     let _lock = match HARNESS_LOCK.lock() {

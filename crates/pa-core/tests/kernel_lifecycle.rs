@@ -116,6 +116,7 @@ async fn execute(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn kernel_state_persists_across_cells_and_turns() {
     let Some(options) = test_options(None) else {
         return;
@@ -164,6 +165,7 @@ async fn kernel_state_persists_across_cells_and_turns() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn background_thread_output_is_separated_from_cell_output() {
     let Some(options) = test_options(None) else {
         return;
@@ -195,6 +197,7 @@ async fn background_thread_output_is_separated_from_cell_output() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rlm_bootstrap_injects_the_kernel_surface() {
     let Some(base) = test_options(None) else {
         return;
@@ -228,6 +231,7 @@ async fn rlm_bootstrap_injects_the_kernel_surface() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn host_requests_round_trip_to_registered_handlers() {
     let mut handlers = HostRequestHandlers::new();
     handlers.register(
@@ -290,6 +294,7 @@ async fn host_requests_round_trip_to_registered_handlers() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn kill9_then_restart_revives_snapshot_and_reports_unserializable() {
     let dir = tempfile::tempdir().expect("tempdir");
     let Some(options) = test_options(Some(dir.path())) else {
@@ -376,6 +381,7 @@ async fn kill9_then_restart_revives_snapshot_and_reports_unserializable() {
 /// continuation waits for their settlement: its completion settles the
 /// track exactly once; a graceful teardown over the settled track fires nothing.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn background_bash_settlement_fires_the_callback_once() {
     let Some(mut options) = test_options(None) else {
         return;
@@ -425,6 +431,7 @@ async fn background_bash_settlement_fires_the_callback_once() {
 /// once: the handles die with the kernel, so owed continuations waiting
 /// on them must hear it before it is lost — once, not once per handle.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn kernel_teardown_with_live_handles_settles_the_callback_once() {
     let Some(mut options) = test_options(None) else {
         return;
@@ -454,6 +461,7 @@ async fn kernel_teardown_with_live_handles_settles_the_callback_once() {
 /// execute result — including calls routed through a helper function,
 /// which a static scan of the cell source cannot see.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn cell_result_summarizes_the_bash_commands_it_ran() {
     let Some(options) = test_options(None) else {
         return;
@@ -483,6 +491,7 @@ async fn cell_result_summarizes_the_bash_commands_it_ran() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn graceful_shutdown_flushes_the_final_snapshot() {
     let dir = tempfile::tempdir().expect("tempdir");
     let Some(options) = test_options(Some(dir.path())) else {

@@ -107,6 +107,7 @@ fn wait_exit(child: &mut Child, budget: Duration) -> bool {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn orphaned_worker_exits_when_the_supervisor_socket_never_answers() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -126,6 +127,7 @@ fn orphaned_worker_exits_when_the_supervisor_socket_never_answers() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn worker_with_a_reachable_supervisor_survives_the_lost_window() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -239,6 +241,7 @@ fn read_exact_timeout(
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_orphan_exit_preserves_the_session_and_releases_execution_ownership() {
     let dir = tempfile::tempdir().expect("temp dir");
@@ -293,6 +296,7 @@ fn the_orphan_exit_preserves_the_session_and_releases_execution_ownership() {
 /// not a readiness signal: an idle orphan exits at the second availability
 /// check after the client's close (checks every 5s, a 4s window), so a worker
 /// that ignored the run would exit while the 20s command still runs.
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_orphaned_worker_waits_for_a_running_user_bash() {
     let dir = tempfile::tempdir().expect("temp dir");
@@ -345,6 +349,7 @@ fn an_orphaned_worker_waits_for_a_running_user_bash() {
 /// writes the sidecars while it holds them: a session whose turn settled
 /// leaves a current info sidecar (`generation.len == offset == file len`),
 /// so the next daemon boot folds zero bytes instead of the transcript.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_orphan_exit_writes_a_current_info_sidecar() {
     let dir = tempfile::TempDir::new().expect("temp dir");

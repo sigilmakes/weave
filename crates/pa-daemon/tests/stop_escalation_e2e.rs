@@ -281,6 +281,7 @@ fn holder_report(pid: u32) -> String {
     format!("pid {pid} state {state} cmdline {cmdline:?} owner {owner:?}")
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_hung_worker_is_killed_within_the_escalation_window_and_its_lease_frees() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -394,6 +395,7 @@ fn a_hung_worker_is_killed_within_the_escalation_window_and_its_lease_frees() {
     drop(daemon);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_well_behaved_worker_keeps_the_clean_stop() {
     let dir = tempfile::TempDir::new().expect("temp dir");

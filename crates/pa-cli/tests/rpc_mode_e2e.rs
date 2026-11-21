@@ -204,6 +204,7 @@ fn turn_script(steps: &Value) -> Value {
     json!({ "responses": steps })
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_get_state_answers_the_fresh_session() {
     let mut client = RpcChild::spawn(
@@ -234,6 +235,7 @@ fn rpc_get_state_answers_the_fresh_session() {
 }
 
 /// The prompt response precedes the turn's stream events (TS `promptResponsePending` buffering).
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_prompt_streams_events_after_the_response() {
     let mut client = RpcChild::spawn(
@@ -271,6 +273,7 @@ fn rpc_prompt_streams_events_after_the_response() {
     client.drain_stderr();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_parse_and_unknown_command_errors() {
     let mut client = RpcChild::spawn(
@@ -315,6 +318,7 @@ fn rpc_parse_and_unknown_command_errors() {
 
 /// Steer and follow-up queue behind a running turn; abort parks them; the next
 /// prompt's run folds the steer and delivers the follow-up (TS `runLoop`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_steer_and_follow_up_queue_then_abort() {
     let script = json!({
@@ -404,6 +408,7 @@ fn rpc_steer_and_follow_up_queue_then_abort() {
     client.drain_stderr();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_thinking_level_set_and_cycle() {
     let script = json!({ "responses": ["unused"], "reasoning": true });
@@ -443,6 +448,7 @@ fn rpc_thinking_level_set_and_cycle() {
     client.drain_stderr();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_compact_answers_the_ts_skip_error() {
     let mut client = RpcChild::spawn(
@@ -473,6 +479,7 @@ fn rpc_compact_answers_the_ts_skip_error() {
     client.drain_stderr();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_daemon_mode_families_answer_the_ts_inprocess_semantics() {
     let mut client = RpcChild::spawn(
@@ -509,6 +516,7 @@ fn rpc_daemon_mode_families_answer_the_ts_inprocess_semantics() {
     client.drain_stderr();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_set_session_name_round_trip() {
     let mut client = RpcChild::spawn(
@@ -534,6 +542,7 @@ fn rpc_set_session_name_round_trip() {
 }
 
 /// `fork` branches at the entry's parent leaf and moves the connection onto the fork's file.
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_fork_messages_and_fork_swap() {
     let script = turn_script(&json!(["one", "two"]));
@@ -573,6 +582,7 @@ fn rpc_fork_messages_and_fork_swap() {
     client.drain_stderr();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_new_session_swaps_the_engine() {
     let script = turn_script(&json!(["one", "unused"]));
@@ -592,6 +602,7 @@ fn rpc_new_session_swaps_the_engine() {
     client.drain_stderr();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_get_available_models_lists_the_catalog() {
     let mut client = RpcChild::spawn_seeded(
@@ -623,6 +634,7 @@ fn rpc_get_available_models_lists_the_catalog() {
     client.drain_stderr();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_eof_settles_and_exits_zero() {
     let script = json!({
@@ -647,6 +659,7 @@ fn rpc_eof_settles_and_exits_zero() {
     client.spawn_stderr = None;
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_get_session_stats_answers_the_ts_shape() {
     let script = turn_script(&json!(["one"]));
@@ -670,6 +683,7 @@ fn rpc_get_session_stats_answers_the_ts_shape() {
 }
 
 /// Regression test: `--mode rpc` must never print the missing-subsystem stub.
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_mode_never_prints_the_missing_subsystem_stub() {
     let mut client = RpcChild::spawn(
@@ -689,6 +703,7 @@ fn rpc_mode_never_prints_the_missing_subsystem_stub() {
 }
 
 /// A fresh persisted session leases its file before the engine can write it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_fresh_sessions_lease_their_files() {
     let mut client = RpcChild::spawn(&["--mode", "rpc"], &turn_script(&json!(["one"])));
@@ -724,6 +739,7 @@ fn rpc_fresh_sessions_lease_their_files() {
 }
 
 /// The `--fork` copy leases its materialized file before the engine writes it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_fork_leases_the_materialized_file() {
     let mut source = RpcChild::spawn(&["--mode", "rpc"], &turn_script(&json!(["one"])));
@@ -778,6 +794,7 @@ fn rpc_fork_leases_the_materialized_file() {
 }
 
 /// A FAILED whole-session replacement never strands the queued work: the post-turn fold drains it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_failed_replacement_restarts_the_queue_pump() {
     let script = json!({ "responses": [
@@ -870,6 +887,7 @@ fn rpc_failed_replacement_restarts_the_queue_pump() {
 }
 
 /// The 143 exit must not queue behind the replacement's settle.
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_sigterm_during_replacement_exits_promptly() {
     let script = json!({ "responses": [ { "text": "slow", "delayMs": 30_000 } ] });
@@ -1087,6 +1105,7 @@ fn write_corpus_fixture(path: &std::path::Path, size_mib: usize) {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn corpus_fixture_has_a_null_root_and_preserves_every_nonroot_parent() {
     let dir = tempfile::tempdir().unwrap();
@@ -1257,11 +1276,13 @@ impl Drop for TimedRpcChild {
 /// The `compaction_start` frame must reach the client BEFORE the pipeline runs:
 /// the pre-summarizer CPU span runs without a yield, so without the flush the
 /// frame strands (TS writes stdout synchronously at the emit: the flush is parity).
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_compact_flushes_the_start_frame_before_the_pipeline() {
     case_rpc_compact_flushes_the_start_frame_before_the_pipeline(10);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_compact_flushes_the_start_frame_before_the_pipeline_32m() {
     case_rpc_compact_flushes_the_start_frame_before_the_pipeline(32);
@@ -1338,11 +1359,13 @@ fn case_rpc_compact_flushes_the_start_frame_before_the_pipeline(size_mib: usize)
 
 /// The flush is bounded against a stalled reader: with the pipe full the writer
 /// blocks mid-write and the compaction must still complete.
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_compact_flush_is_bounded_against_a_stalled_reader() {
     case_rpc_compact_flush_is_bounded_against_a_stalled_reader(10);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_compact_flush_is_bounded_against_a_stalled_reader_32m() {
     case_rpc_compact_flush_is_bounded_against_a_stalled_reader(32);
@@ -1401,11 +1424,13 @@ fn case_rpc_compact_flush_is_bounded_against_a_stalled_reader(size_mib: usize) {
 
 /// The prompt-admitted `/compact`'s frames ride the prompt-response buffer (TS
 /// `promptResponsePending`) and publish AFTER the response.
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_prompt_admitted_compact_frames_flush_after_the_response() {
     case_rpc_prompt_admitted_compact_frames_flush_after_the_response(10);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rpc_prompt_admitted_compact_frames_flush_after_the_response_32m() {
     case_rpc_prompt_admitted_compact_frames_flush_after_the_response(32);

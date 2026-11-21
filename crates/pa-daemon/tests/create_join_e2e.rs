@@ -247,6 +247,7 @@ fn write_padded_session_file(dir: &Path) -> PathBuf {
     path
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn concurrent_creates_join_the_first_create() {
     let dir =

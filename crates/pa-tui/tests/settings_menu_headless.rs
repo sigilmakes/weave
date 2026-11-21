@@ -517,6 +517,7 @@ fn open_settings() -> Vec<HeadlessStep> {
 
 /// The spacing pass: a blank row above and below the tab strip, four spaces between the tabs,
 /// the separator rule below the description, the hint carrying the description's padding.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_settings_page_renders_the_spacing_and_the_new_keys() {
     let (frames, _) = run_plan(open_settings());
@@ -572,6 +573,7 @@ fn the_settings_page_renders_the_spacing_and_the_new_keys() {
 
 /// Right flips the Quiet startup toggle, left flips it back, Enter keeps its cycle; the
 /// multi-option Idle eviction row walks its list the same way.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_arrows_cycle_values_and_the_writes_persist() {
     let mut steps = open_settings();
@@ -618,6 +620,7 @@ fn the_arrows_cycle_values_and_the_writes_persist() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn tab_and_the_number_keys_move_the_tabs_not_the_arrows() {
     let mut steps = open_settings();
@@ -653,6 +656,7 @@ fn tab_and_the_number_keys_move_the_tabs_not_the_arrows() {
 
 /// The two regression pins: the full-width rule stays over the submenu, and the setting's rows
 /// keep the list rows' two-space padding — the hint too.
+#[pa_test_scratch::pa_test]
 #[test]
 fn opening_into_a_setting_keeps_the_bar_and_the_padding() {
     let mut steps = open_settings();
@@ -689,6 +693,7 @@ fn opening_into_a_setting_keeps_the_bar_and_the_padding() {
 }
 
 /// A toggle for an unsupported mode is worse than none.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_fullscreen_setting_and_command_are_retired() {
     let mut steps = open_settings();
@@ -728,6 +733,7 @@ fn the_fullscreen_setting_and_command_are_retired() {
 /// The search field keeps its edit keys after a no-match query: the
 /// garbage backspaces away, the rows return, and Space still cycles
 /// the selected row (TS `SettingsList.handleInput`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_no_match_query_backspaces_away_and_space_still_cycles() {
     let mut steps = open_settings();
@@ -759,6 +765,7 @@ fn a_no_match_query_backspaces_away_and_space_still_cycles() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn threshold_percentage_cycles_through_the_persistence_seam() {
     let mut steps = open_settings();
@@ -780,6 +787,7 @@ fn threshold_percentage_cycles_through_the_persistence_seam() {
 
 /// The real `SessionUi` must supply discovered themes to the menu, then
 /// validate and persist the chosen filename through its settings seam.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_discovered_custom_theme_is_rendered_previewed_and_persisted() {
     let mut theme: Value = serde_json::from_str(pa_tui::theme::PRIME_JSON).unwrap();
@@ -826,6 +834,7 @@ fn a_discovered_custom_theme_is_rendered_previewed_and_persisted() {
     assert_eq!(settings.log(), vec!["theme=terminal-native"]);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_invalid_discovered_theme_shows_a_diagnostic_and_is_not_persisted() {
     let mut steps = open_settings();
@@ -862,6 +871,7 @@ fn an_invalid_discovered_theme_shows_a_diagnostic_and_is_not_persisted() {
     assert!(settings.log().is_empty(), "a rejected theme is never saved");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bad_startup_themes_keep_a_visible_diagnostic_after_the_initial_paint() {
     for initial_theme in ["missing-theme", "broken"] {
@@ -898,6 +908,7 @@ fn bad_startup_themes_keep_a_visible_diagnostic_after_the_initial_paint() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn valid_startup_themes_are_silent_and_do_not_rewrite_preferences() {
     let custom: Value = serde_json::from_str(pa_tui::theme::PRIME_JSON).unwrap();
@@ -919,6 +930,7 @@ fn valid_startup_themes_are_silent_and_do_not_rewrite_preferences() {
 /// timestamp arrives. Its timeout releases a synchronous-loader mutant too,
 /// so a failure never leaves the runtime waiting on a blocked file reader.
 #[cfg(target_os = "linux")]
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_stalled_startup_theme_does_not_hold_first_paint_or_typing() {
     let (paint_tx, paint_rx) = std::sync::mpsc::channel();
@@ -971,6 +983,7 @@ fn a_stalled_startup_theme_does_not_hold_first_paint_or_typing() {
 }
 
 #[cfg(target_os = "linux")]
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_late_startup_theme_failure_cannot_replace_an_intentional_theme_setting() {
     let (chosen_tx, chosen_rx) = std::sync::mpsc::channel();
@@ -1052,6 +1065,7 @@ fn a_late_startup_theme_failure_cannot_replace_an_intentional_theme_setting() {
 /// Run the real public headless entry in its own process. A held theme
 /// read must not keep Tokio runtime teardown (and therefore the CLI) alive.
 #[cfg(target_os = "linux")]
+#[pa_test_scratch::pa_test]
 #[test]
 fn quitting_while_a_startup_theme_read_is_held_does_not_hold_process_exit() {
     let _lock = RUN_LOCK
@@ -1100,6 +1114,7 @@ fn quitting_while_a_startup_theme_read_is_held_does_not_hold_process_exit() {
     });
 }
 #[cfg(target_os = "linux")]
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "subprocess helper for the bounded whole-process quit verifier"]
 fn held_startup_theme_quit_child() {

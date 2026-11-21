@@ -381,6 +381,7 @@ fn run_plan_with_roster(
 
 /// The arrows still visit each empty section in order, each opening its own view (panel-exit
 /// ruling 2026-09-26); Left from the subagents section opens the scoped agents view (2026-09-28).
+#[pa_test_scratch::pa_test]
 #[test]
 fn dock_arrows_visit_each_empty_section_in_order_both_directions() {
     let steps = vec![
@@ -463,6 +464,7 @@ fn dock_arrows_visit_each_empty_section_in_order_both_directions() {
 }
 
 /// Filling a section never moves another (panel-exit ruling 2026-09-26 keeps the dock focused).
+#[pa_test_scratch::pa_test]
 #[test]
 fn dock_arrows_visit_the_same_sections_when_one_has_rows() {
     let steps = vec![
@@ -529,6 +531,7 @@ fn dock_arrows_visit_the_same_sections_when_one_has_rows() {
 /// Left from the subagents selection opens the agents view (the operator's 2026-09-28 ask): the TS
 /// dock has no left/right handling at all, so this is the documented Rust divergence; the editor's
 /// `agents back` is the same rule on the adjacent surface.
+#[pa_test_scratch::pa_test]
 #[test]
 fn left_from_the_subagents_selection_opens_the_agents_view() {
     let steps = vec![
@@ -556,6 +559,7 @@ fn left_from_the_subagents_selection_opens_the_agents_view() {
 
 /// The all-zero dock (the operator's 2026-09-28 directive): the dock row still renders zero
 /// counts, and Enter on the Subagents group opens the scoped agents view's empty roster.
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_all_zero_dock_renders_and_opens_the_empty_scoped_agents_view() {
     let steps = vec![
@@ -654,6 +658,7 @@ fn goal_event_push(seconds: u64) -> Value {
 
 /// The dock's event-driven update contract, pinned ahead of the run loop's per-wake recompute
 /// removal: a `roster_update` push alone repaints the running count and the title's family cost.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_roster_push_alone_remounts_the_dock_count_and_the_title_cost() {
     let steps = vec![
@@ -680,6 +685,7 @@ fn a_roster_push_alone_remounts_the_dock_count_and_the_title_cost() {
 }
 
 /// A `goal_update` event alone mounts the dock's goal row.
+#[pa_test_scratch::pa_test]
 #[test]
 fn b_a_goal_update_alone_mounts_the_dock_goal_row() {
     let steps = vec![HeadlessStep::WaitRender {
@@ -698,6 +704,7 @@ fn b_a_goal_update_alone_mounts_the_dock_goal_row() {
 
 /// A child's settle — the roster push flipping it running to idle — drops the dock's running count
 /// on its own event.
+#[pa_test_scratch::pa_test]
 #[test]
 fn c_a_child_settle_alone_drops_the_dock_running_count() {
     let steps = vec![HeadlessStep::WaitRender {
@@ -721,6 +728,7 @@ fn c_a_child_settle_alone_drops_the_dock_running_count() {
 /// The attach fold: the `roster_subscribe` snapshot's running counts mount in the open's FIRST
 /// frame, and a session switch's fresh snapshot re-mounts them in the switch's first rebuilt
 /// frame — the counts follow the newly attached session.
+#[pa_test_scratch::pa_test]
 #[test]
 fn d_the_attach_mounts_the_snapshot_counts_in_its_first_frame_and_a_switch_follows() {
     let steps = vec![

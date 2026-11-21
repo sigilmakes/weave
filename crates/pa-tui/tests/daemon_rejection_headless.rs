@@ -600,6 +600,7 @@ fn run_plan(
 }
 
 /// An empty follow-up submission is TS `handleFollowUp`'s silent no-op.
+#[pa_test_scratch::pa_test]
 #[test]
 fn empty_follow_up_is_a_silent_noop_and_the_client_stays_alive() {
     let steps = vec![
@@ -632,6 +633,7 @@ fn empty_follow_up_is_a_silent_noop_and_the_client_stays_alive() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rejected_mid_turn_submission_renders_the_error_row_and_keeps_running() {
     let steps = vec![
@@ -670,6 +672,7 @@ fn rejected_mid_turn_submission_renders_the_error_row_and_keeps_running() {
 /// Handled, not fatal (operator directive: the user never loses their TUI to a daemon hiccup);
 /// the loss is surfaced twice, and the close-after-send draft stays consumed so the natural
 /// resubmit never runs the prompt twice.
+#[pa_test_scratch::pa_test]
 #[test]
 fn dead_connection_on_prompt_keeps_the_draft_consumed_and_arms_the_reconnect() {
     let steps = vec![
@@ -714,6 +717,7 @@ fn dead_connection_on_prompt_keeps_the_draft_consumed_and_arms_the_reconnect() {
 /// TS `onSubmit` passes its captured `streamingBehavior` to the fallthrough prompt, so alt+enter
 /// on unknown slash text parks on the follow-up lane, not the steering lane.
 /// A queued prompt remains consumed even if a session-binding event wins the outcome race.
+#[pa_test_scratch::pa_test]
 #[test]
 fn close_after_rebind_keeps_the_outlived_prompt_consumed() {
     let steps = vec![
@@ -742,6 +746,7 @@ fn close_after_rebind_keeps_the_outlived_prompt_consumed() {
     assert!(!last.contains("hello"), "the draft stays consumed: {last}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn prompt_template_follow_up_keeps_the_follow_up_lane() {
     let steps = vec![
@@ -780,6 +785,7 @@ fn prompt_template_follow_up_keeps_the_follow_up_lane() {
 
 /// A refused saved-session create ("Session is already active in <id>", another instance
 /// holding the file; Kevin's second reproducer) must not exit the client.
+#[pa_test_scratch::pa_test]
 #[test]
 fn refused_saved_session_create_falls_back_to_the_agents_view() {
     let run = run_plan_with(vec![HeadlessStep::WaitMs(100)], |supervisor| {
@@ -807,6 +813,7 @@ fn refused_saved_session_create_falls_back_to_the_agents_view() {
 }
 
 /// The TS-identical first line plus the holder guidance, never the bare lease text.
+#[pa_test_scratch::pa_test]
 #[test]
 fn refused_saved_session_create_names_the_holder_and_next_steps() {
     let run = run_plan_with_selection(
@@ -861,6 +868,7 @@ fn refused_saved_session_create_names_the_holder_and_next_steps() {
 }
 
 /// TS #2391: a create rejected in the preparing-restart window is retried, never a bare failure.
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_agents_view_open_waits_through_the_update_restart_window() {
     let run = run_agents_view_plan_with_selection(
@@ -902,6 +910,7 @@ fn an_agents_view_open_waits_through_the_update_restart_window() {
 }
 
 /// TS #2391: the permanent refusal surfaces itself — no third attempt through the window.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_permanent_create_failure_after_the_window_surfaces_unmasked() {
     let run = run_agents_view_plan_with_selection(

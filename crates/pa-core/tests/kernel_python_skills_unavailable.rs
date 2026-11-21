@@ -72,6 +72,7 @@ fn skill(name: &str) -> KernelPythonSkill {
 /// One boot with an explicit kernel python reports the broken import (and only it): the marker line
 /// carries `json`'s healthy import nowhere, so the report stays honest about what actually failed.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn broken_skill_import_reports_and_healthy_skills_stay_silent() {
     let Some(python) = kernel_python() else {
         return;
@@ -114,6 +115,7 @@ async fn broken_skill_import_reports_and_healthy_skills_stay_silent() {
 /// The notice rides the next admitted turn as model context: the
 /// durable row keeps the multi-skill content and `details.skills`.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 // The faux lock is held across the turn's awaits (see `FAUX_LOCK`).
 #[allow(clippy::await_holding_lock)]
 async fn notice_rides_the_next_turn_as_model_context() {

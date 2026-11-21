@@ -15,6 +15,7 @@ fn fixture() -> Value {
     serde_json::from_str(FIXTURE).expect("fixture parses")
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn parses_the_real_payload_with_zero_failures() {
     let parsed =
@@ -27,6 +28,7 @@ fn parses_the_real_payload_with_zero_failures() {
     assert!(parsed.models.iter().all(|model| model.headers.is_none()));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn every_real_entry_survives_transport_pinning() {
     let pinned = parse_provider_model_catalog(&fixture(), &PinnedTemplates::from_compiled())
@@ -43,6 +45,7 @@ fn every_real_entry_survives_transport_pinning() {
     assert!(headers > 0, "template headers are applied at parse time");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn passes_the_packer_gates() {
     // The build lane's gate: >= 42 distinct (provider, api, baseUrl) tuples.
@@ -68,6 +71,7 @@ fn passes_the_packer_gates() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn skip_invalid_keeps_the_real_payload_whole() {
     let parsed = parse_model_catalog(&fixture(), InvalidEntries::SkipInvalid).expect("skip mode");

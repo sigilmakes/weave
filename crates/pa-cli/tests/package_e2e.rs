@@ -144,6 +144,7 @@ fn write_executable(path: &Path, content: &str) {
     std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn generated_shell_shims_use_a_direct_interpreter() {
     let _fixture_guard = EXECUTABLE_FIXTURE_LOCK.lock().unwrap();
@@ -420,6 +421,7 @@ fn normalize_hashes(text: &str) -> String {
 /// Git fetch ranges (`<old>..<new>`) must survive version normalization.
 /// Regression: the old normalizer trimmed a `..` to `.` whenever the old
 /// hash ended in a digit, making the drives differ for ~29% of runs.
+#[pa_test_scratch::pa_test]
 #[test]
 fn normalize_keeps_git_fetch_ranges_for_all_hash_shapes() {
     let fetch_ranges = [
@@ -523,6 +525,7 @@ fn drive(binary: &Path, base: &Path, fixtures: &Fixtures) -> (String, Sandbox) {
     (transcript, sandbox)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn package_manager_corpus_matches_ts_binary() {
     let _fixture_guard = EXECUTABLE_FIXTURE_LOCK.lock().unwrap();

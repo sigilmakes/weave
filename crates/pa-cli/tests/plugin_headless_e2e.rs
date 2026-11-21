@@ -211,6 +211,7 @@ fn success(output: &Output) {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn configured_lua_command_crosses_cli_and_persists_only_command_rows() {
     let fixture = Fixture::new();
@@ -244,6 +245,7 @@ fn configured_lua_command_crosses_cli_and_persists_only_command_rows() {
     assert!(!entries.iter().any(|row| row["type"] == "message"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn lua_command_json_uses_shared_executor_frames_without_a_model_turn() {
     let fixture = Fixture::new();
@@ -278,6 +280,7 @@ fn lua_command_json_uses_shared_executor_frames_without_a_model_turn() {
     assert_eq!(value["args"], "json args");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn unavailable_slash_input_never_becomes_a_model_prompt() {
     for prompt in [
@@ -305,6 +308,7 @@ fn unavailable_slash_input_never_becomes_a_model_prompt() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn disabled_command_is_unavailable_and_saved_data_survives() {
     let fixture = Fixture::new();
@@ -320,6 +324,7 @@ fn disabled_command_is_unavailable_and_saved_data_survives() {
     assert_eq!(std::fs::read_to_string(saved).unwrap(), "retained");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn lua_failures_and_unsupported_streams_reject_the_prompt_wait() {
     for (prompt, error) in [
@@ -344,6 +349,7 @@ fn lua_failures_and_unsupported_streams_reject_the_prompt_wait() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_has_visible_output_but_no_turn_or_management_history_rows() {
     for args in [
@@ -361,6 +367,7 @@ fn reload_has_visible_output_but_no_turn_or_management_history_rows() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn prompt_inspection_lists_active_contributions_without_persistence_or_kernel() {
     let fixture = Fixture::new();
@@ -400,6 +407,7 @@ fn prompt_inspection_lists_active_contributions_without_persistence_or_kernel() 
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn actual_model_prompt_includes_the_active_plugin_inventory() {
     let fixture = Fixture::new();
@@ -412,6 +420,7 @@ fn actual_model_prompt_includes_the_active_plugin_inventory() {
     assert!(stdout(&output).contains("/plugin_echo"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn templates_and_skills_still_expand_before_command_routing() {
     let fixture = Fixture::new();
@@ -443,6 +452,7 @@ fn templates_and_skills_still_expand_before_command_routing() {
     assert_eq!(stdout(&output), "skill used\n");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn prompt_inspection_keeps_model_rules_and_append_layers_consistent() {
     let fixture = Fixture::new();

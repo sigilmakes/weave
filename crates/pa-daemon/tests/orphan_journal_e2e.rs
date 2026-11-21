@@ -563,6 +563,7 @@ fn session_with_orphan(
 
 /// T1: a kernel killed without its shutdown hook must not leak the
 /// `bash()` groups it journaled — the worker's teardown reaps them.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_killed_kernel_reaps_its_journaled_bash_groups() {
     static NEXT: AtomicUsize = AtomicUsize::new(0);
@@ -590,6 +591,7 @@ fn a_killed_kernel_reaps_its_journaled_bash_groups() {
 /// T2: the stopped worker cannot run its own teardown reap when the
 /// kernel and worker die — only the supervisor can, from the journal the
 /// dead worker's kernel wrote.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_dead_worker_reaps_its_journaled_bash_groups_from_the_supervisor() {
     static NEXT: AtomicUsize = AtomicUsize::new(0);

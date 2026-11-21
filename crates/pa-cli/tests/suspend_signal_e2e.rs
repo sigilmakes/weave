@@ -65,6 +65,7 @@ fn wire_log_dump() -> String {
 }
 
 /// The child half: the real interactive loop against the parent's mock supervisor.
+#[pa_test_scratch::pa_test]
 #[test]
 fn suspend_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -111,6 +112,7 @@ fn lead_fresh_session() -> bool {
     })
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn ctrl_z_releases_tracking_stops_and_sigcont_re_applies() {
     if !lead_fresh_session() {
@@ -178,6 +180,7 @@ fn ctrl_z_releases_tracking_stops_and_sigcont_re_applies() {
 
 /// Real-tty e2e for `app.editor.external` (TS `openExternalEditor`): ctrl+g hands the
 /// terminal to `$VISUAL`; the resumed surface strips one trailing newline.
+#[pa_test_scratch::pa_test]
 #[test]
 fn ctrl_g_hands_the_terminal_to_the_external_editor() {
     use std::os::unix::fs::PermissionsExt;

@@ -423,6 +423,7 @@ fn locate(frames: &[String], needle: &str) -> Option<(usize, usize, usize)> {
 
 /// A click on a tool card expands the card's own output (operator directive 2026-09-26); the
 /// chat opens at the collapsed overview level (operator directive 2026-09-28).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_on_a_card_expands_it() {
     let frames = run_plan(
@@ -468,6 +469,7 @@ fn a_click_on_a_card_expands_it() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_second_click_on_a_card_collapses_back() {
     let frames = run_plan(
@@ -534,6 +536,7 @@ fn a_second_click_on_a_card_collapses_back() {
 }
 
 /// One click toggles exactly the clicked component (TS per-component `expanded`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_toggles_only_the_clicked_component() {
     let frames = run_plan(
@@ -617,6 +620,7 @@ fn a_click_toggles_only_the_clicked_component() {
 }
 
 /// Buttonless motion reports flow through the same decode-and-dispatch path.
+#[pa_test_scratch::pa_test]
 #[test]
 fn hover_motion_reports_do_not_disturb_the_click_grammar() {
     let frames = run_plan(
@@ -664,6 +668,7 @@ fn hover_motion_reports_do_not_disturb_the_click_grammar() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_in_the_prompt_bar_places_the_caret() {
     let typed = "hello world";
@@ -709,6 +714,7 @@ fn a_click_in_the_prompt_bar_places_the_caret() {
 }
 
 /// The clicked row carries the `›` marker, exactly like the arrows.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_selects_a_model_picker_row() {
     let catalog = vec![model("mock-1", "Mock One"), model("mock-2", "Mock Two")];

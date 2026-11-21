@@ -223,6 +223,7 @@ fn options(socket: PathBuf) -> InteractiveOptions {
 /// How long the mock's turn stays silent before `turn_end`.
 const QUIET_TURN_MS: u64 = 3500;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_quiet_turn_keeps_the_loader_animating() {
     // The ambient TMUX variable adds a startup notice to the

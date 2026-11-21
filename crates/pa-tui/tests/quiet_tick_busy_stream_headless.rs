@@ -202,6 +202,7 @@ fn run_plan(steps: Vec<HeadlessStep>) -> Vec<String> {
 /// A parked autocomplete request materializes while the reply streams: the second barrier
 /// releases only on the dropdown's selected row, and its budget is shorter than the stream,
 /// so a tick that waits for the stream to pause times the barrier out instead.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_quiet_tick_materializes_autocomplete_while_a_reply_streams() {
     let frames = run_plan(vec![
@@ -225,6 +226,7 @@ fn the_quiet_tick_materializes_autocomplete_while_a_reply_streams() {
 
 /// A keystroke restarts the window: a typed command plus its Enter in one burst submits as
 /// typed, instead of a mid-burst dropdown's Enter completing the command into its args.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_typed_command_burst_submits_as_typed() {
     let mut steps = vec![

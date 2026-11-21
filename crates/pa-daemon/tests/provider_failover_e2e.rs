@@ -499,6 +499,7 @@ fn retry_end(events: &[Value]) -> &Value {
         .expect("auto_retry_end")
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn provider_failure_fails_over_to_the_next_provider_and_recovers() {
     let primary = FailingMock::start(usize::MAX, ReplyMode::Text("never reached"));
@@ -587,6 +588,7 @@ fn provider_failure_fails_over_to_the_next_provider_and_recovers() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn every_provider_failing_surfaces_the_final_error() {
     let primary = FailingMock::start(usize::MAX, ReplyMode::Text("never reached"));
@@ -651,6 +653,7 @@ fn every_provider_failing_surfaces_the_final_error() {
     assert_eq!(turn_end.get("error"), None, "turn_end: {turn_end}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn threshold_yield_keeps_the_backup_until_the_tool_run_finishes() {
     let primary = FailingMock::start(usize::MAX, ReplyMode::Text("never"));
@@ -764,6 +767,7 @@ fn read_receipt(client: &mut Client, session_id: &str, receipt: &Path, read_id: 
 /// primary facts while the in-episode provider requests stay on the backup.
 // Long by design: one failover flow asserted end to end.
 #[allow(clippy::too_many_lines)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn failover_switch_and_restore_rebind_the_kernel_model_facts() {
     let Some(kernel_python) = kernel_python() else {

@@ -66,6 +66,7 @@ const PREMOUNT_MARKER: &[u8] = b"termios-premount-gate\r\n";
 
 /// The chat child: the real interactive surface against the mock
 /// supervisor (a plain run passes trivially).
+#[pa_test_scratch::pa_test]
 #[test]
 fn diff_chat_child_mode() {
     let Some(socket) = std::env::var(CHILD_SOCKET_ENV).ok() else {
@@ -98,6 +99,7 @@ fn diff_chat_child_mode() {
 }
 
 /// The view child: the agents-view roster surface, closed by the caller.
+#[pa_test_scratch::pa_test]
 #[test]
 fn diff_view_child_mode() {
     let Some(socket) = std::env::var(CHILD_SOCKET_ENV).ok() else {
@@ -197,6 +199,7 @@ fn assert_the_handback_is_whole(harness: &mut DifferentialHarness, context: &str
 
 /// Route: the full chat session -> `/exit`: the mid-session Ctrl+S lands
 /// in a raw window (IXON off), and the exit must flow anyway.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_full_session_with_a_mid_session_ctrl_s_exits_whole() {
     let _lock = harness::harness_lock();
@@ -231,6 +234,7 @@ fn a_full_session_with_a_mid_session_ctrl_s_exits_whole() {
 /// Route: the launch on a Ctrl+S-STOPPED tty: the gate holds the child in
 /// the cooked window while the harness arms the stop, and the mount must
 /// lift it (`cfmakeraw`'s IXON clearing).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_launch_on_a_ctrl_s_stopped_tty_flows_and_exits_whole() {
     let _lock = harness::harness_lock();
@@ -287,6 +291,7 @@ fn a_launch_on_a_ctrl_s_stopped_tty_flows_and_exits_whole() {
 }
 
 /// Route: the agents-view exit (breadth over the second surface).
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_agents_view_exit_exits_whole() {
     let _lock = harness::harness_lock();
@@ -494,6 +499,7 @@ fn wait_for_exit(child: &mut Child, what: &str) {
 /// window — the exact state the flow-control fix targets: Ctrl+Z stops the
 /// group, a Ctrl+S stops the tty (IXON restored), the `fg` resume must
 /// restart output, and the exit hands back a FLOWING tty.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_suspend_cycle_with_a_ctrl_s_in_the_stopped_window_never_stops_the_shell() {
     if !stop_capable_runner() {

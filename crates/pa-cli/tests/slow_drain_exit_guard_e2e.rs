@@ -58,6 +58,7 @@ const LAST_ROW: &[u8] = b"row 1599";
 /// The dock's exit-hint row, rendered after every transcript row.
 const EXIT_HINT_ROW: &[u8] = b"Press Ctrl+C again to exit";
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn slow_drain_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -85,6 +86,7 @@ fn slow_drain_child_mode() {
 /// The pty harnesses serialize: concurrent byte-level waits flake on the shared test CPUs.
 static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_slow_drain_flushes_the_whole_transcript_without_forcing_the_exit() {
     let _lock = match HARNESS_LOCK.lock() {
@@ -155,6 +157,7 @@ fn a_slow_drain_flushes_the_whole_transcript_without_forcing_the_exit() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_stalled_drain_still_fires_the_force_quit() {
     let _lock = match HARNESS_LOCK.lock() {

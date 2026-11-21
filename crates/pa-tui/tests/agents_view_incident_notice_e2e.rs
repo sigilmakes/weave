@@ -249,6 +249,7 @@ fn view_options(socket: &std::path::Path) -> AgentsViewOptions {
 /// The collapsed worker-crash notice line renders from the log tail, with the pointer to the
 /// incident CLI (TS "renders the collapsed worker-crash notice line from the log tail").
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn renders_the_collapsed_worker_crash_notice_line() {
     let _env = env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -311,6 +312,7 @@ async fn renders_the_collapsed_worker_crash_notice_line() {
 /// Esc dismisses the notice with the status confirmation, and a dismissal survives a later poll
 /// (TS "dismisses with Esc and never resurrects across later polls").
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn dismisses_with_esc_and_the_dismissal_survives_reentry() {
     let _env = env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -395,6 +397,7 @@ async fn dismisses_with_esc_and_the_dismissal_survives_reentry() {
 /// An armed delete confirmation wins the Esc: it cancels and the notice stays (TS "cancels an
 /// armed delete confirmation with Esc instead of dismissing the notice").
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn esc_cancels_an_armed_delete_confirmation_and_keeps_the_notice() {
     let _env = env_lock().await;
     let dir = tempfile::TempDir::new().expect("temp dir");

@@ -171,6 +171,7 @@ fn test_options() -> Option<pa_core::kernel::shared::KernelManagerOptions> {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)]
 async fn manager_drop_kills_the_kernel_process() {
     let _guard = test_lock();
@@ -184,6 +185,7 @@ async fn manager_drop_kills_the_kernel_process() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)]
 async fn provisioner_drop_kills_the_kernel_process() {
     let _guard = test_lock();
@@ -209,6 +211,7 @@ async fn provisioner_drop_kills_the_kernel_process() {
 /// the prewarm flag boots a kernel in the background; found via the
 /// process table, so the test exercises the public session surface.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)]
 async fn session_engine_drop_kills_the_prewarmed_kernel_process() {
     let _guard = test_lock();
@@ -285,6 +288,7 @@ async fn session_engine_drop_kills_the_prewarmed_kernel_process() {
 /// The explicit dispose seam: a host that keeps the engine object but ends the session (the daemon
 /// worker's shape) must be able to take the kernel down without dropping the engine.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)]
 async fn engine_dispose_kernel_kills_the_prewarmed_kernel_process() {
     let _guard = test_lock();

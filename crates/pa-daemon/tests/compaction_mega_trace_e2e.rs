@@ -332,6 +332,7 @@ fn read_trace(path: &Path) -> Vec<(String, u128, Value)> {
 
 // Measurement harness, not a correctness test: seeds a ~50MB session and
 // prints the phase table; run explicitly with --ignored.
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "measurement harness: seeds ~50MB and prints the phase table"]
 fn mega_session_threshold_compaction_phase_measurement() {

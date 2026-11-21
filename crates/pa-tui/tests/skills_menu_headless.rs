@@ -501,6 +501,7 @@ fn run_plan_with_prompts(steps: Vec<HeadlessStep>) -> (Vec<String>, Vec<Value>) 
     (outcome.frames, prompts)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn skill_commands_surface_in_the_slash_menu() {
     let steps = vec![
@@ -527,6 +528,7 @@ fn skill_commands_surface_in_the_slash_menu() {
 
 /// The TS default (`enableSkillCommands: true`) applies with no settings
 /// seam at all.
+#[pa_test_scratch::pa_test]
 #[test]
 fn skills_surface_without_a_settings_seam() {
     std::env::remove_var("TMUX");
@@ -562,6 +564,7 @@ fn skills_surface_without_a_settings_seam() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn disabled_skill_commands_stay_out_of_the_menu() {
     use pa_tui::client_settings::ClientSettings;
@@ -612,6 +615,7 @@ fn enter() -> crossterm::event::KeyEvent {
 
 /// A bare `/skill:<name>` submission never reaches the daemon: the guard restores the draft and
 /// the notice names the fix.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_bare_skill_submit_shows_the_notice_and_never_sends() {
     let (frames, prompts) = run_plan_with_prompts(vec![
@@ -644,6 +648,7 @@ fn a_bare_skill_submit_shows_the_notice_and_never_sends() {
 
 /// The restored draft keeps the argument position: the trailing space survives, so typed keystrokes
 /// become args instead of gluing onto the command name.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_bare_skill_guard_restores_into_the_argument_position() {
     let (frames, prompts) = run_plan_with_prompts(vec![
@@ -670,6 +675,7 @@ fn the_bare_skill_guard_restores_into_the_argument_position() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_completed_skill_with_args_sends_the_command_and_request() {
     let (frames, prompts) = run_plan_with_prompts(vec![

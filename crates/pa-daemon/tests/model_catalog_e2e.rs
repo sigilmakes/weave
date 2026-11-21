@@ -148,6 +148,7 @@ fn write_models_json(agent_dir: &Path, base_url: &str) {
     .expect("write models.json");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn offline_daemon_serves_the_bundled_catalog_fallback() {
     let dir = std::env::temp_dir().join(format!(

@@ -47,6 +47,7 @@ const CHILD_SOCKET_ENV: &str = "PA_CURSOR_CHILD_SOCKET";
 
 /// The child half of the e2e: runs the real interactive loop against the mock
 /// supervisor (a plain `cargo test` run passes trivially).
+#[pa_test_scratch::pa_test]
 #[test]
 fn cursor_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -79,6 +80,7 @@ fn sigtstp_session_runner() -> bool {
     true
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cursor_stays_hidden_and_positioned_across_mount_picker_and_suspend() {
     if !sigtstp_session_runner() {
@@ -217,6 +219,7 @@ fn cursor_stays_hidden_and_positioned_across_mount_picker_and_suspend() {
     harness.finish();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn shell_markers_are_reserved_for_the_exit_transcript() {
     let _lock = HARNESS_LOCK

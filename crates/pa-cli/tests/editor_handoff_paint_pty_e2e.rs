@@ -250,6 +250,7 @@ fn graceful_shutdown(socket: &Path) {
 
 /// The child half: runs the real interactive loop against the real supervisor; a
 /// plain `cargo test` run passes trivially.
+#[pa_test_scratch::pa_test]
 #[test]
 fn editor_handoff_paint_child_mode() {
     let (Ok(socket), Ok(session), Ok(editor)) = (
@@ -313,6 +314,7 @@ static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// The regression: a mid-stream external-editor handoff must not stop the
 /// transcript from painting the settled reply, and a follow-up plain submit
 /// must still paint.
+#[pa_test_scratch::pa_test]
 #[test]
 fn editor_handoff_keeps_painting_the_streaming_transcript() {
     if !session_runner() {

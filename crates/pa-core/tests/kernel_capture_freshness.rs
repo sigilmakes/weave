@@ -79,6 +79,7 @@ fn file_bytes(path: &Path) -> Vec<u8> {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn fresh_capture_skips_until_a_settled_cell_changes_the_namespace() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let manifest_path = manifest_path_in(dir.path());
@@ -156,6 +157,7 @@ async fn fresh_capture_skips_until_a_settled_cell_changes_the_namespace() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_over_cap_value_is_skipped_from_the_write_and_survives_in_the_namespace() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let manifest_path = manifest_path_in(dir.path());
@@ -231,6 +233,7 @@ async fn an_over_cap_value_is_skipped_from_the_write_and_survives_in_the_namespa
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn dispose_flush_skips_when_fresh_and_still_restores() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let manifest_path = manifest_path_in(dir.path());
@@ -287,6 +290,7 @@ async fn dispose_flush_skips_when_fresh_and_still_restores() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn dispose_flush_dumps_after_a_settled_cell() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let manifest_path = manifest_path_in(dir.path());
@@ -341,6 +345,7 @@ async fn dispose_flush_dumps_after_a_settled_cell() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_externally_replaced_manifest_defeats_the_fresh_skip() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let manifest_path = manifest_path_in(dir.path());
@@ -370,6 +375,7 @@ async fn an_externally_replaced_manifest_defeats_the_fresh_skip() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_internal_state_request_does_not_defeat_the_fresh_skip() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let manifest_path = manifest_path_in(dir.path());
@@ -408,6 +414,7 @@ async fn an_internal_state_request_does_not_defeat_the_fresh_skip() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_internal_execute_that_writes_a_user_variable_defeats_the_memo() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let manifest_path = manifest_path_in(dir.path());
@@ -485,6 +492,7 @@ async fn an_internal_execute_that_writes_a_user_variable_defeats_the_memo() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_restore_settle_clears_the_memo() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let manifest_path = manifest_path_in(dir.path());
@@ -526,6 +534,7 @@ async fn a_restore_settle_clears_the_memo() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_externally_replaced_payload_defeats_the_fresh_skip() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let payload_path = snapshot_path_in(dir.path());
@@ -560,6 +569,7 @@ async fn an_externally_replaced_payload_defeats_the_fresh_skip() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn concurrent_settles_keep_the_boundary_invariant() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let Some(options) = test_options(Some(dir.path())) else {

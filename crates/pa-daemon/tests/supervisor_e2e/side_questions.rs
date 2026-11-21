@@ -5,6 +5,7 @@ use super::*;
 
 // TS daemon-mode handlers + `core/side-question.ts` parity, over the
 // scripted engine.
+#[pa_test_scratch::pa_test]
 #[test]
 fn side_questions_start_abort_and_events_scripted() {
     let dir = tempfile::TempDir::new().expect("temp dir");

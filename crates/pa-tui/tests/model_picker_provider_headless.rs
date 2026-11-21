@@ -303,6 +303,7 @@ fn run_plan(steps: Vec<HeadlessStep>) -> Vec<String> {
 
 /// The operator's duplicate-id repro: the session runs `prime-inference/z-ai/glm-5.3`, the catalog
 /// lists the same id under openrouter FIRST — the prime-inference row carries `current`.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_picker_marks_the_sessions_own_provider_current() {
     let frames = run_plan(vec![

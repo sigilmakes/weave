@@ -230,6 +230,7 @@ fn view_options(socket: &Path, session_dir: &Path, config: serde_json::Value) ->
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reply_to_live_session_delivers_the_prompt() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -387,6 +388,7 @@ async fn reply_to_live_session_delivers_the_prompt() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reply_to_saved_session_resumes_and_sends() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

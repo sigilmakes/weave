@@ -69,6 +69,7 @@ impl Drop for Flock {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn settings_write_leaves_no_lock_artifact() {
     let dir = tempfile::tempdir().unwrap();
@@ -87,6 +88,7 @@ fn settings_write_leaves_no_lock_artifact() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn settings_write_reclaims_a_crashed_holders_lock_directory() {
     let dir = tempfile::tempdir().unwrap();
@@ -106,6 +108,7 @@ fn settings_write_reclaims_a_crashed_holders_lock_directory() {
     assert!(!lock.exists(), "the write released its own lock");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn settings_write_reports_contention_on_a_live_lock_directory() {
     let dir = tempfile::tempdir().unwrap();
@@ -196,6 +199,7 @@ const SOURCE_AUTH: &str = r#"{
 }
 "#;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn auth_write_rejects_a_stale_legacy_file_without_mutation() {
     let dir = tempfile::tempdir().unwrap();
@@ -208,6 +212,7 @@ fn auth_write_rejects_a_stale_legacy_file_without_mutation() {
     assert_legacy_refused(&auth, &lock, &expected);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn auth_write_rejects_a_held_and_released_legacy_flock_without_mutation() {
     // Even a released flock cannot prove that no legacy writer already has

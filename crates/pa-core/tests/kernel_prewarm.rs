@@ -126,6 +126,7 @@ async fn wait_for_kernel_boot(engine: &pa_core::session_engine::engine::SessionE
 /// durable entries — with the empty-namespace arm, because the model never
 /// ran a cell.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)]
 async fn prewarmed_kernel_lands_compaction_notice_without_tool_use() {
     let Some(_kernel_python) = kernel_python() else {
@@ -277,6 +278,7 @@ async fn prewarmed_kernel_lands_compaction_notice_without_tool_use() {
 /// first-call start even when the runtime factory passes
 /// `prewarmIpythonKernel: true` — no boot.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)]
 async fn subagent_sessions_stay_lazy_despite_the_prewarm_flag() {
     let Some(_kernel_python) = kernel_python() else {

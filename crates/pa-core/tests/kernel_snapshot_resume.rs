@@ -219,6 +219,7 @@ impl Fixture {
 /// The full lifecycle: a session defines kernel state and ends, a resumed session prewarms with the
 /// config flag OFF, and its FIRST ipython call sees the old namespace.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)]
 async fn session_end_then_resume_prewarms_and_revives_the_namespace() {
     let Some(_kernel_python) = kernel_python() else {
@@ -373,6 +374,7 @@ async fn session_end_then_resume_prewarms_and_revives_the_namespace() {
 /// The prewarm arm does not over-fire: a FRESH session (no snapshot) with
 /// the config flag off stays lazy — no boot.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)]
 async fn fresh_session_without_snapshot_stays_lazy_without_the_flag() {
     let Some(_kernel_python) = kernel_python() else {

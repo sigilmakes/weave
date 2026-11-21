@@ -372,6 +372,7 @@ fn print_table(phase: &str, measurements: &[Measurement]) {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn client_commands_answer_fast_while_a_turn_streams() {
     let dir = tempfile::TempDir::new().expect("temp dir");

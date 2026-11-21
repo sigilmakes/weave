@@ -313,6 +313,7 @@ fn session_rows(harness: &Harness, type_: &str) -> Vec<Value> {
         .collect()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn imported_session_compacts() {
     let mut harness = setup("import-compact");

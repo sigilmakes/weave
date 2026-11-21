@@ -64,6 +64,7 @@ async fn bounded<T>(future: impl std::future::Future<Output = T>) -> T {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn per_call_cancellation_drops_native_plugin_work_without_retiring_generation() {
     let Some(python) = std::env::var_os("PA_CORE_KERNEL_PYTHON") else {
         eprintln!(

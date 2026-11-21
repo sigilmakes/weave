@@ -251,6 +251,7 @@ fn run_plan(steps: Vec<HeadlessStep>) -> Vec<String> {
     outcome.frames
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn slash_menu_opens_with_the_top_border_rule() {
     let steps = vec![

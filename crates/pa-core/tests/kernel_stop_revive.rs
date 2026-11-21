@@ -57,6 +57,7 @@ fn kernel_python() -> Option<PathBuf> {
 /// and releases the kernel, and the revived namespace still serves the variables the flush carried
 /// — while `dispose` was never called.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stop_kernel_flushes_the_snapshot_and_the_next_ensure_revives_it() {
     let Some(python) = kernel_python() else {
         return;
@@ -106,6 +107,7 @@ async fn stop_kernel_flushes_the_snapshot_and_the_next_ensure_revives_it() {
 /// An idle stop is a no-op (no kernel, no snapshot churn) and a second
 /// stop supersedes the first (TS `pendingStop` last-writer-wins).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stop_kernel_without_a_kernel_is_a_no_op_and_stays_revivable() {
     let Some(python) = kernel_python() else {
         return;
@@ -140,6 +142,7 @@ async fn stop_kernel_without_a_kernel_is_a_no_op_and_stays_revivable() {
 /// draining host work in `stop_kernel()`. The held request gives an exact
 /// ordering barrier rather than relying on timing of the snapshot flush.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn revival_waits_for_in_flight_stop_before_booting() {
     let Some(python) = kernel_python() else {
         return;
@@ -273,6 +276,7 @@ async fn revival_waits_for_in_flight_stop_before_booting() {
 /// against the first bounded await. The absolute spawn count stays pinned
 /// at two: nothing in the chain may arm a third interpreter.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn superseding_stop_after_kill_cannot_deadlock_the_revival_gate() {
     let Some(python) = kernel_python() else {
         return;

@@ -352,6 +352,7 @@ fn crash_daemon_and_worker(daemon: &mut Daemon, worker_pid: u32) {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_revived_worker_stays_supervised_and_the_session_reopens() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -410,6 +411,7 @@ fn the_revived_worker_stays_supervised_and_the_session_reopens() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_worker_that_fails_to_death_releases_the_session_hold() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -446,6 +448,7 @@ fn a_worker_that_fails_to_death_releases_the_session_hold() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_give_up_sweep_reaps_a_live_leftover_of_the_abandoned_id() {
     let dir = tempfile::TempDir::new().expect("temp dir");

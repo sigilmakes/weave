@@ -121,6 +121,7 @@ fn boot_and_observe(agent_dir: &Path, socket: &Path) -> (Daemon, PathBuf, String
     (daemon, log_path, boot_before)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn plain_boot_parks_stale_busy_evidence() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -170,6 +171,7 @@ fn plain_boot_parks_stale_busy_evidence() {
 
 /// Even FRESH busy evidence must not revive a session whose durable state
 /// is the stop lifecycle's `archived` belt (#2592).
+#[pa_test_scratch::pa_test]
 #[test]
 fn plain_boot_never_revives_a_stopped_session() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -216,6 +218,7 @@ fn plain_boot_never_revives_a_stopped_session() {
 
 /// The give-up verdict is durable: a descriptor the supervisor already
 /// gave up on never relaunches at a later boot.
+#[pa_test_scratch::pa_test]
 #[test]
 fn plain_boot_never_revives_a_given_up_worker() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -257,6 +260,7 @@ fn plain_boot_never_revives_a_given_up_worker() {
 
 /// The no-false-negative half of #2584's contract: fresh busy evidence,
 /// an active session, no give-up, no lease holder — still relaunches.
+#[pa_test_scratch::pa_test]
 #[test]
 fn plain_boot_still_revives_fresh_busy_evidence() {
     let dir = tempfile::TempDir::new().expect("temp dir");

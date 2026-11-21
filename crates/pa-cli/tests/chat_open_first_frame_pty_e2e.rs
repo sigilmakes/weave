@@ -44,6 +44,7 @@ const DOCK_DATA_DELAY_MS: u64 = 300;
 
 /// The child half: runs the real interactive loop against the parent's mock supervisor; a
 /// plain `cargo test` run passes trivially.
+#[pa_test_scratch::pa_test]
 #[test]
 fn chat_open_first_frame_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -61,6 +62,7 @@ fn chat_open_first_frame_child_mode() {
 /// shared sandbox CPUs.
 static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn chat_open_first_frame_pins_the_first_paint() {
     if !session_runner() {

@@ -187,6 +187,7 @@ fn create_session(client: &mut Client, request_id: &str, config: &Value) -> (Str
 
 /// A create over a file another daemon's live worker holds answers the
 /// session-hold refusal with the typed wire info.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_foreign_lease_holder_rejects_the_create_with_the_hold_refusal() {
     let dir = tempfile::TempDir::new().expect("temp dir");

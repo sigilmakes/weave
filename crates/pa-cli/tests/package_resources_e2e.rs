@@ -92,6 +92,7 @@ fn assistant_text(stdout: &str) -> String {
         .expect("assistant message in output")
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn package_provided_skill_appears_in_created_session_skill_list() {
     let script = serde_json::json!({ "responses": [{"systemPrompt": true}] });

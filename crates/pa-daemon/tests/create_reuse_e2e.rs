@@ -228,6 +228,7 @@ fn create_session(client: &mut Client, request_id: &str, config: &Value) -> (Str
 
 /// Kevin's reproducer, green: opening a saved session whose worker is already live
 /// answers the LIVE binding — never `Session is already active`.
+#[pa_test_scratch::pa_test]
 #[test]
 fn create_over_a_live_worker_answers_the_live_binding() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -319,6 +320,7 @@ fn create_over_a_live_worker_answers_the_live_binding() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_lease_owner_names_the_live_worker_not_a_stale_inherited_id() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -350,6 +352,7 @@ fn the_lease_owner_names_the_live_worker_not_a_stale_inherited_id() {
 
 /// A stale binding (the file's previous worker is dead) keeps the launch path: the open
 /// succeeds, mints the successor, and the #2575 supersede re-attaches the old pane.
+#[pa_test_scratch::pa_test]
 #[test]
 fn create_over_a_dead_workers_file_launches_and_rebinds() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -418,6 +421,7 @@ fn create_over_a_dead_workers_file_launches_and_rebinds() {
     assert_eq!(binding["sessionFile"].as_str(), Some(session_file.as_str()));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn concurrent_creates_for_one_file_share_a_single_launch() {
     let dir = tempfile::TempDir::new().expect("temp dir");

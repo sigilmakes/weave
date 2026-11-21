@@ -228,6 +228,7 @@ fn tool_result_texts(session_messages: &[Value]) -> Vec<String> {
         .collect()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn settings_declared_stdio_server_round_trips_through_the_kernel_mcp_client() {
     let Some(kernel_python) = kernel_python() else {
@@ -365,6 +366,7 @@ fn settings_declared_stdio_server_round_trips_through_the_kernel_mcp_client() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn begin_login_host_request_is_live_in_the_worker() {
     let Some(kernel_python) = kernel_python() else {

@@ -280,6 +280,7 @@ fn timed_drag(messages: usize) -> (Vec<String>, Vec<String>, Duration, usize) {
     (frames, copies, elapsed, last_render - first_render)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn timing_checkpoints_preserve_rendered_frames_and_copies() {
     let expected = run_plan(40, drag_burst(None));
@@ -360,6 +361,7 @@ fn drag_cost(messages: usize) -> (Duration, Vec<Duration>, String) {
     (best, intervals, extracted)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn drag_select_frame_cost_is_independent_of_session_size() {
     let small = 40usize;

@@ -20,6 +20,7 @@ impl Drop for RestoreOwner {
 // This integration test executable has one test: its process-local ownership
 // marker cannot race another test. Subprocesses receive an environment allowlist.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn nix_ownership_blocks_cli_and_both_direct_installer_boundaries() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();

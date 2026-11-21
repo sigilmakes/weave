@@ -51,6 +51,7 @@ fn starts(count: &std::path::Path) -> u64 {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn first_touch_joins_prewarm_and_preserves_true_failure() {
     let (_dir, provisioner, count) = failing_kernel();
     provisioner.prewarm();
@@ -71,6 +72,7 @@ async fn first_touch_joins_prewarm_and_preserves_true_failure() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn aborted_waiter_leaves_boot_for_other_callers() {
     let (_dir, provisioner, count) = failing_kernel();
     provisioner.prewarm();
@@ -95,6 +97,7 @@ async fn aborted_waiter_leaves_boot_for_other_callers() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stop_during_boot_joins_startup() {
     let (_dir, provisioner, count) = failing_kernel();
     provisioner.prewarm();
@@ -105,6 +108,7 @@ async fn stop_during_boot_joins_startup() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn panicking_progress_callback_does_not_poison_next_startup() {
     let (_dir, provisioner, count) = failing_kernel();
     let progress: pa_core::kernel::bootstrap::KernelBootstrapProgressHandler =
@@ -130,6 +134,7 @@ async fn panicking_progress_callback_does_not_poison_next_startup() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn dispose_during_boot_waits_and_releases_it() {
     let (_dir, provisioner, count) = failing_kernel();
     provisioner.prewarm();

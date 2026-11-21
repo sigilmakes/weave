@@ -530,6 +530,7 @@ fn seed_mega_session(client: &mut TimedClient, session_id: &str, mock: &StallMoc
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "seeds ~12MB; asserts the interrupted-compaction contract"]
 fn interrupted_threshold_compaction_settles_consistent() {

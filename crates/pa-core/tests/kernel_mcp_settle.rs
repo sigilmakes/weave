@@ -135,6 +135,7 @@ async fn wait_for_kernel_boot(
 /// the eager boot is still in flight waits for THAT boot and succeeds: the
 /// join memo serves one boot, never a second build, and the cell runs.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 // The std Mutex guard for LIVE_KERNEL_LOCK rides the awaits on purpose
 // (the lock's own doc above): the kernel-python env is process-global, so
 // the tests serialize their whole kernel lifetimes, not just their setup.
@@ -273,6 +274,7 @@ server.run()
 /// open and succeeds instead of erroring (the registry's per-server lock
 /// joins both callers onto one open).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 // LIVE_KERNEL_LOCK held across the awaits on purpose (the lock's own doc
 // above): the kernel-python env is process-global, so the tests serialize
 // their whole kernel lifetimes.
@@ -396,6 +398,7 @@ async fn generic_mcp_servers_settle_in_the_background_and_first_use_joins_the_op
 /// Red on a runtime without the lane (the cell queues behind the
 /// listing); green with it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 // LIVE_KERNEL_LOCK held across the awaits on purpose (the lock's own doc
 // above): the kernel-python env is process-global, so the tests serialize
 // their whole kernel lifetimes.

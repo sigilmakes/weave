@@ -385,6 +385,7 @@ async fn assert_roster_answers_fast(socket: &Path, dir: &Path) {
 /// The TUI surface: the headless client opens `/mcp`, the inline view
 /// renders the roster, Esc closes it, and Enter dispatches the login.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn mcp_view_lists_the_configured_mock_connection() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     std::fs::create_dir_all(dir.path().join("agent").join("sessions")).expect("session dir");
@@ -463,6 +464,7 @@ async fn mcp_view_lists_the_configured_mock_connection() {
 /// the session-build window, so `/mcp` froze mid-turn. The TS picker builds
 /// rows from local state, so the mid-turn open is instant.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_mcp_connections_answers_instantly_mid_turn() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     std::fs::create_dir_all(dir.path().join("agent").join("sessions")).expect("session dir");

@@ -502,6 +502,7 @@ fn findings_of(stream: &[u8]) -> Vec<String> {
     ledger.leaks()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_passes_the_balanced_restore() {
     // The exact write set of a whole mount/exit session: every mode armed
@@ -520,6 +521,7 @@ fn the_ledger_passes_the_balanced_restore() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_catches_a_leaked_mouse_mode() {
     let stream = b"\x1b[?1002h\x1b[?1003h\x1b[?1006h";
@@ -530,6 +532,7 @@ fn the_ledger_catches_a_leaked_mouse_mode() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_catches_an_unknown_leaked_mode() {
     // A mode the product never writes: the net must catch it anyway.
@@ -540,6 +543,7 @@ fn the_ledger_catches_an_unknown_leaked_mode() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_catches_a_default_on_mode_left_off() {
     // Cursor visibility's default is ON: hide and never show again = deviating.
@@ -554,6 +558,7 @@ fn the_ledger_catches_a_default_on_mode_left_off() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_catches_a_kitty_re_arm_after_the_pop() {
     // A push after the final pop: the re-arm leak shape.
@@ -565,6 +570,7 @@ fn the_ledger_catches_a_kitty_re_arm_after_the_pop() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_catches_a_dangling_sgr() {
     // A styled write with no reset: the shell paints in the color.
@@ -575,6 +581,7 @@ fn the_ledger_catches_a_dangling_sgr() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_catches_a_dangling_hyperlink() {
     let findings = findings_of(b"\x1b]8;;https://example.com\x1b\\link");
@@ -584,6 +591,7 @@ fn the_ledger_catches_a_dangling_hyperlink() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_catches_forbidden_writes() {
     let findings = findings_of(b"\x1b=\x1b[2 q\x1b]0;title\x07");
@@ -601,6 +609,7 @@ fn the_ledger_catches_forbidden_writes() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_catches_an_absolute_kitty_set_left_on() {
     let findings = findings_of(b"\x1b[=5u");
@@ -613,6 +622,7 @@ fn the_ledger_catches_an_absolute_kitty_set_left_on() {
 /// The extended-color forms are one attribute, not a code walk: `38;5;N`
 /// arms no phantom blink (5) or bold (1), and a zero channel inside
 /// `38;2;R;G;B` is a color component, never a reset.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_reads_extended_color_forms_as_one_attribute() {
     // The balanced pair: the extended color sets fg, the 39 clears it.
@@ -630,6 +640,7 @@ fn the_ledger_reads_extended_color_forms_as_one_attribute() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ledger_catches_modify_other_keys_left_armed() {
     let findings = findings_of(b"\x1b[>4;2m");

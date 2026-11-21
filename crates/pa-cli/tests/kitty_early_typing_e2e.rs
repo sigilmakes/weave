@@ -51,6 +51,7 @@ const CHILD_SOCKET_ENV: &str = "PA_EARLY_TYPING_CHILD_SOCKET";
 
 /// The child half of the e2e: runs the real chat surface against the harness's
 /// mock supervisor (a plain `cargo test` run passes trivially).
+#[pa_test_scratch::pa_test]
 #[test]
 fn early_typing_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -72,6 +73,7 @@ fn early_typing_child_mode() {
 /// The pty harnesses serialize: concurrent process-group signals and raw ptys flake on shared CPUs.
 static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn early_typing_inside_the_probe_window_renders_before_the_settle() {
     let _lock = match HARNESS_LOCK.lock() {
@@ -110,6 +112,7 @@ fn early_typing_inside_the_probe_window_renders_before_the_settle() {
     harness.finish();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_kitty_terminal_upgrades_and_a_da1_terminal_settles_without_flags() {
     let _lock = match HARNESS_LOCK.lock() {

@@ -614,6 +614,7 @@ fn run_plan_with(
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bang_runs_the_command_and_mounts_the_bash_card() {
     let steps = vec![
@@ -665,6 +666,7 @@ fn bang_runs_the_command_and_mounts_the_bash_card() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_running_guard_blocks_and_a_bare_bang_is_inert() {
     let steps = vec![
@@ -692,6 +694,7 @@ fn the_running_guard_blocks_and_a_bare_bang_is_inert() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_side_conversation_bash_run_mounts_in_the_pane_and_seeds_follow_ups() {
     let steps = vec![
@@ -748,6 +751,7 @@ fn a_side_conversation_bash_run_mounts_in_the_pane_and_seeds_follow_ups() {
 }
 /// `bash_output` carries no run identity on the wire, so routing follows the active run (TS
 /// `activeBashComponent`): a settled pane row never receives a later run's output.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_main_run_after_a_settled_pane_run_owns_its_output() {
     let steps = vec![
@@ -800,6 +804,7 @@ fn a_main_run_after_a_settled_pane_run_owns_its_output() {
 
 /// TS `pendingMessagesContainer`: the run mounts above the execution indicator and flushes
 /// into the transcript when the turn ends (TS `flushPendingBashComponents`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_bang_during_a_streaming_turn_holds_then_flushes() {
     let steps = vec![
@@ -880,6 +885,7 @@ fn a_bang_during_a_streaming_turn_holds_then_flushes() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_long_truncated_run_previews_the_tail_and_names_the_spill_file() {
     let steps = vec![
@@ -922,6 +928,7 @@ fn a_long_truncated_run_previews_the_tail_and_names_the_spill_file() {
 }
 
 /// TS `setComplete`: cancelled outranks the exit code.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_cancelled_run_marks_the_card_cancelled() {
     let steps = vec![
@@ -948,6 +955,7 @@ fn a_cancelled_run_marks_the_card_cancelled() {
 
 /// §10: the link dies before `bash_end`; the resync's `bashFinished` edge settles the held card
 /// with an unknown exit (TS `renderResyncedSession` — no fake `(cancelled)` marker).
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_update_restart_settles_the_held_bang_card_on_reattach() {
     let steps = vec![

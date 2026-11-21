@@ -262,6 +262,7 @@ fn scripted_session(
 
 /// Wave b10: the scheduling catalog rides the supervisor route and answers
 /// the TS wire shapes against a live scripted session.
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b10_scheduling_wire_shapes() {
     let _serial = serial_lock();
@@ -410,6 +411,7 @@ fn wave_b10_scheduling_wire_shapes() {
 
 /// Wave b10: a scheduled once job actually fires into the session and the run bookkeeping
 /// lands in the catalog.
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b10_scheduled_prompt_fires() {
     let _serial = serial_lock();
@@ -468,6 +470,7 @@ fn wave_b10_scheduled_prompt_fires() {
 }
 
 /// Wave b10 selector-less catalog shapes on a fresh supervisor: the empty objects and refusals.
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b10_fresh_supervisor_catalog() {
     let _serial = serial_lock();
@@ -521,6 +524,7 @@ fn wave_b10_fresh_supervisor_catalog() {
 
 /// Wave b11: the saved-session catalog and peer-roster wire shapes — the fresh-supervisor
 /// error paths, the offline rename/delete, and the live rename.
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b11_saved_sessions_wire_shapes() {
     let _serial = serial_lock();
@@ -669,6 +673,7 @@ fn wave_b11_saved_sessions_wire_shapes() {
 /// The heartbeat-catalog snapshot fallback (TS `worker.heartbeatSnapshot`): a worker too
 /// busy to answer a fresh `heartbeats_list` serves its last-good rows; a worker whose snapshot
 /// went stale fails the response instead (TS `failed`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b10_heartbeat_snapshot_fallback() {
     let _serial = serial_lock();
@@ -725,6 +730,7 @@ fn wave_b10_heartbeat_snapshot_fallback() {
 
 /// TS #2487, the single-worker catalog: the served slice is the worker's own, so the merged
 /// responses are byte-identical to the fresh-forward ones.
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b10_single_worker_slice_is_byte_identical() {
     let _serial = serial_lock();
@@ -785,6 +791,7 @@ fn wave_b10_single_worker_slice_is_byte_identical() {
 /// TS #2487: the supervisor serves each worker's own catalog slice without reforwarding;
 /// a worker-side mutation bumps that worker's generation, so the next list consults it
 /// again (a frozen worker with no fresh slice fails the response, TS `failed`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b10_catalog_slices_served_without_reforwarding() {
     let _serial = serial_lock();

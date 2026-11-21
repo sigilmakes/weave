@@ -275,6 +275,7 @@ fn view_options(socket: &std::path::Path, anchor: Option<&str>) -> AgentsViewOpt
 /// wait (TS `resolveMissingSelectionAnchor`'s finally arm): the Enter after the load opens the
 /// default row instead of re-arming "Still loading sessions" behind a catalog that already settled.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_successful_load_settles_the_anchor_wait_when_the_row_is_missing() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");
@@ -336,6 +337,7 @@ async fn a_successful_load_settles_the_anchor_wait_when_the_row_is_missing() {
 /// The flow's carried catalog (TS `persistentState.savedSessions`): the flow's NEXT view run
 /// paints the Inactive rows on its FIRST frame with no second fetch.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_carried_catalog_paints_the_first_frame_and_skips_the_refetch() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");
@@ -411,6 +413,7 @@ async fn the_carried_catalog_paints_the_first_frame_and_skips_the_refetch() {
 /// A carried catalog settles the entry anchor AT OPEN (TS `start()`'s `armSavedSearchFetch` +
 /// `resolveMissingSelectionAnchor`): the next view run arms no fetch.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_carried_catalog_settles_the_entry_anchor_at_open() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");
@@ -480,6 +483,7 @@ async fn a_carried_catalog_settles_the_entry_anchor_at_open() {
 /// A late `session_list_item` frame delivered after the terminal response never clobbers
 /// the settled catalog: the response is the authoritative array, so a late frame cannot upsert.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_late_stream_frame_never_clobbers_the_settled_catalog() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");

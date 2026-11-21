@@ -411,6 +411,7 @@ fn wait(needle: &str) -> HeadlessStep {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn plugins_manages_native_lua_while_mcp_keeps_connections() {
     let (frames, requests) = run_plan(
@@ -441,6 +442,7 @@ fn plugins_manages_native_lua_while_mcp_keeps_connections() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn unknown_and_streaming_plugin_commands_never_become_model_prompts() {
     let (frames, requests) = run_plan(
@@ -466,6 +468,7 @@ fn unknown_and_streaming_plugin_commands_never_become_model_prompts() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn old_worker_explicitly_rejects_native_commands_without_sending() {
     let (frames, requests) = run_plan(
@@ -489,6 +492,7 @@ fn old_worker_explicitly_rejects_native_commands_without_sending() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_dispatches_to_the_worker_and_refreshes_discovery() {
     let (frames, requests) = run_plan(
@@ -521,6 +525,7 @@ fn reload_dispatches_to_the_worker_and_refreshes_discovery() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn plugin_completion_dispatches_with_its_generation_target() {
     let enter = || {
@@ -556,6 +561,7 @@ fn plugin_completion_dispatches_with_its_generation_target() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn delayed_previous_session_catalog_cannot_replace_the_rebound_worker_catalog() {
     let (frames, requests) = run_plan(
@@ -585,6 +591,7 @@ fn delayed_previous_session_catalog_cannot_replace_the_rebound_worker_catalog() 
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn early_template_input_waits_for_discovery_and_keeps_template_admission() {
     let (_, requests) = run_plan(
@@ -614,6 +621,7 @@ fn early_template_input_waits_for_discovery_and_keeps_template_admission() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn failed_catalog_does_not_fall_back_to_a_paid_prompt() {
     let (_, requests) = run_plan(
@@ -631,6 +639,7 @@ fn failed_catalog_does_not_fall_back_to_a_paid_prompt() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn failed_management_reconcile_refreshes_commands_after_applied_disable() {
     for management in ["/reload", "/plugins disable fixture"] {

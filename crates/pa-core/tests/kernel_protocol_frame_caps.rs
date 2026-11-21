@@ -66,6 +66,7 @@ fn manager(python: std::path::PathBuf) -> ReplKernelManager {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn oversized_unterminated_protocol_line_poisons_and_repairs() {
     let fixture = fake_runtime_path();
     let manager = manager(fixture.to_path_buf());
@@ -95,6 +96,7 @@ async fn oversized_unterminated_protocol_line_poisons_and_repairs() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn normal_protocol_lines_still_stream_through_the_bounded_reader() {
     // Multiple frames in one 64 Ki chunk plus a trailing partial line must
     // all dispatch: the chunked reader only poisons past the ceiling.
@@ -130,6 +132,7 @@ async fn normal_protocol_lines_still_stream_through_the_bounded_reader() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn multi_mib_blank_protocol_line_is_read_in_linear_time() {
     // A 31 MiB blank line arrives in pipe reads of at most 64 KiB; rescanning
     // the buffered prefix per read would scan >= 8 GB. Blank lines skip

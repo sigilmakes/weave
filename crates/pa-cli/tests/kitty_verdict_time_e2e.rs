@@ -63,6 +63,7 @@ const SWEEP_ENV: &str = "PA_KITTY_VERDICT_SWEEP";
 
 /// The child half of the e2e: runs the real chat surface in terminal mode against
 /// the mock supervisor (a plain `cargo test` run passes trivially).
+#[pa_test_scratch::pa_test]
 #[test]
 fn verdict_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -84,6 +85,7 @@ fn verdict_child_mode() {
 /// The pty harnesses serialize: concurrent process-group signals and raw ptys flake on shared CPUs.
 static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_da1_terminal_concludes_before_the_ms60_late_kitty_reply() {
     let _lock = match HARNESS_LOCK.lock() {
@@ -127,6 +129,7 @@ fn a_da1_terminal_concludes_before_the_ms60_late_kitty_reply() {
     harness.finish();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_da1_terminal_concludes_before_the_ms100_late_kitty_reply() {
     let _lock = match HARNESS_LOCK.lock() {
@@ -154,6 +157,7 @@ fn a_da1_terminal_concludes_before_the_ms100_late_kitty_reply() {
     harness.finish();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_same_ms100_reply_on_a_silent_pty_still_upgrades() {
     let _lock = match HARNESS_LOCK.lock() {
@@ -175,6 +179,7 @@ fn the_same_ms100_reply_on_a_silent_pty_still_upgrades() {
     harness.finish();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_kitty_control_upgrades_at_the_answer() {
     let _lock = match HARNESS_LOCK.lock() {
@@ -194,6 +199,7 @@ fn the_kitty_control_upgrades_at_the_answer() {
     harness.finish();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_raced_suspend_on_a_da1_terminal_does_not_wait_for_the_deadline() {
     let _lock = match HARNESS_LOCK.lock() {
@@ -225,6 +231,7 @@ fn a_raced_suspend_on_a_da1_terminal_does_not_wait_for_the_deadline() {
     harness.finish();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_raced_suspend_on_a_silent_pty_keeps_the_deadline() {
     let _lock = match HARNESS_LOCK.lock() {
@@ -261,6 +268,7 @@ fn a_raced_suspend_on_a_silent_pty_keeps_the_deadline() {
 
 /// The characterization sweep (VM-only, opt-in): CI never sets the env, so it
 /// returns trivially there; each cell prints one `SWEEP_ROW` json line.
+#[pa_test_scratch::pa_test]
 #[test]
 fn verdict_time_characterization_sweep() {
     if std::env::var(SWEEP_ENV).is_err() {

@@ -247,6 +247,7 @@ fn run_json_turn(
 /// A packaged session boots the kernel with the exe-adjacent layout: the
 /// ipython cell runs through the staged binary and the skills resolve from
 /// the staged `skills/` directory.
+#[pa_test_scratch::pa_test]
 #[test]
 fn packaged_session_boots_kernel_without_pi_package_dir() {
     let _guard = serial_lock();
@@ -303,6 +304,7 @@ fn packaged_session_boots_kernel_without_pi_package_dir() {
 
 /// The staged manifest reports the pinned version (TS `--version` reads the
 /// packaged package.json at runtime).
+#[pa_test_scratch::pa_test]
 #[test]
 fn packaged_binary_reports_manifest_version() {
     let _guard = serial_lock();
@@ -329,6 +331,7 @@ fn packaged_binary_reports_manifest_version() {
 }
 
 /// A missing sidecar (broken install) surfaces the actionable failure, not a raw uv/pip error.
+#[pa_test_scratch::pa_test]
 #[test]
 fn missing_sidecar_reports_actionable_bootstrap_error() {
     let _guard = serial_lock();
@@ -361,6 +364,7 @@ fn missing_sidecar_reports_actionable_bootstrap_error() {
 }
 
 /// A `PRIME_AGENT_KERNEL_PYTHON` that lacks the runtime reports the TS override error.
+#[pa_test_scratch::pa_test]
 #[test]
 fn invalid_kernel_python_override_reports_ts_error() {
     let _guard = serial_lock();
@@ -444,6 +448,7 @@ fn hostile_child_assertions(staged: &Path) {
 /// kernel-env recipe leaks it into the test env and flips the
 /// missing-sidecar test. This test re-execs this binary with a hostile env
 /// and asserts hermetic behavior in the child.
+#[pa_test_scratch::pa_test]
 #[test]
 fn packaged_layout_stays_hermetic_under_hostile_host_env() {
     if let Some(stage) = std::env::var_os(HOSTILE_CHILD_STAGE) {
@@ -568,6 +573,7 @@ fn split_paired_fixture(python: &str, version: &str, target: &str, alias: &str) 
 
 /// The packaging dry-run produces the release artifact (staged layout,
 /// tarball, manifest, integrity sums) with no dev caches.
+#[pa_test_scratch::pa_test]
 #[test]
 fn packaging_dry_run_produces_artifact() {
     let _guard = serial_lock();
@@ -960,6 +966,7 @@ fn sha256(data: &[u8]) -> [u8; 32] {
 
 /// Heavy (network + uv): the packaged sidecar bootstraps a fresh kernel
 /// venv and boots a session: `cargo test -p pa-cli --test packaged_layout_e2e -- --ignored`
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "network + uv bootstrap (~minutes); the lane verifier runs it explicitly"]
 fn bootstrap_kernel_venv_from_packaged_sidecar() {

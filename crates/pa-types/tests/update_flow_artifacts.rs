@@ -91,6 +91,7 @@ const SPEC_ROSTER: &str = r#"{
     ]
 }"#;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn spec_roster_example_roundtrips_losslessly() {
     rt::<UpdateRoster>(SPEC_ROSTER);
@@ -112,6 +113,7 @@ fn spec_roster_example_roundtrips_losslessly() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn full_artifact_set_roundtrips() {
     rt::<UpdateIntent>(
@@ -125,6 +127,7 @@ fn full_artifact_set_roundtrips() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn prepared_artifact_paths_lay_out_under_the_socket_dir() {
     let agent_dir = Path::new("/ad");
@@ -151,6 +154,7 @@ fn prepared_artifact_paths_lay_out_under_the_socket_dir() {
 
 /// Every watchdog outcome (spec §9) must name a transition the coordinator
 /// table (spec §4) allows from the state it guards.
+#[pa_test_scratch::pa_test]
 #[test]
 fn watchdog_outcomes_are_legal_transitions() {
     let legal = [
@@ -175,6 +179,7 @@ fn watchdog_outcomes_are_legal_transitions() {
 
 /// The marker timestamp written with the budgeted window must expire
 /// exactly when the watchdog says so (spec §5, §7, §9).
+#[pa_test_scratch::pa_test]
 #[test]
 fn prepared_expiry_window_and_marker_verdict_agree() {
     let budget = UpdateTimeoutBudget::default();
@@ -203,6 +208,7 @@ fn prepared_expiry_window_and_marker_verdict_agree() {
 
 /// The status file keeps the TS schema shape: the version constant and the counts field names match
 /// the TS writer's, so differential tests compare artifacts directly.
+#[pa_test_scratch::pa_test]
 #[test]
 fn status_schema_is_ts_shaped() {
     assert_eq!(UPDATE_STATUS_FORMAT_VERSION, 1);
@@ -238,6 +244,7 @@ fn status_schema_is_ts_shaped() {
     assert!(encoded.get("state").is_some());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn roster_binary_and_heartbeat_wire_names() {
     let binary: UpdateRosterBinary = serde_json::from_value(serde_json::json!({

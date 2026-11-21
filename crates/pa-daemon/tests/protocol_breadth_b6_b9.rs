@@ -262,6 +262,7 @@ fn scripted_session(
     (daemon, client, session_id, socket)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b6_rlm_surface_wire_shapes() {
     let _serial = serial_lock();
@@ -298,6 +299,7 @@ fn wave_b6_rlm_surface_wire_shapes() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b7_agent_messages_wire_shapes() {
     let _serial = serial_lock();
@@ -380,6 +382,7 @@ fn wave_b7_agent_messages_wire_shapes() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b8_session_input_pause_wire_shapes() {
     let _serial = serial_lock();
@@ -443,6 +446,7 @@ fn wave_b8_session_input_pause_wire_shapes() {
     assert_eq!(response["data"], Value::Null);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b8_held_pause_gates_queued_input() {
     let _serial = serial_lock();
@@ -545,6 +549,7 @@ fn wave_b8_held_pause_gates_queued_input() {
     assert_eq!(response["data"]["steering"], json!([]), "{response}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn disconnect_mid_write_releases_the_held_input_pause() {
     let _serial = serial_lock();
@@ -655,6 +660,7 @@ fn disconnect_mid_write_releases_the_held_input_pause() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b9_session_navigation_wire_shapes() {
     let _serial = serial_lock();
@@ -754,6 +760,7 @@ fn cancel_owned_admission(
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b9_prompt_admission_wire_shapes() {
     let _serial = serial_lock();
@@ -871,6 +878,7 @@ fn wave_b9_prompt_admission_wire_shapes() {
     assert_eq!(response["data"], json!({ "status": "unknown" }));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn wave_b9_owned_session_lifecycle_wire_shapes() {
     let _serial = serial_lock();

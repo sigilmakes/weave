@@ -68,6 +68,7 @@ const PTY_COLS: usize = 80;
 /// mode against the parent's mock supervisor. A plain `cargo test` run
 /// (no `CHILD_SOCKET_ENV`) passes trivially — only the parent test drives
 /// the real path.
+#[pa_test_scratch::pa_test]
 #[test]
 fn input_live_open_child_mode() {
     let Ok(socket) = std::env::var(CHILD_SOCKET_ENV) else {
@@ -93,6 +94,7 @@ static HARNESS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// A keystroke echoes into the rendered surface while the session open is
 /// still in flight (the attach is stalled for `OPEN_STALL_MS`), and the
 /// typed-ahead text plus the queued Enter submit once the open lands.
+#[pa_test_scratch::pa_test]
 #[test]
 fn typing_echoes_while_the_session_open_is_stalled() {
     let _lock = match HARNESS_LOCK.lock() {
@@ -152,6 +154,7 @@ fn typing_echoes_while_the_session_open_is_stalled() {
 
 /// Drive terminal bytes through the real reader, bindings, editor, and wire.
 /// Negotiation matters: sending CSI-u alone does not prove the app enabled it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn terminal_enter_bindings_preserve_newlines_and_follow_ups() {
     let _lock = HARNESS_LOCK

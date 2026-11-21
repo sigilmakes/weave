@@ -226,6 +226,7 @@ fn combined_parent_script() -> serde_json::Value {
 /// both reply from their kernels; the print run waits for the replies,
 /// answers with the combined text, and disposes the child kernels (the
 /// final namespace snapshots land in the children's artifact dirs).
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_inline_subagents_wait_for_replies_and_combine_them() {
     let lane = lane();
@@ -378,6 +379,7 @@ fn print_inline_subagents_wait_for_replies_and_combine_them() {
 /// The depth gate: with `RLM_MAX_DEPTH=1`, a depth-1 child's own spawn
 /// fails with the shared depth-limit error in its tool result, and the
 /// print run still completes.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_inline_subagents_enforce_the_depth_limit() {
     let lane = lane();
@@ -457,6 +459,7 @@ fn print_inline_subagents_enforce_the_depth_limit() {
 /// The quiescence predicate reads the child's live session state (the
 /// queued follow-up row), so the run cannot exit while the row sits in
 /// the settled child's steering lane.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_inline_subagents_wait_for_a_retasked_child() {
     let lane = lane();
@@ -536,6 +539,7 @@ fn print_inline_subagents_wait_for_a_retasked_child() {
 /// with no stale error from the failed run. The child's error response is
 /// delayed past the parent's spawn turn, so its failure row drains through
 /// the quiescence drive, not the spawn turn's steering poll.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_inline_subagents_report_a_failed_child_then_a_clean_retry() {
     let lane = lane();
@@ -670,6 +674,7 @@ fn goal_context_positions(entries: &[serde_json::Value]) -> Vec<usize> {
 /// child's reply row, and its turn completes the goal, so the printed
 /// answer is the post-reply turn. No backoff sleeps: the continuation
 /// turn produces output and calls `goal.complete()`.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_inline_goal_continuation_waits_for_the_child_reply() {
     let lane = lane();
@@ -752,6 +757,7 @@ fn print_inline_goal_continuation_waits_for_the_child_reply() {
 /// and the reply turn; the real run uses spawn + half the reply turn
 /// (thousands of tokens of margin, so the crossing lands mid-reply-turn
 /// and nowhere else).
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_inline_budget_steer_from_a_drained_reply_runs_after_it() {
     let warm_lane = lane();
@@ -881,6 +887,7 @@ fn print_inline_budget_steer_from_a_drained_reply_runs_after_it() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_inline_rename_rejects_sibling_collisions_and_preserves_routing() {
     let lane = lane();
@@ -950,6 +957,7 @@ print("SELF RENAME REJECTED")
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_inline_delete_cancels_an_executing_child_and_removes_it() {
     let lane = lane();

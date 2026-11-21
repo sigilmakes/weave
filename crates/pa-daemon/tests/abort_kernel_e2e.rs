@@ -221,6 +221,7 @@ impl Client {
 }
 
 /// The turn unwinds within the budget and the cell dies (its finish marker never appears).
+#[pa_test_scratch::pa_test]
 #[test]
 fn abort_during_a_kernel_cell_settles_the_daemon_turn_immediately() {
     let Some(_) = kernel_python() else {

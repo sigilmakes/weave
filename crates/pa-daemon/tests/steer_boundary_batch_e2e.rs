@@ -243,6 +243,7 @@ impl Client {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn multi_steer_parked_mid_run_co_delivers_as_one_batched_turn() {
     let Some(_kernel) = kernel_python() else {

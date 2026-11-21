@@ -38,6 +38,7 @@ const CHILD_ENV: &str = "PA_INTERACTIVE_FORK_CHILD";
 /// The interactive client half: the same entry point the shipped binary
 /// calls, over the pty the parent opened — the real fork startup. The exit
 /// code lands in the outcome file for the parent to assert.
+#[pa_test_scratch::pa_test]
 #[test]
 fn interactive_fork_child_mode() {
     let Ok(config) = std::env::var(CHILD_ENV) else {
@@ -361,6 +362,7 @@ fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn interactive_fork_launch_copies_and_the_daemon_opens_the_fork() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

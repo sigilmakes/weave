@@ -215,6 +215,7 @@ fn session_dir_text(session_dir: &std::path::Path) -> String {
         .join("\n")
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_fork_is_a_fully_detached_session() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -559,6 +560,7 @@ fn wait_socket_accepts(socket: &std::path::Path) {
 
 /// FINDING 3's restart pin: a failed identity persist, then a restart — the boot serves
 /// the NEW identity (reconciles from live worker state before routing).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_restart_after_a_failed_identity_persist_serves_the_moved_session() {
     let dir = tempfile::TempDir::new().expect("temp dir");

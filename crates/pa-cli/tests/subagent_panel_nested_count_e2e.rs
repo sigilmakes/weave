@@ -265,6 +265,7 @@ fn entry_parent_keys(entry: &Value) -> Vec<String> {
 /// every count surface reports the whole subtree: the summary-box walk
 /// counts two descendants from the root (one from the child).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_two_level_spawn_counts_the_whole_tree() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

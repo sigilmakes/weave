@@ -286,6 +286,7 @@ fn run_plan(steps: Vec<HeadlessStep>, fullscreen_mouse: bool) -> Vec<String> {
 
 /// Wheel turns scroll the transcript: up pauses tail-following and drops the newest message
 /// from the window; wheel-down scrolls back, and reaching the bottom resumes following.
+#[pa_test_scratch::pa_test]
 #[test]
 fn wheel_turns_scroll_the_transcript() {
     let mut steps = vec![HeadlessStep::Mouse(WHEEL_UP.to_string()); 18];
@@ -322,6 +323,7 @@ fn wheel_turns_scroll_the_transcript() {
 
 /// The TS overlay-focus gate: the wheel is consumed while the picker owns
 /// the frame.
+#[pa_test_scratch::pa_test]
 #[test]
 fn wheel_is_ignored_while_a_picker_owns_the_frame() {
     let steps = vec![
@@ -353,6 +355,7 @@ fn wheel_is_ignored_while_a_picker_owns_the_frame() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn wheel_reports_are_consumed_when_tracking_is_disabled() {
     let steps = vec![
@@ -374,6 +377,7 @@ fn wheel_reports_are_consumed_when_tracking_is_disabled() {
 }
 
 /// Dispatch decoded terminal reports through `SessionUi` and compare the actual painted rows.
+#[pa_test_scratch::pa_test]
 #[test]
 fn each_wheel_report_moves_exactly_one_rendered_row() {
     let frames = run_plan(

@@ -462,6 +462,7 @@ fn settled_child_usage(child_file: &Path) -> Value {
 /// `child_usage_attributed` row in the TS shape, targeting the durable assistant row
 /// that issued the spawn; a fresh reopen of the parent file folds the aggregate (the
 /// resume semantics).
+#[pa_test_scratch::pa_test]
 #[test]
 fn child_usage_attributed_row_reaches_the_parent_transcript() {
     let _guard = test_lock();
@@ -608,6 +609,7 @@ impl Drop for GitGate {
 
 /// A real child sends a parent message before settling its usage. Both owner
 /// deliveries must leave the parent's canonical source usable for the next turn.
+#[pa_test_scratch::pa_test]
 #[test]
 fn child_message_then_usage_preserves_parent_read_and_next_prompt() {
     let _guard = test_lock();

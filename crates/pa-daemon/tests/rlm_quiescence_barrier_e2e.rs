@@ -349,6 +349,7 @@ fn spawn_held_child_lane(kernel_python: &Path) -> HeldChildLane {
 /// The barrier must answer only after the held child turn settles and the
 /// terminal notice it queues drains; a child with running subagents is not
 /// idle until its whole subtree settled.
+#[pa_test_scratch::pa_test]
 #[test]
 fn wait_for_idle_waits_for_rlm_quiescence() {
     let Some(kernel_python) = kernel_python() else {
@@ -384,6 +385,7 @@ fn wait_for_idle_waits_for_rlm_quiescence() {
 /// barrier sent once the roster says `done` must still hold for the
 /// terminal notice's parent turn; a status-reading barrier answers
 /// inside the settle window.
+#[pa_test_scratch::pa_test]
 #[test]
 fn wait_for_idle_holds_through_the_settle_window() {
     let Some(kernel_python) = kernel_python() else {

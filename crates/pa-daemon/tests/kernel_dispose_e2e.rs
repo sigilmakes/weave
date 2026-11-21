@@ -318,6 +318,7 @@ fn await_receipt(dir: &Path) {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn kill_disposes_the_session_kernel() {
     let Some(kernel_python) = kernel_python() else {
@@ -356,6 +357,7 @@ fn kill_disposes_the_session_kernel() {
 
 /// Daemon `shutdown` routes a `shutdown` to every worker: each disposes its kernel
 /// before its own process exit (no destructors run on `std::process::exit`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn shutdown_disposes_session_kernels_before_the_worker_exits() {
     let Some(kernel_python) = kernel_python() else {
@@ -384,6 +386,7 @@ fn shutdown_disposes_session_kernels_before_the_worker_exits() {
     await_kernels_gone(&baseline, Duration::from_secs(90));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn orphan_exit_disposes_the_kernel_before_the_worker_exits() {
     let Some(kernel_python) = kernel_python() else {

@@ -259,6 +259,7 @@ fn view_options(socket: &std::path::Path) -> AgentsViewOptions {
 /// daemon-driven row: the mock's 2s catalog answer lands long after the barrier armed. The retired
 /// 300ms budget-settle reds here deterministically: `Done` fires before the answer lands.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_render_barrier_holds_until_the_catalog_row_renders() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");
@@ -313,6 +314,7 @@ async fn the_render_barrier_holds_until_the_catalog_row_renders() {
 /// The barrier's deadline pops the hold and the plan proceeds honestly: the needle the mock
 /// never renders ends the wait at its own bound, the status line reports the unsatisfied wait.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_barrier_deadline_pops_the_hold_and_the_plan_proceeds() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");

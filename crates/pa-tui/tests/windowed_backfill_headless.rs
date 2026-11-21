@@ -450,6 +450,7 @@ fn collapsed_markers(frame: &str) -> Vec<String> {
         })
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_windowed_open_backfills_history_above_the_tail() {
     let (frames, requests) = run_attached(
@@ -496,6 +497,7 @@ fn a_windowed_open_backfills_history_above_the_tail() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_unverified_history_leaf_echo_keeps_the_attached_tail_and_reports_incomplete_history() {
     // An older worker omits the echo; a wrong echo belongs to another branch.
@@ -546,6 +548,7 @@ fn an_unverified_history_leaf_echo_keeps_the_attached_tail_and_reports_incomplet
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_full_snapshot_attach_never_backfills() {
     let (frames, requests) = run_attached(
@@ -574,6 +577,7 @@ fn a_full_snapshot_attach_never_backfills() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_rejected_backfill_retries_then_reports_incomplete_history() {
     let (frames, requests) = run_attached_with_failures(
@@ -591,6 +595,7 @@ fn a_rejected_backfill_retries_then_reports_incomplete_history() {
     assert_eq!(requests[0], requests[1]);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_exit_with_backfill_in_flight_releases_the_daemon_connection() {
     let (frames, requests) = run_attached_holding_backfill(
@@ -620,6 +625,7 @@ fn an_exit_with_backfill_in_flight_releases_the_daemon_connection() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_reload_rebuild_during_an_in_flight_backfill_keeps_rows_unique_and_ordered() {
     let (frames, requests) = run_attached_holding_backfill(
@@ -676,6 +682,7 @@ fn a_reload_rebuild_during_an_in_flight_backfill_keeps_rows_unique_and_ordered()
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_changed_or_unverifiable_prefix_is_rejected_before_the_compaction_event() {
     for state in [
@@ -718,6 +725,7 @@ fn a_changed_or_unverifiable_prefix_is_rejected_before_the_compaction_event() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_failed_rebuild_reports_cancelled_incomplete_history() {
     let (frames, requests) = run_attached_holding_backfill(
@@ -881,6 +889,7 @@ fn run_display_peer(
     outcome
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn issue_19_saved_display_history_replays_every_message_once_and_keeps_redraws_incremental() {
     let outcome = run_display_peer(
@@ -924,6 +933,7 @@ fn issue_19_saved_display_history_replays_every_message_once_and_keeps_redraws_i
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn issue_19_same_session_branch_failure_shows_selected_context_then_retries_full_native_history() {
     let outcome = run_display_peer(

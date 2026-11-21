@@ -326,6 +326,7 @@ fn run_plan(session: MockSession, steps: Vec<HeadlessStep>) -> Vec<String> {
 
 /// `/effort` moves the tray's `model:effort` label live: the attach state seeds
 /// `glm-5.3:medium`, and the switch's level lands as `glm-5.3:high`.
+#[pa_test_scratch::pa_test]
 #[test]
 fn effort_command_moves_the_tray_model_label() {
     let steps = vec![
@@ -359,6 +360,7 @@ fn effort_command_moves_the_tray_model_label() {
 
 /// A successful `/effort` switch whose state re-read fails still moves the label: the requested
 /// level renders (TS `applyThinkingLevel` patches the connection state), never the stale suffix.
+#[pa_test_scratch::pa_test]
 #[test]
 fn effort_switch_with_failed_state_read_never_keeps_the_stale_suffix() {
     let mut session = reasoning_session();
@@ -388,6 +390,7 @@ fn effort_switch_with_failed_state_read_never_keeps_the_stale_suffix() {
 }
 
 /// The state's level is "off", but the tray never carries a suffix.
+#[pa_test_scratch::pa_test]
 #[test]
 fn tray_label_stays_bare_without_reasoning() {
     let steps = vec![HeadlessStep::WaitRender {

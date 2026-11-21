@@ -52,6 +52,7 @@ struct Daemon {
 
 impl Drop for Daemon {
     fn drop(&mut self) {
+        let _timing_span = pa_test_scratch::timing::span("teardown.process");
         let _ = self.child.kill();
         let _ = self.child.wait();
     }
@@ -60,6 +61,7 @@ impl Drop for Daemon {
 // The timeout panic path cannot wait on the child; the test process exits and reaps it.
 #[allow(clippy::zombie_processes)]
 fn spawn_daemon(socket: &std::path::Path, agent_dir: &std::path::Path) -> Daemon {
+    let _timing_span = pa_test_scratch::timing::span("setup.process_and_ready");
     let binary = env!("CARGO_BIN_EXE_pa-daemon");
     let child = Command::new(binary)
         .arg("supervisor")
@@ -91,6 +93,7 @@ struct Client {
 
 impl Client {
     fn connect(socket: &std::path::Path) -> (Self, serde_json::Value) {
+        let _timing_span = pa_test_scratch::timing::span("setup.connect_wait");
         let deadline = Instant::now() + Duration::from_secs(5);
         loop {
             if let Ok(stream) = UnixStream::connect(socket) {
@@ -137,6 +140,7 @@ impl Client {
 
     /// One command round trip with its elapsed wall time; non-response frames are skipped.
     fn read_response(&mut self, id: &str) -> (Duration, serde_json::Value) {
+        let _timing_span = pa_test_scratch::timing::span("run.response_wait");
         let deadline = Instant::now() + Duration::from_secs(60);
         loop {
             assert!(Instant::now() < deadline, "no response for {id} arrived");
@@ -169,6 +173,7 @@ fn scripted_turn(client: &mut Client, session_id: &str, text: &str, id: &str) {
 /// walk pays a real parse cost per child.
 fn seed_child_session(dir: &std::path::Path, child_id: &str) {
     const CHILD_HEADER_ROWS: u64 = 1;
+    let fixture_generation = pa_test_scratch::timing::span("setup.fixture_generation");
     std::fs::create_dir_all(dir).expect("child dir");
     let file = dir.join(format!("{child_id}.jsonl"));
     let filler = "x".repeat(SEEDED_ASSISTANT_CONTENT_KB * 1024);
@@ -204,12 +209,14 @@ fn seed_child_session(dir: &std::path::Path, child_id: &str) {
         content.push('\n');
         parent_id = Some(entry_id);
     }
+    drop(fixture_generation);
     assert_eq!(
         write_session_rows(&file, &content),
         SEEDED_MESSAGES_PER_CHILD as u64 + CHILD_HEADER_ROWS
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn get_context_tree_answers_from_memory_on_a_grown_store() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -294,6 +301,7 @@ fn get_context_tree_answers_from_memory_on_a_grown_store() {
 
     // Every read must answer under the ceiling, cold or warm: the root is in-memory
     // and the children come from the cache (a cold cache serves the live rows alone).
+    let _cache_wait = pa_test_scratch::timing::span("run.cache_wait");
     let mut saw_seeded_children = false;
     let deadline = Instant::now() + CACHE_FILL_DEADLINE;
     let mut reads = 0;
@@ -348,6 +356,7 @@ fn get_context_tree_answers_from_memory_on_a_grown_store() {
 mod session_fixture;
 
 fn write_session_rows(path: &std::path::Path, content: &str) -> u64 {
+    let _timing_span = pa_test_scratch::timing::span("setup.fixture_log_write");
     let mut fixture = session_fixture::BulkSessionFixture::new(path);
     for line in content.lines().filter(|line| !line.is_empty()) {
         let row: serde_json::Value = serde_json::from_str(line).expect("fixture row");
@@ -356,6 +365,7 @@ fn write_session_rows(path: &std::path::Path, content: &str) -> u64 {
     fixture.finish()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "expensive old durable path; run explicitly for fixture byte equivalence"]
 fn static_child_fixtures_match_the_durable_writer() {

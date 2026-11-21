@@ -389,6 +389,7 @@ fn run_case(resource: Option<&str>, expected: &str, final_event: Value) -> Vec<S
     frames
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn working_message_resource_is_opt_in_and_resets_after_success_error_and_abort() {
     let _guard = run_lock();

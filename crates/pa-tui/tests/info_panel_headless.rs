@@ -277,6 +277,7 @@ const PANEL_HINT: &str = "Esc close";
 
 /// Every flooding command opens the read-only info panel inline, ESC closes it, and the transcript
 /// gains nothing; `?` types into the editor instead of mounting the removed guide.
+#[pa_test_scratch::pa_test]
 #[test]
 fn info_commands_open_inline_panels_that_esc_closes_without_transcript_rows() {
     let steps = vec![

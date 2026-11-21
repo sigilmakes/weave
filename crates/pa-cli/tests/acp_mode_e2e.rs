@@ -91,6 +91,7 @@ impl AcpChild {
     /// the drop shuts the supervisor down. The socket sits on the struct
     /// for tests that speak raw daemon commands alongside the ACP frames.
     fn spawn(args: &[&str], script: &serde_json::Value) -> AcpChild {
+        let _timing_span = pa_test_scratch::timing::span("setup.process_and_fixture");
         let home = tempfile::TempDir::new().unwrap();
         let socket = home.path().join("daemon.sock");
         std::fs::write(home.path().join("worker-script.json"), script.to_string()).unwrap();
@@ -111,6 +112,7 @@ impl AcpChild {
         child_script: &serde_json::Value,
         kernel_python: &std::path::Path,
     ) -> AcpChild {
+        let _timing_span = pa_test_scratch::timing::span("setup.process_and_fixture");
         let home = tempfile::TempDir::new().unwrap();
         let socket = home.path().join("daemon.sock");
         let child_script_path = home.path().join("child-script.json");
@@ -151,6 +153,7 @@ impl AcpChild {
     /// Read frames until the request `id` answers; returns the answer with the notifications seen
     /// before it, in order.
     fn wait_response(&mut self, id: u64, timeout: Duration) -> (Value, Vec<Value>) {
+        let _timing_span = pa_test_scratch::timing::span("run.response_wait");
         let deadline = Instant::now() + timeout;
         let mut notifications = Vec::new();
         loop {
@@ -186,6 +189,7 @@ impl AcpChild {
         timeout: Duration,
         mut frame_matches: impl FnMut(&Value) -> bool,
     ) -> Value {
+        let _timing_span = pa_test_scratch::timing::span("run.frame_wait");
         let deadline = Instant::now() + timeout;
         loop {
             let timeout_left = deadline.saturating_duration_since(Instant::now());
@@ -270,6 +274,7 @@ fn worker_descriptor(home: &std::path::Path) -> Value {
 
 impl Drop for AcpChild {
     fn drop(&mut self) {
+        let _timing_span = pa_test_scratch::timing::span("teardown.process");
         if std::thread::panicking() {
             if let Some(home) = self.home.take() {
                 let path = home.keep();
@@ -316,6 +321,7 @@ fn assert_end_turn(response: &Value) {
 
 /// The TS initialize response shape (capture `ts-happy_path.jsonl`), with the
 /// version and sessionId-class fields normalized as volatile.
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_initialize_matches_the_ts_golden() {
     let script = json!({ "responses": ["unused"] });
@@ -343,6 +349,7 @@ fn acp_initialize_matches_the_ts_golden() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_second_initialize_is_served() {
     let script = json!({ "responses": ["unused"] });
@@ -354,6 +361,7 @@ fn acp_second_initialize_is_served() {
     assert_eq!(response["result"]["protocolVersion"], 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_prompt_stream_completion_envelope_and_stop_reason_match_ts() {
     let script = json!({ "engine": "faux", "responses": ["ACP-OK"] });
@@ -438,6 +446,7 @@ fn acp_prompt_stream_completion_envelope_and_stop_reason_match_ts() {
     assert_eq!(close_response["result"], json!({}));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_prompt_chunk_carries_the_assistant_message_id() {
     let script = json!({ "engine": "faux", "responses": ["ACP-OK"] });
@@ -474,6 +483,7 @@ fn acp_prompt_chunk_carries_the_assistant_message_id() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_cwd_mismatch_is_reported_not_adopted() {
     let script = json!({ "responses": ["unused"] });
@@ -491,6 +501,7 @@ fn acp_cwd_mismatch_is_reported_not_adopted() {
         .is_some_and(|actual| actual.starts_with(std::path::MAIN_SEPARATOR)));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_error_shapes_match_the_ts_goldens() {
     let script = json!({ "responses": ["unused"] });
@@ -549,6 +560,7 @@ fn acp_error_shapes_match_the_ts_goldens() {
     assert_eq!(response["result"], json!({}));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_initialize_with_string_protocol_version_is_invalid_params() {
     let script = json!({ "responses": ["unused"] });
@@ -566,6 +578,7 @@ fn acp_initialize_with_string_protocol_version_is_invalid_params() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_image_block_without_mime_type_is_invalid_params() {
     let script = json!({ "responses": ["unused"] });
@@ -592,6 +605,7 @@ fn acp_image_block_without_mime_type_is_invalid_params() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_cancel_without_an_active_turn_is_a_noop() {
     let script = json!({ "responses": ["unused"] });
@@ -612,6 +626,7 @@ fn acp_cancel_without_an_active_turn_is_a_noop() {
     assert_eq!(close_response["result"], json!({}));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_mcp_admission_accepts_valid_servers_and_close_releases() {
     let script = json!({ "responses": ["unused"] });
@@ -635,6 +650,7 @@ fn acp_mcp_admission_accepts_valid_servers_and_close_releases() {
     assert_eq!(close_response["result"], json!({}));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_mcp_admission_rejects_a_second_session_only_when_open() {
     let script = json!({ "responses": ["unused"] });
@@ -681,6 +697,7 @@ fn acp_mcp_admission_rejects_a_second_session_only_when_open() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_mcp_admission_rejects_invalid_params_with_the_ts_reasons() {
     let script = json!({ "responses": ["unused"] });
@@ -733,6 +750,7 @@ fn acp_mcp_admission_rejects_invalid_params_with_the_ts_reasons() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_mcp_schema_invalid_entries_are_dropped_like_the_sdk() {
     // The SDK zod filter (`vecSkipError(zMcpServer)`) silently drops entries
@@ -757,6 +775,7 @@ fn acp_mcp_schema_invalid_entries_are_dropped_like_the_sdk() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_mcp_long_names_fail_at_tool_derivation_with_internal_error() {
     let script = json!({ "responses": ["unused"] });
@@ -778,6 +797,7 @@ fn acp_mcp_long_names_fail_at_tool_derivation_with_internal_error() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_close_clears_the_connection_mcp_servers() {
     let script = json!({ "engine": "faux", "responses": ["unused"] });
@@ -819,6 +839,7 @@ fn acp_daemon_attached_close_clears_the_connection_mcp_servers() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_eof_teardown_clears_the_connection_mcp_servers() {
     let script = json!({ "engine": "faux", "responses": ["unused"] });
@@ -855,6 +876,7 @@ fn acp_daemon_attached_eof_teardown_clears_the_connection_mcp_servers() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_mode_daemon_unreachable_exits_1_without_fallback() {
     let home = tempfile::TempDir::new().unwrap();
@@ -893,6 +915,7 @@ fn acp_mode_daemon_unreachable_exits_1_without_fallback() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_cancels_mid_turn() {
     // A scripted worker with a slow turn: the cancel lands while the
@@ -927,6 +950,7 @@ fn acp_daemon_attached_cancels_mid_turn() {
     drop(client);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_overlapping_prompt_is_refused() {
     // A second prompt while the first runs is refused; the running turn
@@ -992,6 +1016,7 @@ fn acp_daemon_attached_overlapping_prompt_is_refused() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_close_mid_turn_answers_cancelled() {
     let mut client = AcpChild::spawn(
@@ -1103,6 +1128,7 @@ fn wait_live_session(socket: &std::path::Path) -> Value {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_default_session_persists_and_resumes() {
     // Without --no-session the daemon session is saved and resident: it
@@ -1191,6 +1217,7 @@ fn acp_daemon_attached_default_session_persists_and_resumes() {
     assert!(saved.contains("Name a river.") && saved.contains("Name a mountain."));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_resident_eof_mid_turn_cancels_the_prompt() {
     let answer = "a paced answer that streams slowly enough to close mid-turn";
@@ -1238,6 +1265,7 @@ fn acp_daemon_attached_resident_eof_mid_turn_cancels_the_prompt() {
 /// EOF while `session/new` is still running: the reader awaits the
 /// handler before it reads further, so the teardown at EOF releases the
 /// session it installs and the process exits.
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_eof_during_session_new_exits() {
     let mut client = AcpChild::spawn(
@@ -1256,6 +1284,7 @@ fn acp_daemon_attached_eof_during_session_new_exits() {
     assert!(client.child.wait().expect("the ACP child exits").success());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_close_keeps_the_worker_and_new_rebinds_it() {
     let mut client = AcpChild::spawn(
@@ -1303,6 +1332,7 @@ fn acp_daemon_attached_close_keeps_the_worker_and_new_rebinds_it() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_prompt_during_cancel_is_refused() {
     // A prompt behind a cancel is refused while the stop runs, and the
@@ -1369,6 +1399,7 @@ fn acp_daemon_attached_prompt_during_cancel_is_refused() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_failed_turn_publishes_only_the_error_boundary() {
     // A failed turn (here: the empty-prompt rejection) publishes one
@@ -1425,6 +1456,7 @@ fn acp_daemon_attached_failed_turn_publishes_only_the_error_boundary() {
 }
 
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_supervisor_loss_fails_the_prompt() {
     // The supervisor dies while a prompt is in flight: the pending
@@ -1485,6 +1517,7 @@ fn acp_daemon_attached_supervisor_loss_fails_the_prompt() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_image_only_prompt_reaches_the_session() {
     let mut client = AcpChild::spawn(
@@ -1627,6 +1660,7 @@ fn request_sandboxed_daemon_shutdown(socket: &std::path::Path) {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_compact_command_publishes_the_compaction_meta_and_end_turn() {
     // The faux session is short, so `/compact` skips (TS
@@ -1675,6 +1709,7 @@ fn acp_compact_command_publishes_the_compaction_meta_and_end_turn() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_goal_command_publishes_goal_meta_and_runs_the_continuation() {
     // `/goal` start schedules its continuation as the turn's model segment:
@@ -1737,6 +1772,7 @@ fn acp_goal_command_publishes_goal_meta_and_runs_the_continuation() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_truncated_final_response_maps_to_max_tokens_stop_reason() {
     // Issue #3363: a turn whose final assistant message stopped at the
@@ -1799,6 +1835,7 @@ fn daemon_request(socket: &std::path::Path, id: &str, command: &Value) -> Value 
         .unwrap_or_else(|| panic!("the daemon closed without answering {id}"))
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_forwards_cli_session_options() {
     // Outside the agent dir: only --skill loads it.
@@ -1896,6 +1933,7 @@ fn compaction_metas(updates: &[Value]) -> Vec<Value> {
 
 /// A settled turn crossing the reserve headroom compacts at the boundary and publishes the
 /// `compaction` meta (a single-turn skip publishes the empty payload).
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_threshold_auto_compaction_publishes_the_compaction_meta() {
     let script = json!({
@@ -1967,6 +2005,7 @@ fn acp_threshold_auto_compaction_publishes_the_compaction_meta() {
 /// leaves, so a client that prompts again the instant it reads the
 /// response is admitted. Twenty back-to-back prompts keep every
 /// settle-to-next-admission window covered.
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_settled_prompt_immediately_admits_the_next_prompt() {
     let script = json!({
@@ -2005,6 +2044,7 @@ fn acp_settled_prompt_immediately_admits_the_next_prompt() {
 /// error runs one compact-and-retry at the boundary and the retried turn
 /// settles the prompt with `end_turn` instead of the error (TS
 /// `_checkCompaction` Case 1, binary level).
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_overflow_recovery_compacts_and_retries_the_turn() {
     let script = json!({
@@ -2152,6 +2192,7 @@ fn spawn_lane(
 /// update reports the live outstanding-subagent count, the terminal update
 /// reports zero, and the settled child's terminal-notice turn ("notice
 /// seen") drains inside the barrier, between the two.
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_prompt_settles_after_rlm_quiescence() {
     let Some(kernel_python) = kernel_python() else {
@@ -2211,6 +2252,7 @@ fn acp_prompt_settles_after_rlm_quiescence() {
 /// answers cancelled once the stop sequence cancelled the held child, and
 /// the roster reports the child cancelled. Close goes through the same
 /// stop sequence, so it is not retested here.
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_cancel_during_settle_cancels_the_subagents() {
     let Some(kernel_python) = kernel_python() else {
@@ -2257,6 +2299,7 @@ fn acp_cancel_during_settle_cancels_the_subagents() {
 /// subagents (TS aborts the controller and exits): the process is gone
 /// while the resident session's held child still runs — EOF does not
 /// cancel a resident session's children.
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_eof_during_settle_exits_and_leaves_resident_subagents() {
     let Some(kernel_python) = kernel_python() else {
@@ -2296,6 +2339,7 @@ fn acp_eof_during_settle_exits_and_leaves_resident_subagents() {
 /// `heartbeats_changed` to every client; the ACP link publishes the
 /// change at origin turn 0 (connection-scoped like TS, never the active
 /// prompt turn).
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_heartbeat_change_publishes_turn_zero_meta() {
     let mut client = AcpChild::spawn(
@@ -2326,6 +2370,7 @@ fn acp_heartbeat_change_publishes_turn_zero_meta() {
 /// A bash run another client started on the bound session (the daemon's
 /// `execute_bash`) surfaces as one synthetic tool call keyed by run id:
 /// the started run, the streamed chunk, and the settled status.
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_user_bash_maps_to_a_synthetic_tool_call() {
     let mut client = AcpChild::spawn(
@@ -2377,6 +2422,7 @@ fn acp_user_bash_maps_to_a_synthetic_tool_call() {
 }
 
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_close_stop_failure_fences_the_session() {
     let mut client = AcpChild::spawn(
@@ -2448,6 +2494,7 @@ fn acp_daemon_attached_close_stop_failure_fences_the_session() {
     drop(client);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn acp_daemon_attached_close_holds_the_input_pause_until_the_next_session_new() {
     let mut client = AcpChild::spawn(

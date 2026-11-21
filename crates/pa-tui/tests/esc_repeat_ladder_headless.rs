@@ -428,6 +428,7 @@ const TREE_PANE: &str = "Session Tree";
 
 /// Sixty Escape presses at the empty editor: the repeat's tree action fires exactly once and the
 /// ladder terminates instead of cycling the selector every second press.
+#[pa_test_scratch::pa_test]
 #[test]
 fn repeated_escape_converges_to_the_inert_empty_state() {
     let mut steps = vec![HeadlessStep::WaitMs(300)];
@@ -459,6 +460,7 @@ fn repeated_escape_converges_to_the_inert_empty_state() {
 
 /// A non-Escape key re-arms the gesture: after the converged inert tail, one arrow press starts a
 /// fresh input chain and the next double-Esc opens the selector again.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_non_escape_key_re_arms_the_double_escape_gesture() {
     let mut steps = vec![HeadlessStep::WaitMs(300)];

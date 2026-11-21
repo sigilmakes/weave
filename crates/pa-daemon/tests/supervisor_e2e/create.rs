@@ -19,6 +19,7 @@ fn write_saved_header(path: &std::path::Path, header: &serde_json::Value) {
 
 /// Explicit `--provider`/`--model` flags are authoritative for the worker's
 /// model resolution — no process-wide fallback may answer instead.
+#[pa_test_scratch::pa_test]
 #[test]
 fn create_config_model_flags_reach_the_worker_engine() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -83,6 +84,7 @@ fn create_config_model_flags_reach_the_worker_engine() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn create_path_duplicate_name_fails_with_current_ts_string() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -165,6 +167,7 @@ fn create_path_duplicate_name_fails_with_current_ts_string() {
 /// newest saved session for the cwd (any session on a shared dir, including
 /// one whose context and scheduled jobs resurrect); the daemon refuses the
 /// blind-resume form, and a create without the field still succeeds.
+#[pa_test_scratch::pa_test]
 #[test]
 fn create_with_continue_recent_is_refused() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -238,6 +241,7 @@ fn create_with_continue_recent_is_refused() {
 /// A cold reopen must discover project resources in the saved directory, even
 /// when the caller (Agents View inline Reply) sends no cwd. An explicit fallback
 /// or override must still win.
+#[pa_test_scratch::pa_test]
 #[test]
 fn cold_reopen_uses_saved_cwd_unless_explicitly_overridden() {
     let dir = tempfile::tempdir().expect("temp dir");
@@ -352,6 +356,7 @@ fn cold_reopen_uses_saved_cwd_unless_explicitly_overridden() {
     assert_eq!(client.read_response("shutdown")["success"], true);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn missing_saved_cwd_requires_an_explicit_fallback() {
     let dir = tempfile::tempdir().unwrap();
@@ -399,6 +404,7 @@ fn missing_saved_cwd_requires_an_explicit_fallback() {
 }
 
 /// Uses a real Python kernel; only provider responses are scripted.
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "requires PRIME_AGENT_KERNEL_PYTHON with the kernel runtime installed"]
 fn cold_reopen_python_kernel_uses_saved_cwd_and_explicit_override() {

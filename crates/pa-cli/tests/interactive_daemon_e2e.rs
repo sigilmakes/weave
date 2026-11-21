@@ -391,6 +391,7 @@ async fn create_session_via_daemon(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_attaches_prompts_streams_lists_and_switches() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -724,6 +725,7 @@ impl pa_tui::provider_auth::ProviderAuthCommands for FullFlowProviderAuth {
 /// The full first-run flow with no usable model (TS `runOnboardingFlow`'s
 /// not-ready branch): every answer, both credentials, and the flag persist.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn fresh_home_runs_the_full_sign_in_flow_to_completion() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -857,6 +859,7 @@ async fn fresh_home_runs_the_full_sign_in_flow_to_completion() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_failed_completion_write_surfaces_a_warning_and_never_kills_the_run() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -913,6 +916,7 @@ async fn a_failed_completion_write_surfaces_a_warning_and_never_kills_the_run() 
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn ensure_daemon_running_spawns_supervisor_and_tui_attaches() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1000,6 +1004,7 @@ async fn ensure_daemon_running_spawns_supervisor_and_tui_attaches() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_dispatches_slash_commands_menu_and_suggestions() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1179,6 +1184,7 @@ async fn tui_dispatches_slash_commands_menu_and_suggestions() {
 /// and Enter applies it (durable `model_change` row); `/effort` without
 /// reasoning reports the TS unsupported note (an `off`-only list is no thinking).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_model_picker_applies_and_effort_reports() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1331,6 +1337,7 @@ async fn tui_model_picker_applies_and_effort_reports() {
 /// The `thinkingLevelMap` (not the `reasoning` flag) is the capability signal:
 /// `/effort` applies its declared level.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_effort_applies_on_a_map_addressable_model_without_the_reasoning_flag() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1453,6 +1460,7 @@ async fn tui_effort_applies_on_a_map_addressable_model_without_the_reasoning_fla
 /// The skip (TS `CompactionSkippedError`) reaches the transcript through the
 /// `compaction_end` event.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_compact_on_a_short_session_warns_nothing_to_compact() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1552,6 +1560,7 @@ async fn tui_compact_on_a_short_session_warns_nothing_to_compact() {
 /// The loader row is a soft capture: a loaded box can batch the delayMs-paced
 /// window past the paint loop.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_compact_shows_the_loader_then_the_summary_and_rebuilds() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1729,6 +1738,7 @@ async fn tui_compact_shows_the_loader_then_the_summary_and_rebuilds() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_session_tree_navigates_forks_and_clones() {
     use crossterm::event::{KeyCode, KeyModifiers};
 
@@ -1890,6 +1900,7 @@ async fn tui_session_tree_navigates_forks_and_clones() {
 
 /// Two ~12k-token unpaced turns must render at the producer's rate, not a frame-rate ceiling.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_big_streamed_turns_render_at_the_producer_rate() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -2010,6 +2021,7 @@ async fn tui_big_streamed_turns_render_at_the_producer_rate() {
 
 /// A settings fixture rebinding `app.tools.expand` to `ctrl+alt+x` drives the surface.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_renders_and_fires_user_keybindings_from_settings() {
     use crossterm::event::{KeyCode, KeyModifiers};
 
@@ -2159,6 +2171,7 @@ async fn tui_renders_and_fires_user_keybindings_from_settings() {
 /// The visible follow-up queue (TS `queuedMessagesContainer`): prompts
 /// submitted while a turn runs park as dim preview rows with the browse hint.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_prompts_queued_behind_a_turn_render_the_queue_strip() {
     use crossterm::event::{KeyCode, KeyModifiers};
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -2265,6 +2278,7 @@ async fn tui_prompts_queued_behind_a_turn_render_the_queue_strip() {
 /// model resolves from the full catalog and fails at run-start auth
 /// validation with the TS login-guidance message — never "Model not found".
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_flagged_model_turn_reports_the_ts_preflight_error_without_credentials() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -2362,6 +2376,7 @@ async fn tui_flagged_model_turn_reports_the_ts_preflight_error_without_credentia
 /// The dogfood acceptance: a `/model` pick must move the footer label immediately
 /// and leave the next turn on the switched model.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_model_pick_refreshes_the_label_and_the_next_turn_resolves() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -2481,6 +2496,7 @@ async fn tui_model_pick_refreshes_the_label_and_the_next_turn_resolves() {
 /// `--models` scope end to end: the cycle keys walk the session's scope
 /// order, not the catalog's (mock-2 must never appear).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_scoped_models_cycle_through_the_session_scope() {
     use crossterm::event::{KeyCode, KeyModifiers};
 
@@ -2603,6 +2619,7 @@ fn base_options(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_renames_session_through_slash_command() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -2682,6 +2699,7 @@ async fn tui_renames_session_through_slash_command() {
 // the new session through the `/name` path, the verbatim suffix submits as the
 // initial prompt, and a parse error keeps the draft without creating a session.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_new_command_honors_name_and_prompt() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -2824,6 +2842,7 @@ async fn tui_new_command_honors_name_and_prompt() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_side_question_pane_flow() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -2948,6 +2967,7 @@ async fn tui_side_question_pane_flow() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_settings_menu_cycles_rows() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -3013,6 +3033,7 @@ async fn tui_settings_menu_cycles_rows() {
 /// The operator's Esc-ordering pin (2026-09-25): Esc closes the cwd
 /// completion menu without interrupting the streaming turn.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_esc_closes_the_completion_menu_without_interrupting_the_turn() {
     use crossterm::event::KeyCode;
 
@@ -3092,6 +3113,7 @@ async fn tui_esc_closes_the_completion_menu_without_interrupting_the_turn() {
 
 /// Prompt-stash verifier: a draft in the editor belongs to the session it was typed in.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_prompt_stash_round_trips_across_in_place_switch() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -3216,6 +3238,7 @@ async fn tui_prompt_stash_round_trips_across_in_place_switch() {
 /// Prompt-stash verifier, the agents-view handoff arm: the (user-rebound)
 /// `app.session.resume` key stashes the draft; reopening the chat restores it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_prompt_stash_survives_the_agents_view_handoff() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -3374,6 +3397,7 @@ async fn tui_prompt_stash_survives_the_agents_view_handoff() {
 
 /// Prompt-stash verifier, the pasted-image arm: the stashed draft round-trips its image bytes.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_prompt_stash_restores_a_pasted_image_with_the_draft() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -3506,6 +3530,7 @@ async fn tui_prompt_stash_restores_a_pasted_image_with_the_draft() {
 /// TS `handlePromptStash` — `app.prompt.stash` on its DEFAULT key (ctrl+s):
 /// stash with a draft, restore with an empty editor.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_ctrl_s_stashes_and_restores_the_prompt_draft() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -3666,6 +3691,7 @@ async fn tui_ctrl_s_stashes_and_restores_the_prompt_draft() {
 /// restores the held draft into the emptied editor (TS
 /// `promptStashToRestore`).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_ctrl_s_stash_keeps_a_held_draft_and_reports_the_empty_editor() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -3801,6 +3827,7 @@ async fn tui_ctrl_s_stash_keeps_a_held_draft_and_reports_the_empty_editor() {
 
 /// `app.prompt.stash` is remappable: a user binding replaces the default outright.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_ctrl_s_stash_is_remappable_via_keybindings_json() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -3942,6 +3969,7 @@ async fn tui_ctrl_s_stash_is_remappable_via_keybindings_json() {
 /// draft and shows the parked text, so the stash must stash the user's draft,
 /// and the disarmed browse keeps the next Enter from deleting the parked message.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_ctrl_s_during_queue_browse_stashes_the_draft_and_keeps_the_parked_message() {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -4115,6 +4143,7 @@ async fn tui_ctrl_s_during_queue_browse_stashes_the_draft_and_keeps_the_parked_m
 /// Declared chat-editor keybindings dispatch: ctrl+l opens the picker, and
 /// the no-default actions fire from a user keybindings.json.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_dispatches_declared_editor_keybindings() {
     use crossterm::event::{KeyCode, KeyModifiers};
 
@@ -4257,6 +4286,7 @@ async fn create_idle_session_with_settled_turn(
 /// IDLE settled session must paint the transcript from the attach snapshot
 /// alone; the run's only step is a settle window.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_attach_to_idle_session_renders_without_input() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -4387,6 +4417,7 @@ fn subscription_options(
 /// and the daemon's marker (the supervisor routes the new
 /// `mark_anthropic_warning_shown` frame to the worker).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_anthropic_warning_warns_once_then_a_fresh_process_reattaches_silently() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -4518,6 +4549,7 @@ async fn tui_anthropic_warning_warns_once_then_a_fresh_process_reattaches_silent
 /// ever reaches the run; the renamed tray label only appears when the
 /// event's render scheduling works.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_idle_session_event_repaints_without_input() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -4582,6 +4614,7 @@ async fn tui_idle_session_event_repaints_without_input() {
 /// `prime-agent` run must open a FRESH session even when a newer saved session
 /// exists for the cwd — resuming it blindly would resurrect whatever it holds.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_bare_launch_opens_a_fresh_session_when_a_newer_saved_one_exists_for_the_cwd() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -4664,6 +4697,7 @@ async fn tui_bare_launch_opens_a_fresh_session_when_a_newer_saved_one_exists_for
 /// submissions (the second while the first's round trip is in flight) reach
 /// the daemon in order; the ordered channel pins it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_two_back_to_back_submits_reach_the_daemon_in_order() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -4762,6 +4796,7 @@ async fn tui_two_back_to_back_submits_reach_the_daemon_in_order() {
 /// the outcome stays SILENT on the newly mounted session, while the daemon
 /// still ran the turn for the switched-away session (TS's staleness guard).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_submit_outlived_by_switch_stays_silent_on_the_new_session() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -4892,6 +4927,7 @@ async fn tui_submit_outlived_by_switch_stays_silent_on_the_new_session() {
 /// closed `ui_rx` is select-ready forever, so the loop must park the closed
 /// arm (the exit gate waits on the turn's events) — an unparked arm hot-spins.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_headless_done_with_a_turn_settling_parks_the_closed_input_channel() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -4972,6 +5008,7 @@ async fn tui_headless_done_with_a_turn_settling_parks_the_closed_input_channel()
 /// killing the worker (and removing its file, so no rebind can resurrect it)
 /// settles the round trip as a refusal — the turn never ran.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_refused_submit_restores_the_draft_after_the_round_trip() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -5090,6 +5127,7 @@ async fn tui_refused_submit_restores_the_draft_after_the_round_trip() {
 /// for the worker's `isStreaming` state (an external admission condition),
 /// so I/O stalls cannot move a fixed submit/kill clock across the edge.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_accepted_then_killed_turn_renders_closed_error() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let session_dir = dir.path().join("agent/sessions");
@@ -5227,6 +5265,7 @@ async fn tui_accepted_then_killed_turn_renders_closed_error() {
 
 /// Both terminal close reasons remain visible after a later, replaceable turn status.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_close_reason_rows_survive_late_turn_status() {
     for (reason, explanation) in [
         ("shutdown", "The Prime Agent daemon shut down while this window was attached. The session transcript remains saved; restart Prime Agent and reopen it from Agents View."),

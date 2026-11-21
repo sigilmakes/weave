@@ -279,6 +279,7 @@ fn read_receipt(client: &mut Client, session_id: &str, receipt: &Path, read_id: 
 /// A `set_model` switch must rebind the kernel's model facts: the second
 /// turn's cell answers the switched-to model's `model.info` and context
 /// window, not the session-creation model's.
+#[pa_test_scratch::pa_test]
 #[test]
 fn set_model_rebinds_the_kernel_model_facts() {
     let Some(kernel_python) = kernel_python() else {

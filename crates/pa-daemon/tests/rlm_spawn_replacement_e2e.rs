@@ -275,6 +275,7 @@ fn worker_pid(agent_dir: &Path, socket: &Path, worker_id: &str) -> u32 {
 // `SupervisorChildSessions`) must progress while the test thread blocks in
 // its synchronous JSONL/file polls.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[pa_test_scratch::pa_test]
 async fn concurrent_spawns_prompt_exactly_once_across_a_worker_replacement() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("daemon.sock");
