@@ -991,6 +991,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn execute_bash_and_wait_matches_the_ts_result_shape() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1040,6 +1041,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_abort_stays_with_every_admitted_run_when_another_run_starts() {
         let user_bash = UserBash::new();
@@ -1064,6 +1066,7 @@ mod tests {
         assert!(!user_bash.is_running());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_abandoned_awaited_run_releases_the_flag() {
         let user_bash = UserBash::new();
@@ -1079,6 +1082,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_awaited_bash_run_reports_running_to_the_connection_state() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1125,6 +1129,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn execute_bash_claims_the_slot_and_aborts() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1289,6 +1294,7 @@ mod tests {
     /// child would keep running and hold the output pipes open.
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn abort_bash_kills_the_commands_child_processes() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1314,6 +1320,7 @@ mod tests {
     /// leaves the user's processes running.
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn shutdown_kills_the_running_commands_child_processes() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1332,6 +1339,7 @@ mod tests {
     /// holding the inherited output pipes does not hold the run open (TS `waitForChildProcess`).
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_backgrounded_process_does_not_hold_the_run_open() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1368,6 +1376,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn transient_execute_bash_records_nothing() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1403,6 +1412,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn execute_bash_and_wait_refuses_a_missing_cwd() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1425,6 +1435,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn sanitize_output_matches_the_ts_chain() {
         assert_eq!(sanitize_output("clean\r\noutput"), "clean\noutput");
@@ -1439,6 +1450,7 @@ mod tests {
         assert_eq!(sanitize_output("format\u{fff9}gone"), "formatgone");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn truncate_tail_keeps_the_tail_budget() {
         let (content, truncated) = truncate_tail("one\ntwo\nthree\n");
@@ -1469,6 +1481,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_shutdown_gate_cannot_close_between_a_streamed_claim_and_its_registration() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1512,6 +1525,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_shutdown_gate_cannot_close_between_an_awaited_admission_and_its_registration() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1555,6 +1569,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_close_abort_cancels_an_admitted_awaited_run_and_settles_after_it() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;
@@ -1583,6 +1598,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_awaited_dispatch_against_a_closing_gate_records_no_row() {
         let cwd = tempfile::tempdir().expect("tempdir");
         let worker = created_worker(cwd.path()).await;

@@ -3,6 +3,7 @@ use super::*;
 
 /// Images ride as multimodal blocks after the text, even when the model
 /// turn cannot run.
+#[pa_test_scratch::pa_test]
 #[test]
 fn prompt_images_ride_the_user_message_content() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -42,6 +43,7 @@ fn prompt_images_ride_the_user_message_content() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn assistant_updates_stream_live_while_the_turn_runs() {
     let _faux = FAUX_TEST_LOCK
@@ -131,6 +133,7 @@ fn assistant_updates_stream_live_while_the_turn_runs() {
     assert!(final_len >= 40 * 3, "final partial is the full text");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn agent_engine_streams_updates_and_final_message() {
     let _faux = FAUX_TEST_LOCK
@@ -189,6 +192,7 @@ fn agent_engine_streams_updates_and_final_message() {
 /// The worker persists the accepted row before the lazy core builds. Its
 /// pre-admission leaf must keep that row out of restored model history, while
 /// repeated text and image blocks remain distinct turns after a runtime rebuild.
+#[pa_test_scratch::pa_test]
 #[test]
 fn lazy_build_restores_only_the_pre_admission_prompt_context() {
     let _faux = FAUX_TEST_LOCK
@@ -417,6 +421,7 @@ fn lazy_build_restores_only_the_pre_admission_prompt_context() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cold_real_owner_preserves_legacy_custom_rows_as_generic_custom_rows() {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -724,6 +729,7 @@ fn cold_real_owner_preserves_legacy_custom_rows_as_generic_custom_rows() {
     assert_eq!(std::fs::read(&path).unwrap(), physical);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn opaque_legacy_payload_is_preserved_without_becoming_a_model_message() {
     let kind = "legacy.custom";
@@ -760,6 +766,7 @@ fn opaque_legacy_payload_is_preserved_without_becoming_a_model_message() {
 
 /// The helper poll proves the existing gate contract even with a cached SDK.
 /// The real prompt below still persists through the actual canonical owner.
+#[pa_test_scratch::pa_test]
 #[test]
 fn cached_sdk_acceptance_waits_for_build_gate_before_user_receipt() {
     let _faux = FAUX_TEST_LOCK
@@ -831,6 +838,7 @@ fn cached_sdk_acceptance_waits_for_build_gate_before_user_receipt() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn refused_canonical_model_and_thinking_switches_do_not_publish_new_state() {
     let _faux = FAUX_TEST_LOCK
@@ -894,6 +902,7 @@ fn refused_canonical_model_and_thinking_switches_do_not_publish_new_state() {
     assert_eq!(engine.effective_thinking(), previous_thinking);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn lazy_startup_two_accepted_batch_inputs_are_excluded_then_delivered_once() {
     let _faux = FAUX_TEST_LOCK
@@ -1016,6 +1025,7 @@ fn lazy_startup_two_accepted_batch_inputs_are_excluded_then_delivered_once() {
     assert!(std::fs::read(&path).unwrap().starts_with(&accepted_bytes));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn live_stream_metadata_snapshot_preserves_provider_terminal_and_next_epoch() {
     use pa_agent::stream::{AssistantMessageEvent, ModelStream, StreamFn};
@@ -1207,6 +1217,7 @@ fn live_stream_metadata_snapshot_preserves_provider_terminal_and_next_epoch() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cold_switch_uses_caller_persistence_and_hot_switch_commits_once_through_sink() {
     let _faux = FAUX_TEST_LOCK
@@ -1275,6 +1286,7 @@ fn cold_switch_uses_caller_persistence_and_hot_switch_commits_once_through_sink(
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cached_user_and_custom_admissions_are_durable_and_visible_once() {
     let _faux = FAUX_TEST_LOCK

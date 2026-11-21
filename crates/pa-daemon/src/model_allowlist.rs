@@ -92,6 +92,7 @@ mod tests {
         std::fs::write(dir.join("settings.json"), value).unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn load_reads_the_global_scope_only() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -117,6 +118,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn load_trims_and_drops_empty_lists() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -136,6 +138,7 @@ mod tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn assert_allowed_passes_without_an_allowlist_and_types_the_refusal() {
         assert_allowed(&DaemonAllowlist::Unrestricted, "anything/model").unwrap();
@@ -148,6 +151,7 @@ mod tests {
         assert_eq!(refusal.selector, "zai/glm-5.3");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_unreadable_settings_document_fails_closed() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -169,6 +173,7 @@ mod tests {
         assert!(matches!(state, DaemonAllowlist::Unrestricted));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_malformed_allowed_models_value_fails_closed() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -210,6 +215,7 @@ mod tests {
 
     /// A NON-OBJECT global document (`[]`, `"bad"`) is a corrupted
     /// document, not an absent key: the guard fails closed.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_non_object_global_document_fails_closed() {
         let dir = tempfile::tempdir().expect("tempdir");

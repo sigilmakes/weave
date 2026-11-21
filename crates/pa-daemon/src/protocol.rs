@@ -1058,6 +1058,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn kernel_bash_activity_commands_are_session_scoped() {
         for (command, kind) in [
@@ -1083,6 +1084,7 @@ mod tests {
         assert!(default_server_capabilities().contains(&"kernel_bash_activity".to_string()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn envelope_round_trips() {
         let line = r#"{"type":"command","id":"c1","protocol":{"name":"prime-agent.daemon","version":7},"command":{"type":"list","all":true}}"#;
@@ -1091,6 +1093,7 @@ mod tests {
         assert!(matches!(envelope.command, DaemonCommand::List { .. }));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn supervisor_parser_preserves_envelope_and_bare_error_shapes() {
         let cases = [
@@ -1133,6 +1136,7 @@ mod tests {
         assert_eq!(serde_json::to_value(parsed.command).unwrap(), command);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unknown_command_is_preserved() {
         let line = r#"{"type":"command","id":"c2","protocol":{"name":"prime-agent.daemon","version":7},"command":{"type":"bogus_command","activeSessionId":"x"}}"#;
@@ -1140,6 +1144,7 @@ mod tests {
         assert_eq!(err.to_string(), "Unknown daemon command: bogus_command");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn old_protocol_is_rejected() {
         let line = r#"{"type":"command","id":"c3","protocol":{"name":"prime-agent.daemon","version":6},"command":{"type":"list"}}"#;
@@ -1147,6 +1152,7 @@ mod tests {
         assert!(err.to_string().contains("protocol 7 or newer"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn replay_info_matches_ts() {
         let info = create_daemon_replay_info(None, 5, "legacy");
@@ -1180,6 +1186,7 @@ mod tests {
 
     /// The preparing-restart refusal keeps the TS plain message for old
     /// clients and carries the typed `update_restarting` info.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn update_preparing_refusal_carries_the_typed_error_info() {
         let failure = response_failure(
@@ -1194,6 +1201,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn response_line_serializes_in_the_ts_key_order() {
         let success = response_success(Some("k1"), "compact", Some(json!({"x": 1})));
@@ -1208,6 +1216,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn response_line_bytes_matches_the_reference_tree_path() {
         let shapes: Vec<DaemonResponse> = vec![

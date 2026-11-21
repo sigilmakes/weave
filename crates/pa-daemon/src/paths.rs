@@ -169,6 +169,7 @@ pub fn mtime_age(path: &Path) -> Option<Duration> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn log_path_hashes_socket() {
         let path = daemon_log_path(

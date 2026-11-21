@@ -13,6 +13,7 @@ fn inputs() -> SummaryInputs {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn sender_child_edge_decides_the_relationship_label() {
     let true_child = json!({
@@ -70,6 +71,7 @@ fn sender_child_edge_decides_the_relationship_label() {
     ));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn summary_lifecycle_is_message_based() {
     let empty = SessionCore::test_core(None, "/tmp".to_string());
@@ -124,6 +126,7 @@ fn summary_lifecycle_is_message_based() {
 /// its subagents runs (each child counts its own descendants the same
 /// way), so every roster surface classifies it running; with no running
 /// subagents it is idle again. Its own-work flag stays its own.
+#[pa_test_scratch::pa_test]
 #[test]
 fn running_subagents_keep_an_idle_session_working() {
     let core = SessionCore::test_core(None, "/tmp".to_string());
@@ -158,6 +161,7 @@ fn running_subagents_keep_an_idle_session_working() {
 /// The live row's `usage` is the whole-file own-usage fold the saved
 /// row publishes, including spend before the latest compaction and the
 /// compaction's own call.
+#[pa_test_scratch::pa_test]
 #[test]
 fn live_summary_usage_is_the_catalog_fold() {
     let dir = std::env::temp_dir().join(format!("pa-worker-usage-{}", uuid::Uuid::new_v4()));
@@ -243,6 +247,7 @@ fn live_summary_usage_is_the_catalog_fold() {
 }
 
 /// The live row bills the turn's own spend instead of reporting nothing.
+#[pa_test_scratch::pa_test]
 #[test]
 fn pathless_summary_usage_folds_the_in_memory_entries() {
     let mut store = crate::session_store::SessionFile::create("/tmp", None, 0);
@@ -269,6 +274,7 @@ fn pathless_summary_usage_folds_the_in_memory_entries() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn display_ids_are_twelve_hex() {
     let id = crate::util::new_display_id();
@@ -279,6 +285,7 @@ fn display_ids_are_twelve_hex() {
 /// The summary carries the live note, and the next run's boundaries clear it.
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn summary_carries_the_live_note_until_the_run_boundaries_clear_it() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()
@@ -353,6 +360,7 @@ async fn summary_carries_the_live_note_until_the_run_boundaries_clear_it() {
 /// an injected pending receipt or a substitute canonical authority.
 #[allow(clippy::await_holding_lock)] // the faux registry must span the async worker flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn state_and_prompt_admission_wait_for_existing_build_gate() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()

@@ -937,6 +937,7 @@ mod tests {
             .collect()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_socket_target_maps_windows_and_passes_unix_through() {
         // Unix paths pass through unchanged on both platforms.
@@ -963,6 +964,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_config_requires_the_pane_env() {
         // No Herdr pane: no config (the connector is a no-op).
@@ -1019,6 +1021,7 @@ mod tests {
         assert_eq!(invalid.retry_grace, Duration::from_millis(2500));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_error_hold_reads_the_terminal_assistant_row() {
         // The terminal assistant row's error becomes the hold message.
@@ -1063,6 +1066,7 @@ mod tests {
         assert_eq!(error_hold_message(&[]), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_resume_argv_rides_only_valid_targets() {
         let argv = valid_resume_argv(Some("019e71ec-e08a-75a9-b573-000000000001.jsonl"));
@@ -1090,6 +1094,7 @@ mod tests {
         assert_eq!(valid_resume_argv(Some("id\u{0007}")), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_seq_never_restarts_below_a_used_value() {
         // The process-global seq is monotonic and floor-clamped: within
@@ -1208,6 +1213,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_reporter_publishes_the_wire_contract_states() {
         let socket_path = temp_socket("wire");
         let (requests, server) = fake_herdr(&socket_path);
@@ -1263,6 +1269,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_error_end_holds_then_blocks_with_the_message() {
         let socket_path = temp_socket("hold");
         let (requests, server) = fake_herdr(&socket_path);
@@ -1295,6 +1302,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_retry_within_the_grace_keeps_the_pane_working() {
         let socket_path = temp_socket("retry");
         let (requests, server) = fake_herdr(&socket_path);
@@ -1333,6 +1341,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_release_is_the_last_write_and_never_reclaims() {
         let socket_path = temp_socket("release");
         let (requests, server) = fake_herdr(&socket_path);
@@ -1366,6 +1375,7 @@ mod tests {
     /// failure state: the successor's `session_start` publishes clean
     /// (idle), never the old blocked/error shape.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_replacement_resets_the_predecessor_failure_state() {
         let socket_path = temp_socket("reset");
         let (requests, server) = fake_herdr(&socket_path);
@@ -1420,6 +1430,7 @@ mod tests {
     /// The stale-generation gate: a replaced reporter's racing boundary
     /// events never reach the wire — only the successor's do.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_stale_generation_reporter_never_writes() {
         let socket_path = temp_socket("stale");
         let (requests, server) = fake_herdr(&socket_path);
@@ -1463,6 +1474,7 @@ mod tests {
     /// A runaway tuning env cannot overflow the deadline arithmetic:
     /// the value caps at the JS `setTimeout` bound instead of panicking
     /// the reporter task with `Instant + Duration`.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn runaway_tuning_values_cap_instead_of_panicking() {
         let config = HerdrConfig::from_env(&env(&[
@@ -1484,6 +1496,7 @@ mod tests {
     /// and the dropped release still acks so the quit close does not
     /// stall on the timeout.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_stale_release_neither_writes_nor_stalls() {
         let socket_path = temp_socket("stale-release");
         let (requests, server) = fake_herdr(&socket_path);
@@ -1518,6 +1531,7 @@ mod tests {
     /// uid that is not ours).
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_pane_socket_fence_decides_by_type_and_owner() {
         let socket_path = temp_socket("fence");
         let listener = tokio::net::UnixListener::bind(&socket_path).unwrap();
@@ -1568,6 +1582,7 @@ mod tests {
     /// drops the report before the connect, exactly like a missing
     /// socket.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_reporter_into_a_non_socket_target_stays_silent() {
         // A LIVE listener exists at the real path: the impostor the
         // reporter receives is a symlink pointing AT it. If the fence
@@ -1604,6 +1619,7 @@ mod tests {
     /// fence treats `None` as reject (fail closed — the probe must never
     /// fall back to uid 0, which would accept a root-owned socket).
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_failed_uid_probe_fails_closed() {
         assert!(
@@ -1618,6 +1634,7 @@ mod tests {
     /// boundary once the socket exists. The old queue-time marking
     /// deduped it away forever — this test fails on that shape.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_state_is_re_sent_after_the_socket_comes_up() {
         let socket_path = temp_socket("late-boot");
 
@@ -1673,6 +1690,7 @@ mod tests {
 
     /// Concurrent seq minting never duplicates: the first-seed race's
     /// loser must advance the shared counter like every other caller.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn concurrent_seq_mints_never_duplicate() {
         let all = std::sync::Mutex::new(Vec::new());
@@ -1694,6 +1712,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_dropped_reporter_stays_silent_without_releasing() {
         let socket_path = temp_socket("silent");
         let (requests, server) = fake_herdr(&socket_path);
@@ -1742,6 +1761,7 @@ mod tests {
         server.abort();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_noop_reporter_is_inert() {
         let noop = HerdrReporter::default();

@@ -290,6 +290,7 @@ pub(crate) fn compute_own_usage_by_model(
 mod usage_tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn own_usage_subtracts_child_attributions() {
         let assistant = json!({
@@ -354,6 +355,7 @@ mod usage_tests {
     /// A duplicated attribution id — a retried durable append whose bytes
     /// landed but whose fsync errored — is subtracted once: own usage keeps
     /// one batch, the total keeps its last-wins aggregate.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_duplicated_attribution_id_is_subtracted_once() {
         let assistant = json!({
@@ -403,6 +405,7 @@ mod usage_tests {
 
     /// A `branch_summary` row served by an auxiliary model (TS #2411) bills on
     /// the model its entry records, not the timeline's current model.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_summary_usage_bills_on_the_row_recorded_auxiliary_model() {
         let entry = |value: &Value, id: &str| crate::session_store::SessionEntry {
@@ -463,6 +466,7 @@ mod usage_tests {
 
     /// A windowed load seeds the timeline with the retained-window boundary's
     /// model; without a seed (a full-history foreign file) the breakdown stays omitted.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn window_seed_resolves_rows_before_the_first_model_change() {
         let entry = |value: &Value, id: &str| crate::session_store::SessionEntry {

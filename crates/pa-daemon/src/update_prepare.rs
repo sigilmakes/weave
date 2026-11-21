@@ -578,6 +578,7 @@ mod tests {
         UpdateId::from(String::from(name))
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn begin_is_idempotent_and_refuses_other_ids() {
         let coordinator = PrepareCoordinator::new();
@@ -609,6 +610,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn transitions_walk_the_spec_path() {
         let coordinator = PrepareCoordinator::new();
@@ -634,6 +636,7 @@ mod tests {
         assert_eq!(coordinator.drain_complete(&id("u1")), PrepareOp::NotActive);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn illegal_transitions_and_wrong_ids_do_not_apply() {
         let coordinator = PrepareCoordinator::new();
@@ -652,6 +655,7 @@ mod tests {
         assert_eq!(coordinator.active_state(), Some(PrepareState::Draining));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prepare_deadline_watchdog_aborts_back_to_serving() {
         let coordinator = PrepareCoordinator::new();
@@ -676,6 +680,7 @@ mod tests {
         assert_eq!(coordinator.active_state(), Some(PrepareState::Draining));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn commit_is_idempotent_while_stopping_and_abandon_takes_it() {
         let coordinator = PrepareCoordinator::new();
@@ -727,6 +732,7 @@ mod tests {
         assert!(coordinator.abandon_stopping(&id("u2")).is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prepared_self_expiry_survives_coordinator_death() {
         // Spec §5/I1: a coordinator dying after the ack leaves at worst a
@@ -761,6 +767,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn expiry_wait_parks_without_timers_and_rearms_when_the_budget_moves() {
         struct WakeCount(AtomicUsize);
         impl Wake for WakeCount {
@@ -811,6 +818,7 @@ mod tests {
         assert!(armed.elapsed() < Duration::from_secs(1));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn abort_is_idempotent_and_owns_only_prepare_phases() {
         let coordinator = PrepareCoordinator::new();
@@ -844,6 +852,7 @@ mod tests {
         assert_eq!(coordinator.active_state(), Some(PrepareState::Stopping));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn admission_gate_matches_the_ts_contract() {
         // Reads and attach always pass, whatever the state.
@@ -883,6 +892,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn marker_expiry_helpers_agree_with_pa_types_verdict() {
         let budget = budget();
@@ -914,6 +924,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prepared_artifact_lifecycle_is_durable_and_idempotent() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -957,6 +968,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn mutation_drain_latch_waits_and_times_out() {
         let latch = MutationDrainLatch::new();
         latch.begin();

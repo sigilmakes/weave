@@ -128,6 +128,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancel_rlm_child_answers_the_ts_cancelled_shape() {
         let worker = created_worker().await;
         let response = worker
@@ -141,6 +142,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn delete_rlm_subagent_answers_the_ts_not_found_shape() {
         let worker = created_worker().await;
         let response = worker
@@ -154,6 +156,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn set_rlm_max_depth_answers_the_ts_result_shape() {
         let worker = created_worker().await;
         let response = worker
@@ -193,6 +196,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn missing_required_fields_fail() {
         let worker = created_worker().await;
         for command_type in ["cancel_rlm_child", "delete_rlm_subagent"] {

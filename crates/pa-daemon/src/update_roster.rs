@@ -511,6 +511,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn roster_assembles_all_four_sections() {
         let dir = tempfile::tempdir().unwrap();
@@ -631,6 +632,7 @@ mod tests {
         assert!(!encoded.as_object().unwrap().contains_key("archived"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn missing_session_id_fails_the_row() {
         let dir = tempfile::tempdir().unwrap();

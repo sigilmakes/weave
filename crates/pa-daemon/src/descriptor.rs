@@ -469,6 +469,7 @@ mod tests {
     use super::*;
     use serde_json::Map;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn write_file_atomic_replaces_an_existing_destination() {
         let dir = tempfile::tempdir().unwrap();
@@ -482,6 +483,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unsynced_atomic_write_replaces_an_existing_destination() {
         let dir = tempfile::tempdir().unwrap();
@@ -495,6 +497,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn persist_worker_at_unsynced_stamps_and_round_trips() {
         let dir = tempfile::tempdir().unwrap();
@@ -533,6 +536,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn persisted_supervisor_config_round_trips_through_the_unsynced_write() {
         let dir = tempfile::tempdir().unwrap();
@@ -565,6 +569,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn durable_create_round_trips() {
         let payload = json!({
@@ -584,6 +589,7 @@ mod tests {
         assert_eq!(rebuilt["script"], "/script.json");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn descriptor_validates_against_socket() {
         let descriptor = WorkerDescriptor {

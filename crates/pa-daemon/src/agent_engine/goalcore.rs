@@ -318,6 +318,7 @@ mod tests {
     use crate::agent_engine::tests::{admit, faux_engine_with_settings, FAUX_TEST_LOCK};
     use std::sync::Arc;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn max_depth_facade_and_pending_flush_keep_exact_metadata_payloads() {
         let _faux = FAUX_TEST_LOCK
@@ -373,6 +374,7 @@ mod tests {
         assert!(engine.pending_max_depth.lock().unwrap().is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn blocked_goal_driver_cannot_refresh_state_or_pending_handle_mirrors() {
         let _faux = FAUX_TEST_LOCK

@@ -168,6 +168,7 @@ pub fn prime_agent_meta(payload: &PrimeAgentSessionMeta) -> Value {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn meta_wraps_under_the_namespace_key() {
         let wrapped = prime_agent_meta(&PrimeAgentSessionMeta {
@@ -188,6 +189,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn acp_stop_reason_keeps_cancel_and_truncation() {
         use super::super::types::AcpStopReason;
@@ -209,6 +211,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn quiescence_serializes_camel_case() {
         let wrapped = prime_agent_meta(&PrimeAgentSessionMeta {

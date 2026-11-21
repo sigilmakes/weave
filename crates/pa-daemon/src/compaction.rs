@@ -454,6 +454,7 @@ fn compaction_end_event(outcome: &CompactionOutcome, custom_instructions: Option
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn compaction_result_value_mirrors_the_ts_datakeys() {
         let result = pa_core::session_engine::compaction_exec::CompactionResult {
@@ -507,6 +508,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn event_shapes_match_ts() {
         let run = crate::engine::CompactionRun {
@@ -600,6 +602,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn interrupted_disclosure_is_the_auto_abort_row_stamped_with_the_declaration() {
         let disclosure = interrupted_compaction_disclosure(&json!({

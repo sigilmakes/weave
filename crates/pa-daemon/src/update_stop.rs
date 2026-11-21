@@ -190,6 +190,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn stopped_and_refused_verdicts_carry_the_spec_budgets() {
         let fake = Arc::new(FakeWorkers {
             acks: Mutex::new(vec![true, true, false]),
@@ -227,6 +228,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn no_ack_means_no_kill_and_the_verdict_names_the_worker() {
         // The spec's slice-3 verifier: a worker that never acks is Refused
         // (the session keeps running — nothing signals or kills).
@@ -247,6 +249,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ts_worker_request_timeout_parity() {
         // TS `UPDATE_RESTART_WORKER_REQUEST_TIMEOUT_MS = 90_000`.

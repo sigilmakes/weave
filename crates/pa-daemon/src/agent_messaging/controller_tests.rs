@@ -163,6 +163,7 @@ fn input() -> AgentMessageSendInput {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn family_reads_siblings_from_the_supervisor_roster() {
     let dir = tempfile::TempDir::new().unwrap();
     let socket = dir.path().join("sup.sock");
@@ -187,6 +188,7 @@ async fn family_reads_siblings_from_the_supervisor_roster() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn family_labels_children_and_parent_from_the_registry() {
     let dir = tempfile::TempDir::new().unwrap();
     let socket = dir.path().join("sup.sock");
@@ -247,6 +249,7 @@ async fn family_labels_children_and_parent_from_the_registry() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn family_resolves_the_parent_by_session_id() {
     let dir = tempfile::TempDir::new().unwrap();
     let socket = dir.path().join("sup.sock");
@@ -276,6 +279,7 @@ async fn family_resolves_the_parent_by_session_id() {
 /// members keyed by their durable session id (the wake-resolvable
 /// selector), the spawn-time live id kept as an alias.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn family_keeps_off_roster_children_addressable() {
     let dir = tempfile::TempDir::new().unwrap();
     let socket = dir.path().join("sup.sock");
@@ -307,6 +311,7 @@ async fn family_keeps_off_roster_children_addressable() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn refused_ticket_falls_back_to_the_supervisor_route() {
     let dir = tempfile::TempDir::new().unwrap();
     let socket = dir.path().join("sup.sock");
@@ -328,6 +333,7 @@ async fn refused_ticket_falls_back_to_the_supervisor_route() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn self_target_is_refused() {
     let controller = controller(std::path::PathBuf::from("/nonexistent.sock"), None);
     let error = controller
@@ -349,6 +355,7 @@ async fn self_target_is_refused() {
 /// worker purpose, then `worker_deliver_message` carrying the TS
 /// sender identity block, and the receipt maps onto the kernel shape.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn direct_ticket_delivers_to_the_target_worker_socket() {
     let dir = tempfile::TempDir::new().unwrap();
     let worker_socket = dir.path().join("worker.sock");
@@ -478,6 +485,7 @@ async fn direct_ticket_delivers_to_the_target_worker_socket() {
     assert_eq!(delivery["sender"]["clientId"], "agent");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn same_session_file_resolves_the_storage_root_alias() {
     assert!(same_session_file(
@@ -500,6 +508,7 @@ fn same_session_file_resolves_the_storage_root_alias() {
     ));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn summaries_label_the_nuclear_family_by_durable_edges() {
     let identity = FamilyIdentity {
@@ -568,6 +577,7 @@ fn summaries_label_the_nuclear_family_by_durable_edges() {
         .any(|s| s.active_session_id.as_deref() == Some("root555")));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn summaries_bind_a_child_one_level_down_and_leave_a_same_depth_fork_out() {
     let parent = FamilyIdentity {
@@ -645,6 +655,7 @@ fn summaries_bind_a_child_one_level_down_and_leave_a_same_depth_fork_out() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn summaries_treat_a_root_fork_as_a_root() {
     let parent = FamilyIdentity {
@@ -731,6 +742,7 @@ fn summaries_treat_a_root_fork_as_a_root() {
 
 /// TS #2493: observe rows carry the typed family status (the busy verdict) plus the
 /// separate live activity axis — a quiet row is `idle`, never the pre-fix `inactive`.
+#[pa_test_scratch::pa_test]
 #[test]
 fn summaries_carry_the_typed_status_and_activity() {
     let identity = FamilyIdentity {
@@ -805,6 +817,7 @@ fn summaries_carry_the_typed_status_and_activity() {
     assert_eq!(passivated.activity, None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn summaries_label_root_siblings_and_never_foreign_children() {
     let identity = FamilyIdentity {
@@ -841,6 +854,7 @@ fn summaries_label_root_siblings_and_never_foreign_children() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn family_resolves_a_moved_parent_by_the_peers_roster_alias() {
     let dir = tempfile::TempDir::new().unwrap();
     let socket = dir.path().join("sup.sock");
@@ -869,6 +883,7 @@ async fn family_resolves_a_moved_parent_by_the_peers_roster_alias() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn family_joins_a_replaced_child_by_its_durable_ids() {
     let dir = tempfile::TempDir::new().unwrap();
     let socket = dir.path().join("sup.sock");
@@ -905,6 +920,7 @@ async fn family_joins_a_replaced_child_by_its_durable_ids() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn family_resolves_a_moved_parent_by_the_session_file_alias() {
     let dir = tempfile::TempDir::new().unwrap();
     let socket = dir.path().join("sup.sock");

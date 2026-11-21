@@ -7,6 +7,7 @@ use super::*;
 /// alongside the headroom (the combined input+output ceiling).
 const FAUX_REQUEST_BUDGET: u64 = 16_384;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn no_retained_boundary_native_archive_is_acked_and_cold_restored_by_the_real_owner() {
     use pa_types::session::FileEntry;
@@ -306,6 +307,7 @@ fn no_retained_boundary_native_archive_is_acked_and_cold_restored_by_the_real_ow
 /// The automatic threshold compaction at the turn boundary. The faux
 /// provider estimates usage from the serialized context, so the headroom
 /// sits halfway between a baseline turn and the baseline plus the big prompt.
+#[pa_test_scratch::pa_test]
 #[test]
 fn threshold_crossing_auto_compacts_with_the_event_pair() {
     let _faux = FAUX_TEST_LOCK
@@ -417,6 +419,7 @@ fn threshold_crossing_auto_compacts_with_the_event_pair() {
 /// fresh resolution drifts mid-session (R8). The settings default changes
 /// under the built session, so `resolve_model` lands on a dead provider —
 /// but the threshold arm follows `session_model`.
+#[pa_test_scratch::pa_test]
 #[test]
 fn threshold_compaction_stays_on_the_session_provider_after_a_resolution_drift() {
     let _faux = FAUX_TEST_LOCK
@@ -599,6 +602,7 @@ fn threshold_compaction_stays_on_the_session_provider_after_a_resolution_drift()
     ));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn retire_clears_the_provider_target_for_the_replacement_build() {
     let _faux = FAUX_TEST_LOCK
@@ -744,6 +748,7 @@ fn outcome_row_and_end_event(
     (row_index, event)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn threshold_skip_records_the_durable_outcome_row() {
     let _faux = FAUX_TEST_LOCK
@@ -815,6 +820,7 @@ fn threshold_skip_records_the_durable_outcome_row() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn requested_compaction_skip_records_the_durable_outcome_row() {
     let _faux = FAUX_TEST_LOCK
@@ -867,6 +873,7 @@ fn requested_compaction_skip_records_the_durable_outcome_row() {
     assert!(outcome_row_in_live_context(&engine));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn threshold_compaction_aborted_mid_run_records_the_cancelled_outcome() {
     let _faux = FAUX_TEST_LOCK
@@ -945,6 +952,7 @@ fn threshold_compaction_aborted_mid_run_records_the_cancelled_outcome() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn requested_compaction_aborted_mid_run_records_the_cancelled_outcome() {
     let _faux = FAUX_TEST_LOCK
@@ -1024,6 +1032,7 @@ fn requested_compaction_aborted_mid_run_records_the_cancelled_outcome() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn threshold_below_the_headroom_stays_silent() {
     let _faux = FAUX_TEST_LOCK
@@ -1088,6 +1097,7 @@ fn compaction_events(events: &[EngineEvent]) -> Vec<serde_json::Value> {
         .collect()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn compact_session_command_emits_the_ts_event_pair_on_a_skip() {
     let (_engine, events) = run_prompts(
@@ -1121,6 +1131,7 @@ fn compact_session_command_emits_the_ts_event_pair_on_a_skip() {
     assert_eq!(events.last(), Some(&EngineEvent::Done(Ok(()))));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn compact_session_command_emits_the_result_on_success() {
     // Two big turns (~12k tokens each) push the history past the
@@ -1185,6 +1196,7 @@ fn compact_session_command_emits_the_result_on_success() {
     assert_eq!(rows[0]["customType"], "session_slash_command");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn threshold_crossing_inside_one_run_compacts_before_the_next_model_turn() {
     let _faux = FAUX_TEST_LOCK
@@ -1228,6 +1240,7 @@ fn threshold_crossing_inside_one_run_compacts_before_the_next_model_turn() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn failed_mid_run_compaction_resumes_without_retrying_each_tool_round() {
     let _faux = FAUX_TEST_LOCK
@@ -1284,6 +1297,7 @@ fn failed_mid_run_compaction_resumes_without_retrying_each_tool_round() {
 /// machinery armed: the suppression is reserved for a summary attempt
 /// that failed to commit (cursor: "Recheck mismatch disables further
 /// compaction").
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_not_due_recheck_keeps_threshold_checks_armed() {
     use crate::auto_compaction::AutoCompactionRun;
@@ -1301,6 +1315,7 @@ fn a_not_due_recheck_keeps_threshold_checks_armed() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn low_custom_percentage_compacts_real_history_once_and_then_makes_progress() {
     let _faux = FAUX_TEST_LOCK

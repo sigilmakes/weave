@@ -985,6 +985,7 @@ mod tombstone_usage_tests {
 
     /// The deleted-descendant bucket still bills the parent after the
     /// transcript is gone (the Rust-side instance of TS #2506's Macroscope race).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn saved_session_delete_captures_usage_before_the_unlink() {
         let root = temp_dir("capture");
@@ -1031,6 +1032,7 @@ mod tombstone_usage_tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn top_level_deletes_never_capture() {
         let root = temp_dir("top-level");
@@ -1053,6 +1055,7 @@ mod tombstone_usage_tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn symlink_delete_tombstones_the_edge_keyed_at_the_target() {
         let root = temp_dir("symlink-del");
@@ -1101,6 +1104,7 @@ mod tombstone_usage_tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_non_regular_session_path_captures_nothing() {
         let root = tempfile::Builder::new()

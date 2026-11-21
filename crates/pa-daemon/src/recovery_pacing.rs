@@ -43,6 +43,7 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn bounded_fanout_caps_concurrency_and_runs_every_job() {
         let in_flight = std::sync::Arc::new(AtomicUsize::new(0));
         let max_seen = std::sync::Arc::new(AtomicUsize::new(0));
@@ -70,6 +71,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn bounded_fanout_survives_a_panic_in_one_job() {
         let ran = std::sync::Arc::new(AtomicUsize::new(0));
         let jobs: Vec<_> = (0..4)

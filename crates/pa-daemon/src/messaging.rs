@@ -486,6 +486,7 @@ mod tests {
         DaemonWorkerDescriptor, DaemonWorkerLifecycle, DurableDaemonCreateCommand,
     };
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn sender_endpoint_carries_the_durable_parent_edge() {
         let sender = sender_endpoint_from_summary(
@@ -580,6 +581,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unknown_target_answers_with_the_ts_error() {
         let supervisor = supervisor();
         let response = supervisor
@@ -595,6 +597,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unknown_source_fails_like_the_ts_source_lookup() {
         let supervisor = supervisor();
         supervisor.registry.insert(resident("target-1")).await;
@@ -609,6 +612,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn self_target_is_refused() {
         let supervisor = supervisor();
         supervisor.registry.insert(resident("solo-1")).await;
@@ -623,6 +627,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn ambiguous_saved_selector_carries_the_catalog_error() {
         let supervisor = supervisor();
         let sessions = crate::paths::sessions_dir(&supervisor.options.agent_dir).unwrap();
@@ -643,6 +648,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ledger_edges_match_by_name_child_id_and_session_id() {
         let edge = crate::rlm_ledger::RlmLedgerEdge {
@@ -662,6 +668,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn delivery_routes_worker_deliver_message_to_the_target() {
         let supervisor = supervisor();
         supervisor.registry.insert(resident("target-1")).await;

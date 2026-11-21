@@ -96,6 +96,7 @@ pub fn notification(method: &str, params: &Value) -> Value {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_request_notification_and_errors() {
         let request =
@@ -125,6 +126,7 @@ mod tests {
         assert_eq!(invalid["error"]["code"], INVALID_REQUEST);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn response_shapes() {
         assert_eq!(

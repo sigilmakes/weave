@@ -348,6 +348,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn age_rule_archives_at_and_past_the_boundary() {
         let now = SystemTime::now();
@@ -362,6 +363,7 @@ mod tests {
         assert_eq!(ids, vec!["old", "edge"]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn age_rule_off_archives_nothing() {
         let now = SystemTime::now();
@@ -370,6 +372,7 @@ mod tests {
         assert!(doomed.is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn count_rule_keeps_the_newest_cap_and_spares_protected() {
         let now = SystemTime::now();
@@ -397,6 +400,7 @@ mod tests {
         assert_eq!(ids, vec!["c"]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn count_rule_under_the_cap_archives_nothing() {
         let now = SystemTime::now();
@@ -408,6 +412,7 @@ mod tests {
         assert!(doomed.is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn both_rules_union_without_duplicates() {
         let now = SystemTime::now();
@@ -423,6 +428,7 @@ mod tests {
         assert_eq!(ids, vec!["old", "b"]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn sweep_moves_doomed_sessions_and_keeps_the_rest() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -452,6 +458,7 @@ mod tests {
         assert!(!old.is_file(), "aged session left the sessions dir");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn sweep_with_both_rules_off_is_a_noop() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -472,6 +479,7 @@ mod tests {
         assert!(old.is_file());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn restore_round_trips_an_archived_session() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -490,6 +498,7 @@ mod tests {
         assert!(restore_session(dir.path(), &archive, &sessions, "missing").is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_destination_created_after_the_precheck_is_never_replaced() {
         let dir = tempfile::tempdir().unwrap();

@@ -89,6 +89,7 @@ fn quota_failure_message(
 
 /// A park record must report a failed write through the installed owner sink.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_failed_park_entry_write_propagates_to_the_caller() {
     let dir = tempfile::TempDir::new().unwrap();
     let engine = park_engine(dir.path()).await;
@@ -121,6 +122,7 @@ async fn a_failed_park_entry_write_propagates_to_the_caller() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn quota_failure_beyond_cap_parks_with_a_durable_wake() {
     let dir = tempfile::TempDir::new().unwrap();
     let engine = park_engine(dir.path()).await;
@@ -190,6 +192,7 @@ async fn quota_failure_beyond_cap_parks_with_a_durable_wake() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn repeat_failure_while_parked_keeps_the_scheduled_wake() {
     let dir = tempfile::TempDir::new().unwrap();
     let engine = park_engine(dir.path()).await;
@@ -232,6 +235,7 @@ async fn repeat_failure_while_parked_keeps_the_scheduled_wake() {
 
 /// Non-quota failures never park; a quota failure without a reported reset keeps the abort.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn non_quota_and_no_reset_failures_do_not_park() {
     let dir = tempfile::TempDir::new().unwrap();
     let engine = park_engine(dir.path()).await;
@@ -249,6 +253,7 @@ async fn non_quota_and_no_reset_failures_do_not_park() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn spent_park_budget_clears_the_stale_park() {
     let dir = tempfile::TempDir::new().unwrap();
     let engine = park_engine(dir.path()).await;
@@ -279,6 +284,7 @@ async fn spent_park_budget_clears_the_stale_park() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn consumed_wake_without_reset_re_arms_bounded() {
     let dir = tempfile::TempDir::new().unwrap();
     let engine = park_engine(dir.path()).await;
@@ -334,6 +340,7 @@ async fn consumed_wake_without_reset_re_arms_bounded() {
 /// The replacement teardown ends the retired session's park with it,
 /// so an unparked replacement is never reported quota-parked.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn retire_session_runtime_clears_the_live_park() {
     let dir = tempfile::TempDir::new().unwrap();
     let engine = park_engine(dir.path()).await;
@@ -353,6 +360,7 @@ async fn retire_session_runtime_clears_the_live_park() {
 /// A parked session that completes a model call resumes; an early success
 /// queues the marker.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn early_resume_clears_the_park_and_cancels_the_wake() {
     let dir = tempfile::TempDir::new().unwrap();
     let engine = park_engine(dir.path()).await;

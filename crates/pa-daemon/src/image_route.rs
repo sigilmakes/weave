@@ -374,6 +374,7 @@ mod tests {
         }]
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn image_route_resolves_the_configured_image_model() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -393,6 +394,7 @@ mod tests {
         assert!(none.is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn image_route_refusals_name_the_setting() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -438,6 +440,7 @@ mod tests {
     /// The end-to-end routed episode: the settled assistant row tags the
     /// image model, and the settle restores the session target (TS: the
     /// next dispatch re-evaluates the routing).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn image_turn_serves_on_the_image_model_and_restores() {
         let _faux = FAUX_TEST_LOCK
@@ -523,6 +526,7 @@ mod tests {
         registration.unregister();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn image_turn_without_image_model_fails_with_the_refusal() {
         let _faux = FAUX_TEST_LOCK

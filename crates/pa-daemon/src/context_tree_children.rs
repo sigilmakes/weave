@@ -327,6 +327,7 @@ mod tests {
         child_dir
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn disk_children_carry_usage_label_status_and_model() {
         let root = dir();
@@ -382,6 +383,7 @@ mod tests {
     /// A subagent's node attributes its spend to ITS model: the by-model bucket
     /// subtracts the grandchild's attribution exactly like `ownUsage`
     /// ($0.065 = $0.088 aggregate - $0.023 grandchild).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn disk_child_attributes_its_own_spend_to_its_model() {
         let root = dir();
@@ -507,6 +509,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn walk_lists_sub_dirs_and_skips_ids() {
         let root = dir();
@@ -538,6 +541,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn grandchildren_load_from_the_childs_sibling_tree() {
         let root = dir();
@@ -571,6 +575,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn deleted_grandchildren_stay_hidden() {
         let root = dir();
@@ -612,6 +617,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ghost_gapped_child_files_still_report_usage() {
         let root = dir();
@@ -645,6 +651,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn session_artifacts_dir_follows_the_agent_dir() {
         assert_eq!(

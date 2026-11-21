@@ -231,6 +231,7 @@ fn unreadable_compaction_reason(rest: &pa_types::JsonMap) -> String {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn admitted_terminal_rows_persist_during_shutdown_until_execution_lock_release() {
         let dir = tempfile::tempdir().unwrap();
@@ -294,6 +295,7 @@ mod tests {
         assert!(SessionFile::open(&path).unwrap().entry("late").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_unreadable_compaction_row_reports_the_session_and_reason_without_touching_the_file() {
         let dir = tempfile::tempdir().unwrap();

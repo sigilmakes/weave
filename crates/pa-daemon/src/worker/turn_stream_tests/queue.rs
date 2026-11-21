@@ -4,6 +4,7 @@
 use super::*;
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn suspended_runner_parks_a_queued_item_until_resumed() {
     let engine = ScriptedEngine::default();
     let runner = burst_runner(Arc::new(engine));
@@ -144,6 +145,7 @@ fn delivered_rows(events: &[Value]) -> Vec<(String, String)> {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn steering_mode_all_batches_the_queued_prefix_into_one_turn() {
     let engine: Arc<dyn SessionEngine> = Arc::new(
         ScriptedEngine::from_value(&json!({ "responses": ["batched reply"] })).unwrap_or_default(),
@@ -191,6 +193,7 @@ async fn steering_mode_all_batches_the_queued_prefix_into_one_turn() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_default_mode_co_delivers_the_queued_steering_prefix() {
     let engine: Arc<dyn SessionEngine> = Arc::new(
         ScriptedEngine::from_value(&json!({ "responses": ["batched reply"] })).unwrap_or_default(),
@@ -236,6 +239,7 @@ async fn the_default_mode_co_delivers_the_queued_steering_prefix() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn one_at_a_time_delivers_each_queued_steer_as_its_own_turn() {
     // The burst harness has no session store, so the scripted engine serves
     // its first response for EVERY turn (prompt_index stays 0): the turns
@@ -280,6 +284,7 @@ async fn one_at_a_time_delivers_each_queued_steer_as_its_own_turn() {
 
 /// An item queued after the arm stays out of the batch.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn forced_batch_delivers_the_armed_prefix_as_one_turn() {
     let engine: Arc<dyn SessionEngine> = Arc::new(
         ScriptedEngine::from_value(&json!({ "responses": ["batch reply"] })).unwrap_or_default(),
@@ -330,6 +335,7 @@ async fn forced_batch_delivers_the_armed_prefix_as_one_turn() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn mode_all_never_batches_across_policy_classes() {
     let engine: Arc<dyn SessionEngine> = Arc::new(
         ScriptedEngine::from_value(&json!({ "responses": ["lane reply"] })).unwrap_or_default(),
@@ -370,6 +376,7 @@ async fn mode_all_never_batches_across_policy_classes() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn follow_up_mode_all_batches_the_follow_up_lane() {
     let engine: Arc<dyn SessionEngine> = Arc::new(
         ScriptedEngine::from_value(&json!({ "responses": ["follow-up batch reply"] }))
@@ -411,6 +418,7 @@ async fn follow_up_mode_all_batches_the_follow_up_lane() {
 
 /// Kevin's acceptance case: ALL visible steers send together; the follow-up runs once idle.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 async fn abort_and_send_queued_delivers_the_steering_batch_then_the_follow_ups() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
@@ -602,6 +610,7 @@ async fn abort_and_send_queued_delivers_the_steering_batch_then_the_follow_ups()
 
 /// Answers immediately while both the aborted turn and the follow-up's reply are held.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 async fn abort_and_send_queued_acks_before_the_follow_up_delivery() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
@@ -847,6 +856,7 @@ impl SessionEngine for NoteWitnessEngine {
 /// The queued async bash completion's delivery keeps the note its cut run
 /// accepted mid-flight; the note clears only at the run's true end.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_async_completion_notice_delivery_keeps_the_live_note() {
     let engine = Arc::new(NoteWitnessEngine::default());
     let runner = burst_runner(engine.clone());
@@ -890,6 +900,7 @@ async fn the_async_completion_notice_delivery_keeps_the_live_note() {
 
 /// An ordinary queued follow-up retains the note until its own final end, like steering.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn queued_follow_up_keeps_the_note_until_its_final_end() {
     let engine = Arc::new(NoteWitnessEngine::default());
     let runner = burst_runner(engine.clone());
@@ -924,6 +935,7 @@ async fn queued_follow_up_keeps_the_note_until_its_final_end() {
 /// `AgentEnd`'s queued-work decision must be reconsidered if the queue is withdrawn
 /// before the final idle snapshot.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn withdrawing_follow_up_after_agent_end_clears_the_note_at_settle() {
     let engine = Arc::new(NoteWitnessEngine::default());
     let runner = burst_runner(engine.clone());
@@ -951,6 +963,7 @@ async fn withdrawing_follow_up_after_agent_end_clears_the_note_at_settle() {
 /// Clearing queued work while a run is active preserves its note, but clearing the
 /// last queued work after the run settled ends the retained note's lifetime.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn clearing_an_idle_queue_drops_the_retained_note() {
     let dir = tempfile::tempdir().unwrap();
     let engine = Arc::new(NoteWitnessEngine::default());
@@ -1096,6 +1109,7 @@ impl SessionEngine for AbortSwallowedEngine {
 /// still settles idle at the same settle: the note — the roster
 /// summary's `progressNote` source — must not survive that idle settle.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_aborted_run_clears_the_note_at_its_idle_settle() {
     let engine = Arc::new(AbortSwallowedEngine::default());
     let runner = burst_runner(engine.clone());
@@ -1130,6 +1144,7 @@ async fn an_aborted_run_clears_the_note_at_its_idle_settle() {
 /// core-then-note snapshot as `SummaryInputs`. Idle must never become
 /// observable with the stopped run's note still present.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[pa_test_scratch::pa_test]
 async fn an_aborted_run_never_exposes_an_idle_summary_with_its_old_note() {
     let (release, receiver) = std::sync::mpsc::channel();
     let gate = Arc::new(NoteClearGate {

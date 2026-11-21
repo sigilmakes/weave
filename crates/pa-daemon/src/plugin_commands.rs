@@ -400,6 +400,7 @@ return {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn worker_discovery_and_invocation_share_the_real_lua_generation() {
         let fixture = Fixture::new().await;
         let catalog = fixture.catalog().await;
@@ -441,6 +442,7 @@ return {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn reload_retires_targets_and_disable_removes_inventory_without_history() {
         let fixture = Fixture::new().await;
         let old = fixture
@@ -513,6 +515,7 @@ return {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn worker_rejects_busy_streaming_and_unknown_without_model_fallback() {
         let fixture = Fixture::new().await;
         let before = fixture.rows();
@@ -544,6 +547,7 @@ return {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn deferred_job_publication_fences_sessions_and_surfaces_persistence_errors() {
         let fixture = Fixture::new().await;
         let session = fixture
@@ -610,6 +614,7 @@ return {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn deferred_job_success_and_failure_reach_custom_message_transport_once() {
         for mode in ["generic", "failed", "projected", "malformed"] {
             let fixture = Fixture::new().await;
@@ -734,6 +739,7 @@ end}}}
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn failed_reload_keeps_the_last_good_inventory_and_manager_reports_diagnostic() {
         let fixture = Fixture::new().await;
         let before = fixture.catalog().await;

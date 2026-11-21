@@ -31,6 +31,7 @@ async fn snapshot_after_create() -> (Arc<Worker>, DaemonResponse) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn queue_action_rows_serve_the_labeled_preview() {
     let (worker, _) = snapshot_after_create().await;
     {
@@ -89,6 +90,7 @@ async fn queue_action_rows_serve_the_labeled_preview() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn update_snapshot_reports_the_session_and_flushes_the_journal() {
     let (worker, response) = snapshot_after_create().await;
     assert!(response.success, "snapshot must succeed: {response:?}");
@@ -112,6 +114,7 @@ async fn update_snapshot_reports_the_session_and_flushes_the_journal() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn update_snapshot_failure_preserves_live_and_recovery_state() {
     let (worker, _) = snapshot_after_create().await;
     {
@@ -183,6 +186,7 @@ async fn update_snapshot_failure_preserves_live_and_recovery_state() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn update_snapshot_requires_a_recovery_journal() {
     let (worker, _) = snapshot_after_create().await;
     worker.recovery.lock().unwrap().take();
@@ -195,6 +199,7 @@ async fn update_snapshot_requires_a_recovery_journal() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn update_snapshot_reflects_queued_work() {
     let (worker, _) = snapshot_after_create().await;
     worker
@@ -247,6 +252,7 @@ fn queued_user_item(message: &str) -> QueuedItem {
 
 /// The rider flags exactly the injected rows (operator 2026-09-25), never a same-text user row.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_action_snapshot_flags_parked_child_status_notices() {
     let (worker, _) = snapshot_after_create().await;
     let notice_text =
@@ -298,6 +304,7 @@ async fn the_action_snapshot_flags_parked_child_status_notices() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_follow_up_notice_parks_with_typed_provenance() {
     let (worker, _) = snapshot_after_create().await;
     let content = "[child-exited: no-reply child:lane]\n\nLast assistant text: done".to_string();
@@ -362,6 +369,7 @@ async fn a_follow_up_notice_parks_with_typed_provenance() {
 
 /// The spoof matrix (the operator's anti-spoof mandate).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reserved_kind_spoofs_reject_and_lookalikes_park_unflagged() {
     let (worker, _) = snapshot_after_create().await;
     let content = "[child-exited: no-reply child:lane]".to_string();
@@ -452,6 +460,7 @@ async fn reserved_kind_spoofs_reject_and_lookalikes_park_unflagged() {
 }
 
 /// A notice-free projection keeps the TS wire shape (the field is skipped).
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_rider_serializes_only_when_a_notice_is_parked() {
     let empty = SessionActionSnapshot::default();
@@ -503,6 +512,7 @@ fn the_rider_serializes_only_when_a_notice_is_parked() {
 
 /// Operator directive 2026-09-28: internal prompts never render as individual queue rows.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn injected_continuations_mark_their_own_rider_only() {
     let (worker, _) = snapshot_after_create().await;
     let continuation = "[goal: continuation]\n\nKeep driving the goal.".to_string();
@@ -606,6 +616,7 @@ async fn injected_continuations_mark_their_own_rider_only() {
 
 /// The rider folds the row, never an omission: the browse affordance keeps the queue inspectable.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn injected_continuations_still_project_their_lane_text() {
     let (worker, _) = snapshot_after_create().await;
     {
@@ -639,6 +650,7 @@ async fn injected_continuations_still_project_their_lane_text() {
 
 /// Operator safeguard: journal restore must preserve the typed provenance.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn restored_lane_rows_keep_the_child_status_provenance() {
     let (worker, _) = snapshot_after_create().await;
     let content = "[child-exited: no-reply child:lane]\n\nLast assistant text: done".to_string();

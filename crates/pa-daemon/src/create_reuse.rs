@@ -390,6 +390,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_client_owned_create_names_the_live_binding_on_owner_conflicts() {
         let resident = resident_with(Some("daemon-tui:1"), "live-id");
         let conflict = client_owned_conflict(
@@ -407,6 +408,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_plain_create_never_conflicts_on_ownership() {
         let resident = resident_with(Some("daemon-tui:1"), "live-id");
         assert!(
@@ -417,6 +419,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_owning_clients_reopen_reuses() {
         let resident = resident_with(Some("daemon-tui:1"), "live-id");
         assert!(client_owned_conflict(
@@ -430,6 +433,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_unowned_worker_is_reusable() {
         let resident = resident_with(None, "live-id");
         assert!(client_owned_conflict(
@@ -443,6 +447,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_unlaunched_registration_counts_as_dead() {
         let resident = resident_with(None, "live-id");
         assert!(!resident_process_alive(&resident).await);
@@ -476,6 +481,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_spawned_identity_keeps_a_live_holder_alive() {
         let pid = std::process::id();
         let start_id = crate::lease::get_process_start_id(pid);
@@ -484,6 +490,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_recycled_pid_counts_as_dead() {
         let pid = std::process::id();
         let resident = resident_with_identity(u64::from(pid), Some("1/1"));
@@ -491,6 +498,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_unverifiable_identity_counts_as_alive() {
         let pid = std::process::id();
         let resident = resident_with_identity(u64::from(pid), None);

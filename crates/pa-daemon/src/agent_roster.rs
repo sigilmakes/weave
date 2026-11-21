@@ -476,6 +476,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn write_classifies_and_indexes() {
         let roster = locked();
@@ -493,6 +494,7 @@ mod tests {
         assert_eq!(entry.status, AgentRosterStatus::Running);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn session_file_ownership_converges() {
         let roster = locked();
@@ -512,6 +514,7 @@ mod tests {
         assert_eq!(roster.entries().len(), 1);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn delete_is_idempotent() {
         let roster = locked();
@@ -522,6 +525,7 @@ mod tests {
         roster.delete("s1");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn queued_children_classify_running_with_label() {
         let roster = locked();
@@ -533,6 +537,7 @@ mod tests {
         assert_eq!(entry.status_label.as_deref(), Some("queued"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn seeded_rows_carry_the_marker_and_never_double_key() {
         let roster = locked();
@@ -571,6 +576,7 @@ mod tests {
         assert_eq!(hydrated.summary["cwd"], "/tmp/project");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_entries_filter_by_worker() {
         let roster = locked();
@@ -582,6 +588,7 @@ mod tests {
         assert_eq!(w1[0].agent_id, "s1");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn delta_sequence_gate_drops_stale_snapshots() {
         let roster = locked();
@@ -610,6 +617,7 @@ mod tests {
         assert!(!roster.accept_delta_sequence("w1", "i2", 1));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn pull_gate_orders_authoritative_writes_by_the_snapshot_counter() {
         let roster = locked();
@@ -648,6 +656,7 @@ mod tests {
         assert!(roster.accept_delta_sequence("w1", "i2", 4));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn replacement_watermarks_stay_bounded() {
         let roster = locked();
@@ -669,6 +678,7 @@ mod tests {
     /// The bucket folds' ordering rule (the delta watermark's twin): a
     /// fold that started earlier never overwrites a bucket applied by a
     /// newer one, whatever order the two folds FINISH in.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_older_bucket_fold_never_overwrites_a_newer_one() {
         let roster = locked();

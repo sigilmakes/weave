@@ -138,6 +138,7 @@ async fn exit_orphaned(worker: &Worker, absent_since: tokio::time::Instant) {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn lost_exit_window_parses_the_ts_contract() {
         assert_eq!(lost_exit_ms_from(None), DEFAULT_LOST_EXIT_MS);

@@ -71,6 +71,7 @@ fn fixture(dir: &Path, id: &str) -> (SessionLog, PathBuf) {
     (log, dir.join(session_file_name(id)))
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn log_readers_list_headers_and_resume_a_sidecar_from_real_rows() {
     let dir = tempfile::tempdir().unwrap();
@@ -98,6 +99,7 @@ fn log_readers_list_headers_and_resume_a_sidecar_from_real_rows() {
     assert_eq!(read_session_info(&path), Some(resumed));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn log_reader_ignores_a_torn_append_without_mutating_or_locking() {
     let dir = tempfile::tempdir().unwrap();
@@ -118,6 +120,7 @@ fn log_reader_ignores_a_torn_append_without_mutating_or_locking() {
     assert_eq!(fs::read(&path).unwrap(), bytes);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn log_reader_cannot_tell_an_edited_bare_row_from_an_original_one() {
     let dir = tempfile::tempdir().unwrap();
@@ -135,6 +138,7 @@ fn log_reader_cannot_tell_an_edited_bare_row_from_an_original_one() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn log_reader_refuses_a_malformed_line_and_leaves_the_bytes() {
     let dir = tempfile::tempdir().unwrap();
@@ -147,6 +151,7 @@ fn log_reader_refuses_a_malformed_line_and_leaves_the_bytes() {
     assert_eq!(fs::read(&path).unwrap(), bytes, "no implicit repair");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn log_reader_folds_a_legacy_bare_log_without_repair() {
     let dir = tempfile::tempdir().unwrap();
@@ -160,6 +165,7 @@ fn log_reader_folds_a_legacy_bare_log_without_repair() {
     assert_eq!(fs::read(&path).unwrap(), header.as_bytes());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn log_archive_round_trip_preserves_bytes_and_catalog_identity() {
     let dir = tempfile::tempdir().unwrap();
@@ -196,6 +202,7 @@ fn log_archive_round_trip_preserves_bytes_and_catalog_identity() {
     assert_eq!(list_sessions(&sessions), vec![resolved]);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn log_archive_does_not_move_a_locked_or_protected_session() {
     let dir = tempfile::tempdir().unwrap();
@@ -237,6 +244,7 @@ fn log_archive_does_not_move_a_locked_or_protected_session() {
     assert!(path.is_file());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "subprocess execution-lock holder for the archive regression"]
 fn archive_execution_holder() {
@@ -249,6 +257,7 @@ fn archive_execution_holder() {
     std::io::stdin().read_line(&mut release).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn log_archive_spares_an_execution_owned_by_a_foreign_process() {
     use std::io::{BufRead, BufReader};
@@ -317,6 +326,7 @@ fn log_archive_spares_an_execution_owned_by_a_foreign_process() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn log_restore_refuses_a_held_source_or_live_target_execution_lock() {
     let dir = tempfile::tempdir().unwrap();

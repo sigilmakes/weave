@@ -15,6 +15,7 @@ use pa_types::daemon::agent_roster::AgentRosterStatus;
 /// the roster through the subscribe answer - the old per-switch
 /// reseed read the whole family here.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn subscribe_is_a_pure_in_memory_snapshot() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     register_root_worker(&supervisor, "w-root", &root_file).await;
@@ -68,6 +69,7 @@ async fn subscribe_is_a_pure_in_memory_snapshot() {
 /// match their last published forms, so the wire never re-ships an
 /// unchanged row.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_identical_rewrite_does_not_broadcast() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     register_root_worker(&supervisor, "w-root", &root_file).await;
@@ -97,6 +99,7 @@ async fn an_identical_rewrite_does_not_broadcast() {
 /// and the changed form becomes the new diff baseline (the guard
 /// compares against the last published form, not the first).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_changed_rewrite_broadcasts_and_resets_the_diff_baseline() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     register_root_worker(&supervisor, "w-root", &root_file).await;
@@ -136,6 +139,7 @@ async fn a_changed_rewrite_broadcasts_and_resets_the_diff_baseline() {
 /// its model, thinking level, and cwd, and drops only the
 /// live-runtime fields. One push carries the settled row.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stop_passivates_an_anchored_child_preserving_display_fields() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     register_root_worker(&supervisor, "w-root", &root_file).await;
@@ -181,6 +185,7 @@ async fn stop_passivates_an_anchored_child_preserving_display_fields() {
 /// ledger-seed hydrate writes and the agents view reads (the
 /// `thinking_level` e2e's post-stop assertion).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn passivation_normalizes_the_live_model_descriptor_to_the_durable_pair() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     register_root_worker(&supervisor, "w-root", &root_file).await;
@@ -217,6 +222,7 @@ async fn passivation_normalizes_the_live_model_descriptor_to_the_durable_pair() 
 /// exists for it), so its captured spend bills through the bucket
 /// on the parent's row - not through a row anywhere.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stop_carries_the_deleted_childs_spend_to_its_parent() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     let agent_dir = dir.join("agent");
@@ -336,6 +342,7 @@ async fn stop_carries_the_deleted_childs_spend_to_its_parent() {
 /// event, and the parent's roster row bills the deleted child's
 /// captured spend in the delete's own push.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_saved_delete_without_a_roster_row_bills_the_parent() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     let agent_dir = dir.join("agent");
@@ -455,6 +462,7 @@ async fn a_saved_delete_without_a_roster_row_bills_the_parent() {
 /// (TS keeps every stopped non-ephemeral row visible: the operator's
 /// rows-disappear report), surviving later stops' unowned sweeps.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stop_removes_unanchored_children_and_passivates_the_top_level_row() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     let agent_dir = dir.join("agent");
@@ -631,6 +639,7 @@ async fn stop_removes_unanchored_children_and_passivates_the_top_level_row() {
 /// root returns to the saved catalog alone, while another root's
 /// anchored seeded row keeps its display.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stop_prunes_seeded_rows_of_a_family_that_lost_its_root() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     let agent_dir = dir.join("agent");
@@ -721,6 +730,7 @@ async fn stop_prunes_seeded_rows_of_a_family_that_lost_its_root() {
 /// clean, so the agents view's first frame never dumps the dead
 /// family's rows as top-level entries.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stop_leaves_the_first_roster_snapshot_clean_behind_hundreds_of_seeded_rows() {
     let (dir, supervisor, root_file, _child_file) = roster_fixture().await;
     let agent_dir = dir.join("agent");
@@ -790,6 +800,7 @@ async fn stop_leaves_the_first_roster_snapshot_clean_behind_hundreds_of_seeded_r
 /// TS `passivatedWorkerRosterEntry` keeps the registration marks that
 // were true and strips the live-runtime fields, including the
 // heartbeat's own active flag.
+#[pa_test_scratch::pa_test]
 #[test]
 fn passivation_keeps_registration_marks_and_strips_live_fields() {
     let passivated = passivated_summary(json!({
@@ -848,6 +859,7 @@ fn passivation_keeps_registration_marks_and_strips_live_fields() {
 /// replaces the passivated row with the live one, so a resumed
 /// session never renders its stale passive row.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_reregistration_replaces_the_passive_row() {
     let (dir, supervisor, root_file, child_file) = roster_fixture().await;
     register_root_worker(&supervisor, "w-root", &root_file).await;

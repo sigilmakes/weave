@@ -164,6 +164,7 @@ mod tests {
     use crate::protocol::{response_line, response_success};
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn long_request_does_not_block_roster_or_message_on_the_same_link() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("sup.sock");
@@ -225,6 +226,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unanswered_supervisor_hello_respects_request_deadline() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("sup.sock");
@@ -247,6 +249,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn link_round_trips_against_an_echo_server() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("sup.sock");

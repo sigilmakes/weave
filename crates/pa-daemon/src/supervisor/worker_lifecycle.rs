@@ -1167,6 +1167,7 @@ mod tests {
         pid
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn recovery_journal_retirement_requires_positive_owner_death_evidence() {
         for (alive, expected, current, gone) in [
@@ -1188,6 +1189,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_provably_gone_retire_removes_the_recovery_journal() {
         let dir = tempfile::tempdir().expect("temp dir");
         let supervisor = supervisor_in(dir.path());
@@ -1240,6 +1242,7 @@ mod tests {
         assert_eq!(std::fs::read(unknown_journal).unwrap(), retained);
     }
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_live_worker_keeps_its_orphan_journal() {
         let dir = tempfile::tempdir().expect("temp dir");
         let supervisor = supervisor_in(dir.path());

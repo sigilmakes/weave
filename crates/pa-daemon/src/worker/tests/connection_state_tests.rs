@@ -125,6 +125,7 @@ impl SessionEngine for SwitchingEngine {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn summary_retry_resolves_the_selection_that_owns_the_locked_core() {
     let (entered_tx, entered_rx) = std::sync::mpsc::channel();
     let (resume_tx, resume_rx) = std::sync::mpsc::channel();
@@ -179,6 +180,7 @@ async fn summary_retry_resolves_the_selection_that_owns_the_locked_core() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_attach_state_carries_the_stats_context_usage() {
     let dir = tempfile::tempdir().unwrap();
     let session_dir = dir.path().join("sessions");

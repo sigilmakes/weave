@@ -559,6 +559,7 @@ mod tests {
             .expect("background bash probe lock") = Some(probe);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn live_background_bash_holds_the_goal_continuation_until_it_settles() {
         let _faux = FAUX_TEST_LOCK
@@ -641,6 +642,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unresolved_goal_handoff_is_display_only_and_cannot_admit_continuations() {
         let _faux = FAUX_TEST_LOCK

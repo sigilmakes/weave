@@ -378,6 +378,7 @@ async fn release_the_gate_and_settle(gate: &GateHoldEngine, fired: tokio::task::
 /// below shares this fixture; without this proof a missing ask would be
 /// vacuous.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_unraced_fire_passes_the_gate_and_asks_the_supervisor_to_stop() {
     let probe = StopAskProbe::spawn();
     let gate = Arc::new(GateHoldEngine::new());
@@ -405,6 +406,7 @@ async fn the_unraced_fire_passes_the_gate_and_asks_the_supervisor_to_stop() {
 /// window): the post-await revalidation cancels the stop, and the racing
 /// client's hold survives intact (the stop would have disconnected it).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_client_attaching_at_the_gate_cancels_the_stop() {
     let probe = StopAskProbe::spawn();
     let gate = Arc::new(GateHoldEngine::new());
@@ -437,6 +439,7 @@ async fn a_client_attaching_at_the_gate_cancels_the_stop() {
 /// the stop cancels — the queued work lives only on the resident worker,
 /// so the graceful stop would have discarded it — and both rows survive.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn lane_work_parking_at_the_gate_cancels_the_stop() {
     let probe = StopAskProbe::spawn();
     let gate = Arc::new(GateHoldEngine::new());
@@ -485,6 +488,7 @@ async fn lane_work_parking_at_the_gate_cancels_the_stop() {
 /// (the round-7 window): the stop cancels — the shutdown would have
 /// cancelled the compaction mid-run.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_manual_compaction_starting_at_the_gate_cancels_the_stop() {
     let probe = StopAskProbe::spawn();
     let gate = Arc::new(GateHoldEngine::new());
@@ -505,6 +509,7 @@ async fn a_manual_compaction_starting_at_the_gate_cancels_the_stop() {
 /// lost. The `queued_input_suspended` arm stands for the suspension
 /// predicate set (the input-pause lease arm shares the same `||` term).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_input_suspension_engaging_at_the_gate_cancels_the_stop() {
     let probe = StopAskProbe::spawn();
     let gate = Arc::new(GateHoldEngine::new());
@@ -524,6 +529,7 @@ async fn an_input_suspension_engaging_at_the_gate_cancels_the_stop() {
 /// left the user's process running (the awaited-run bracket holds the same
 /// `isBashRunning` contribution the exclusive slot does).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_user_bash_admitted_at_the_gate_cancels_the_stop() {
     let probe = StopAskProbe::spawn();
     let gate = Arc::new(GateHoldEngine::new());
@@ -552,6 +558,7 @@ async fn a_user_bash_admitted_at_the_gate_cancels_the_stop() {
 /// `passivateSession` checks `shuttingDown` only before its fresh-snapshot
 /// await.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_shutdown_starting_at_the_gate_cancels_the_stop() {
     let probe = StopAskProbe::spawn();
     let gate = Arc::new(GateHoldEngine::new());
@@ -639,6 +646,7 @@ async fn wait_for_event(
 /// This pins the gate, not its order against the bash abort (see the
 /// module docs).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_shutdown_gate_refuses_a_bash_admitted_inside_the_stop() {
     let (worker, _dir) = interleave_worker().await;
     // The settle seam: a compaction in flight parks the graceful stop at
@@ -688,6 +696,7 @@ async fn the_shutdown_gate_refuses_a_bash_admitted_inside_the_stop() {
 /// pre-window interleave) is aborted by the stop — the settled run reports
 /// cancelled, so the worker's exit never leaves the user's process running.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_bash_admitted_before_the_gate_is_aborted_by_the_stop() {
     let (worker, _dir) = interleave_worker().await;
     let mut events = worker.events.subscribe();
@@ -730,6 +739,7 @@ async fn a_bash_admitted_before_the_gate_is_aborted_by_the_stop() {
 /// gate disabled forever. The retain now rides the registration's
 /// verdict).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_close_beats_the_late_attach_registration() {
     let (worker, _dir) = interleave_worker().await;
     // THE CLOSE: the attach guard's Drop ran first (the connection's EOF
@@ -780,6 +790,7 @@ async fn the_close_beats_the_late_attach_registration() {
 /// its core retain stands — its release rides the routed detach, so the
 /// token-gated verdict must not hold it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_routed_attach_without_a_token_keeps_the_core_retain() {
     let (worker, _dir) = interleave_worker().await;
     let response = worker
@@ -802,6 +813,7 @@ async fn a_routed_attach_without_a_token_keeps_the_core_retain() {
 /// close — the live connection's attach registers, and the close releases
 /// both the registry entry and the core hold.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_registration_beats_the_close_and_the_release_frees_the_hold() {
     let (worker, _dir) = interleave_worker().await;
     let response = worker
@@ -850,6 +862,7 @@ async fn the_registration_beats_the_close_and_the_release_frees_the_hold() {
 /// same connection re-registers, and the eventual close releases it (no
 /// leak either way).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_detach_is_not_final_the_reattach_registers_and_the_close_releases() {
     let (worker, _dir) = interleave_worker().await;
     let attach = worker
@@ -897,6 +910,7 @@ async fn the_detach_is_not_final_the_reattach_registers_and_the_close_releases()
 /// The shared-client-id reconnect shape (the round-6/9 sibling holds): the
 /// id leaves the core only when the LAST live connection holding it goes.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_shared_client_id_survives_one_connection_close_while_the_other_holds() {
     let (worker, _dir) = interleave_worker().await;
     let first = worker
@@ -935,6 +949,7 @@ async fn a_shared_client_id_survives_one_connection_close_while_the_other_holds(
 /// and the clear runs BEFORE the insert, so the overflowing release still
 /// rejects its own late registration.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_released_token_set_caps_at_8192() {
     let (worker, _dir) = interleave_worker().await;
     for index in 0..8193 {

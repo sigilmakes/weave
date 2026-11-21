@@ -4,6 +4,7 @@ use super::*;
 
 /// The `done` waiter fires after the idle flip and queue projection, never pre-idle.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_waiting_prompt_resolves_only_after_the_turn_settles() {
     let engine: Arc<dyn SessionEngine> = Arc::new(
         ScriptedEngine::from_value(&json!({ "responses": ["settled reply"] })).unwrap_or_default(),
@@ -96,6 +97,7 @@ fn live_feed_runner(engine: Arc<dyn SessionEngine>, socket: std::path::PathBuf) 
 /// tool executes and end idle once the turn settles.
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn roster_feed_publishes_live_tool_activity() {
     let dir = tempfile::TempDir::new().unwrap();
     let socket = dir.path().join("sup.sock");

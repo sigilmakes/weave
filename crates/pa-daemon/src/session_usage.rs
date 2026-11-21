@@ -493,6 +493,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn duplicate_attribution_ids_subtract_once_and_preserve_latest_aggregate() {
         let assistant = message(
@@ -531,6 +532,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn orphan_ids_are_not_consumed_and_legacy_attributions_remain_distinct() {
         let mut orphan = attribution("a", &usage(20, 2, 2.0), &usage(120, 12, 10.0));
@@ -567,6 +569,7 @@ mod tests {
 
     /// The latest aggregate replaces the raw block, every child block
     /// accumulates, and the summary subtracts the child spend (no double count).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn latest_aggregate_replaces_raw_and_child_usage_accumulates() {
         let summary = scan_summary(&[
@@ -599,6 +602,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn attribution_without_a_present_target_folds_nothing() {
         let assistant = message(
@@ -634,6 +638,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn summarization_usage_is_added() {
         let summary = scan_summary(&[
@@ -670,6 +675,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn no_billable_work_is_none() {
         assert_eq!(scan_summary(&[]), None);
@@ -690,6 +696,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn child_attribution_drift_clamps_at_zero() {
         let summary = scan_summary(&[
@@ -709,6 +716,7 @@ mod tests {
     }
 
     /// The map keeps first-insertion order so the cost sums stay bit-identical to the TS fold.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cost_sums_follow_insertion_order() {
         let line = |id: &str, cost: f64| {
@@ -729,6 +737,7 @@ mod tests {
 
     /// TS `JSON.parse` keeps the row (absent fields count as zero) — the wire shape is
     /// `{input, output, totalTokens}` without `cacheRead`/`cacheWrite`/`cost`.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn partial_usage_objects_keep_the_row() {
         let summary = scan_summary(&[
@@ -749,6 +758,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn overflowing_usage_saturates_never_panics() {
         let line = |id: &str| {
@@ -773,6 +783,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn read_own_usage_summary_scans_a_file() {
         use std::io::Write;
@@ -821,6 +832,7 @@ mod tests {
     /// `SAVED_USAGE_FIXTURE=<captured .jsonl> cargo test --ignored`. The devbox
     /// fixture pins the fold against the TS-computed summary: own spend only —
     /// the attributed child spend stays on the child rows.
+    #[pa_test_scratch::pa_test]
     #[test]
     #[ignore = "needs a captured session fixture (SAVED_USAGE_FIXTURE)"]
     fn captured_session_summary_matches_the_ts_fold() {

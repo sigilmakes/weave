@@ -260,6 +260,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn missing_path_prepares_as_a_no_op() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -268,6 +269,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_dangling_symlink_is_rejected_as_not_a_socket() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -278,6 +280,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn non_socket_file_at_the_path_is_refused_and_preserved() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -288,6 +291,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn live_listener_is_never_unlinked() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -312,6 +316,7 @@ mod tests {
     /// (macOS has no `/proc` and the fd probes would always read false).
     #[cfg(target_os = "linux")]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn dropping_the_listener_is_the_graceful_exit_close() {
         use std::io::Write;
         use std::os::fd::AsRawFd;
@@ -368,6 +373,7 @@ mod tests {
     /// the dead file the matching identity describes (the still-ours
     /// direction: a respawn does not wait out the stale-socket path).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn exit_cleanup_after_close_spares_a_live_successor_with_a_matching_identity() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -400,6 +406,7 @@ mod tests {
     /// backlog also refuses, so those platforms never reach this arm).
     #[cfg(target_os = "linux")]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn exit_cleanup_after_close_unlinks_the_dead_still_ours_file() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -415,6 +422,7 @@ mod tests {
     /// file; the next bind's stale-socket prepare clears it instead.
     #[cfg(not(target_os = "linux"))]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn exit_cleanup_off_linux_preserves_the_dead_file_until_the_next_bind() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -437,6 +445,7 @@ mod tests {
     /// inode can exactly match a poisoned bind-time identity capture.
     #[cfg(target_os = "linux")]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn exit_cleanup_preserves_a_backlogged_successor_with_a_matching_identity() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -482,6 +491,7 @@ mod tests {
 
     #[cfg(target_os = "linux")]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn exit_cleanup_unlinks_a_closed_listener_on_a_long_socket_path() {
         let dir = tempfile::TempDir::new().unwrap();
         let deep = dir.path().join("a".repeat(80)).join("b".repeat(80));
@@ -495,6 +505,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn stale_socket_file_is_removed_and_the_path_rebinds() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -508,6 +519,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unlink_refuses_a_live_listener_even_when_marked_stale() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -520,6 +532,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unlink_refuses_a_replaced_file_with_a_new_identity() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -539,6 +552,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unlink_is_a_no_op_when_the_file_is_already_gone() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -548,6 +562,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cleanup_waits_while_a_rival_startup_holds_the_lock() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");
@@ -573,6 +588,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cleanup_is_deferred_while_a_rival_holds_the_lock() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -590,6 +606,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_stale_cleanup_lock_of_a_crashed_holder_is_reclaimed() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("daemon.sock");

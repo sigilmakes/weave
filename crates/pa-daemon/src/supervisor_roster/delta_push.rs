@@ -89,6 +89,7 @@ fn flip_summary(dir: &Path, busy: bool) -> Value {
 /// has this race (its roster deltas ride one ordered supervisor
 /// client socket).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn worker_roster_delta_drops_stale_sequences() {
     fn summary(level: &str) -> Value {
         serde_json::json!({
@@ -369,6 +370,7 @@ fn delta_frame(worker_token: &str, summary: Value, removed: Vec<String>) -> Work
 /// push per mutation. A subscriber counts the pushes, so a duplicate
 /// is wire-visible.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn worker_roster_delta_pushes_one_update_per_flip() {
     let dir = tempfile::tempdir().expect("temp dir");
     let supervisor = Arc::new(supervisor_with_registered_worker(dir.path()).await);
@@ -407,6 +409,7 @@ async fn worker_roster_delta_pushes_one_update_per_flip() {
 /// the same single push (the TS apply writes entries and deletes
 /// removals before the one `scheduleRosterPush` flush).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn worker_roster_delta_batches_removals_into_the_same_push() {
     let dir = tempfile::tempdir().expect("temp dir");
     let supervisor = Arc::new(supervisor_with_registered_worker(dir.path()).await);
@@ -477,6 +480,7 @@ async fn worker_roster_delta_batches_removals_into_the_same_push() {
 /// --nocapture`.
 #[ignore = "manual roster delta push benchmark"]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn roster_delta_push_benchmark() {
     const FLIPS: usize = 2000;
     const WARMUP_FLIPS: usize = 50;

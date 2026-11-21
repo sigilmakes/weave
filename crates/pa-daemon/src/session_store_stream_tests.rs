@@ -23,6 +23,7 @@ fn fixture() -> (tempfile::TempDir, std::path::PathBuf) {
     (dir, path)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn native_replay_matches_the_read_only_sdk_row_for_row() {
     let (_dir, path) = fixture();
@@ -42,6 +43,7 @@ fn native_replay_matches_the_read_only_sdk_row_for_row() {
     assert_eq!(std::fs::read(&path).unwrap(), before);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn damaged_native_rows_are_refused_without_repair() {
     // A same-length edit is not damage any more: a bare row carries no
@@ -69,6 +71,7 @@ fn damaged_native_rows_are_refused_without_repair() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn legacy_raw_rows_are_refused_without_repair() {
     let dir = tempfile::tempdir().unwrap();
@@ -79,6 +82,7 @@ fn legacy_raw_rows_are_refused_without_repair() {
     assert_eq!(std::fs::read(&path).unwrap(), bytes);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn native_open_keeps_the_empty_and_missing_header_errors() {
     let dir = tempfile::tempdir().unwrap();

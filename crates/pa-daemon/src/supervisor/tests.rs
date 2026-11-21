@@ -8,6 +8,7 @@ use proptest::test_runner::RngSeed;
 /// the give-up cap (the storm's counter could never grow while
 /// relaunch-spawns kept resetting it); a child that lived past the
 /// stable window was healthy, so its death starts a fresh count.
+#[pa_test_scratch::pa_test]
 #[test]
 fn churn_accumulates_and_a_stable_lifetime_resets() {
     let descriptor: DaemonWorkerDescriptor = serde_json::from_value(serde_json::json!({
@@ -50,6 +51,7 @@ fn churn_accumulates_and_a_stable_lifetime_resets() {
 /// A failed relaunch produced no worker, so the count accumulates instead of
 /// resetting.
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn a_failed_relaunch_accumulates_to_the_give_up_cap() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -110,6 +112,7 @@ async fn a_failed_relaunch_accumulates_to_the_give_up_cap() {
 }
 
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn a_stop_during_the_storm_leaves_the_terminal_state_to_the_stop() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -174,6 +177,7 @@ async fn a_stop_during_the_storm_leaves_the_terminal_state_to_the_stop() {
 /// runtime the paused clock cannot advance.
 #[cfg(any(target_os = "linux", target_os = "macos"))] // the kernel-watch arms
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn an_adopted_watch_hands_off_at_exit_without_a_timer() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -259,6 +263,7 @@ async fn an_adopted_watch_hands_off_at_exit_without_a_timer() {
 /// The adopted predecessor must still hand off, even with an unchanged epoch.
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn a_pid_only_replacement_keeps_the_adopted_predecessor_out_of_crash_recovery() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -342,6 +347,7 @@ fn adopted_watch_resident(dir: &std::path::Path, pid: u32) -> Arc<ResidentWorker
 /// in the registry.
 #[cfg(any(target_os = "linux", target_os = "macos"))] // the kernel-watch arms
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_registered_replacement_pid_is_monitored_after_the_predecessor_exits() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -472,6 +478,7 @@ async fn a_registered_replacement_pid_is_monitored_after_the_predecessor_exits()
 /// to the crash arm and the death counts a failure.
 #[cfg(any(target_os = "linux", target_os = "macos"))] // the kernel-watch arms
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_superseded_watch_leaves_the_failure_count_to_the_new_monitor() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -550,6 +557,7 @@ async fn a_superseded_watch_leaves_the_failure_count_to_the_new_monitor() {
 /// while this watch was backed off.
 #[cfg(any(target_os = "linux", target_os = "macos"))] // the kernel-watch arms
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn a_superseded_watch_in_backoff_does_not_relaunch_over_the_new_owner() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -657,6 +665,7 @@ fn abandon_update_resident(dir: &std::path::Path, worker_id: &str) -> Arc<Reside
 /// staying unsupervised in the registry. On the unfixed tree the failed
 /// relaunch is only logged.
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn an_abandoned_updates_failed_relaunch_arms_supervision_again() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -757,6 +766,7 @@ async fn an_abandoned_updates_failed_relaunch_arms_supervision_again() {
 /// agents-view recursive rollup's deleted-descendant term. Absent
 /// rows (no tombstoned descendants) carry no field, matching the
 /// optional wire shape.
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_session_rows_publish_deleted_descendant_usage() {
     let dir = std::env::temp_dir().join(format!("pa-saved-dd-{}", uuid::Uuid::new_v4()));
@@ -786,6 +796,7 @@ fn saved_session_rows_publish_deleted_descendant_usage() {
     assert!(row.get("deletedDescendantUsage").is_none());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_session_rows_carry_the_persisted_thinking_level() {
     let dir = std::env::temp_dir().join(format!("pa-saved-tl-{}", uuid::Uuid::new_v4()));
@@ -823,6 +834,7 @@ fn saved_session_rows_carry_the_persisted_thinking_level() {
 }
 
 /// No billable work stays bare, like TS's undefined serialization.
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_session_rows_publish_the_own_usage_summary() {
     let dir = std::env::temp_dir().join(format!("pa-saved-usage-{}", uuid::Uuid::new_v4()));
@@ -864,6 +876,7 @@ fn saved_session_rows_publish_the_own_usage_summary() {
 
 /// `parentSessionPath` only when one is recorded (TS's `undefined` is omitted), so a
 /// non-resident bound session keeps its family edge.
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_session_summaries_carry_the_parent_binding() {
     let dir = std::env::temp_dir().join(format!("pa-saved-binding-{}", uuid::Uuid::new_v4()));
@@ -895,6 +908,7 @@ fn saved_session_summaries_carry_the_parent_binding() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn worker_probe_fails_at_the_deadline_and_names_the_worker() {
     let dir = std::env::temp_dir().join(format!("pa-probe-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -911,6 +925,7 @@ async fn worker_probe_fails_at_the_deadline_and_names_the_worker() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn worker_probe_accepts_a_live_socket() {
     let dir = std::env::temp_dir().join(format!("pa-probe-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -928,6 +943,7 @@ async fn worker_probe_accepts_a_live_socket() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn adoption_settles_then_seeds_the_roster_once() {
     let dir = std::env::temp_dir().join(format!("pa-adopt-seed-{}", uuid::Uuid::new_v4()));
     let agent_dir = dir.join("agent");
@@ -1023,6 +1039,7 @@ async fn adoption_settles_then_seeds_the_roster_once() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_create_while_shutting_down_is_refused() {
     let dir = tempfile::TempDir::new().unwrap();
     let options = SupervisorOptions {
@@ -1057,6 +1074,7 @@ async fn a_create_while_shutting_down_is_refused() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn begin_shutdown_sets_the_accept_exit_after_the_stop_pass() {
     let dir = tempfile::TempDir::new().unwrap();
     let options = SupervisorOptions {
@@ -1079,6 +1097,7 @@ async fn begin_shutdown_sets_the_accept_exit_after_the_stop_pass() {
 /// The stop's only `Err` (tombstone persist) leaves the worker untouched and the kill
 /// retryable.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_failed_stop_persist_gates_the_kill_stop_belt() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -1162,6 +1181,7 @@ async fn a_failed_stop_persist_gates_the_kill_stop_belt() {
 
 /// The durable intent is already on disk, so the stop proceeds instead of aborting.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_existing_tombstone_carries_the_stop_past_its_failed_re_write() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -1233,6 +1253,7 @@ async fn an_existing_tombstone_carries_the_stop_past_its_failed_re_write() {
 /// pass that does not wait for the flush barrier fails below.
 #[cfg(unix)] // the signal-drain state machine: unix signal source
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn first_signal_drains_a_settling_turn_and_rejects_new_work() {
     let dir = tempfile::TempDir::new().unwrap();
     let options = SupervisorOptions {
@@ -1387,6 +1408,7 @@ async fn first_signal_drains_a_settling_turn_and_rejects_new_work() {
 /// invented ten-minute cap: a `prompt_and_wait` whose worker answers a
 /// virtual hour later still succeeds.
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn a_prompt_and_wait_route_outlives_the_old_ten_minute_cap() {
     let dir = tempfile::TempDir::new().unwrap();
     let options = SupervisorOptions {
@@ -1476,6 +1498,7 @@ async fn a_prompt_and_wait_route_outlives_the_old_ten_minute_cap() {
 /// descriptor-preserving exit never becomes a terminal stop pass.
 #[cfg(unix)] // the signal-drain state machine: unix signal source
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_signal_during_an_in_flight_shutdown_forces() {
     let dir = tempfile::TempDir::new().unwrap();
     let options = SupervisorOptions {
@@ -1560,6 +1583,7 @@ async fn a_signal_during_an_in_flight_shutdown_forces() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn idle_passivation_requires_the_worker_token() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -1587,6 +1611,7 @@ async fn idle_passivation_requires_the_worker_token() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn idle_passivation_refuses_a_client_owned_worker() {
     // The owner refusal (TS `canEvictWorker`'s `hasOwnerClient` arm):
     // ownership alone carries it (TS `clientOwned: noSession`). An
@@ -1684,6 +1709,7 @@ async fn idle_passivation_refuses_a_client_owned_worker() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_passivated_row_prompt_joins_an_already_hosting_resident() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -1778,6 +1804,7 @@ async fn a_passivated_row_prompt_joins_an_already_hosting_resident() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_passivated_row_prompt_with_no_rival_falls_through_the_failed_launch() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -1829,6 +1856,7 @@ async fn a_passivated_row_prompt_with_no_rival_falls_through_the_failed_launch()
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_ledger_delete_of_a_stopped_child_tombstones_without_a_worker() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -1928,6 +1956,7 @@ async fn a_ledger_delete_of_a_stopped_child_tombstones_without_a_worker() {
 /// The delete's own push carries both halves together: the parent's
 /// refreshed bucket AND the child's row removal, one `roster_update`.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_stopped_childs_delete_removes_its_row_and_bills_the_parent() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -2095,6 +2124,7 @@ async fn the_stopped_childs_delete_removes_its_row_and_bills_the_parent() {
 /// finding): two live edges sharing a child id never let a delete
 /// tombstone the unrelated one.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_ledger_delete_never_tombstones_an_unrelated_edge_sharing_the_child_id() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -2155,6 +2185,7 @@ async fn a_ledger_delete_never_tombstones_an_unrelated_edge_sharing_the_child_id
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_ledger_child_wake_joins_an_already_hosting_resident() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -2269,6 +2300,7 @@ proptest! {
     })]
 
     // The live rename ladder: TS `routeClientCommand` wraps the forward in the name reservation.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn live_renames_reserve_family_names(
         rows in prop::collection::vec(

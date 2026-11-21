@@ -24,6 +24,7 @@ fn recorded_process_alive(
 mod recorded_process_tests {
     use super::recorded_process_alive;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unobservable_start_id_keeps_live_tombstone_owned_by_recorded_pid() {
         assert!(recorded_process_alive(Some(true), Some("original"), None));
@@ -843,6 +844,7 @@ mod rlm_child_admission_tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn restored_child_admission_preserves_completed_display_and_ledger_edge() {
         let dir = tempfile::tempdir().expect("fixture");
         let agent_dir = dir.path().join("agent");
@@ -902,6 +904,7 @@ mod launch_admission_tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn terminal_stop_refuses_boot_adoption_and_unknown_registration_before_publication() {
         let dir = tempfile::tempdir().expect("fixture");
         let supervisor = Arc::new(
@@ -957,6 +960,7 @@ mod pid_range_tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn oversized_pid_is_refused_before_registration_or_boot_adoption_work() {
         let dir = tempfile::tempdir().expect("fixture");
         let supervisor = Arc::new(
@@ -1048,6 +1052,7 @@ mod registration_uncertainty_tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn missing_or_empty_registration_identity_preserves_known_and_unknown_state() {
         for known in [false, true] {
             for observed in [None, Some(String::new())] {

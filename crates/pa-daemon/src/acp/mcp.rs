@@ -321,6 +321,7 @@ mod tests {
         json!({ "name": name, "type": "http", "url": url, "headers": headers })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn admits_stdio_with_cwd_and_env() {
         let servers = resolve_acp_mcp_servers(
@@ -346,6 +347,7 @@ mod tests {
         assert_eq!(env.get("A").map(String::as_str), Some("1"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn drops_schema_invalid_entries_like_the_sdk() {
         // Missing required env (SDK z.array(zEnvVariable)): entry dropped,
@@ -382,6 +384,7 @@ mod tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rejects_invalid_names_and_duplicates() {
         let err = resolve_acp_mcp_servers(&[stdio("-bad")], Path::new("/tmp")).unwrap_err();
@@ -394,6 +397,7 @@ mod tests {
         assert_eq!(err, "duplicate MCP server name: dup");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rejects_stdio_shape_problems() {
         let err = resolve_acp_mcp_servers(
@@ -410,6 +414,7 @@ mod tests {
         assert_eq!(err, "MCP server n has an invalid stdio command");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rejects_environment_shape_problems() {
         let entry = |env: Value| json!({ "name": "e", "type": "stdio", "command": "cat", "args": [], "env": env });
@@ -435,6 +440,7 @@ mod tests {
         assert_eq!(err, "MCP server e has an invalid environment entry");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rejects_http_shape_problems() {
         let err = resolve_acp_mcp_servers(
@@ -463,6 +469,7 @@ mod tests {
         assert_eq!(err, "MCP server h has an invalid HTTP URL");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn header_identity_is_case_insensitive() {
         let err = resolve_acp_mcp_servers(
@@ -477,6 +484,7 @@ mod tests {
         assert_eq!(err, "MCP server hdr has duplicate header x-a");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tool_names_follow_the_tighter_limit() {
         let long = "a".repeat(51);

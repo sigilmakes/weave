@@ -246,6 +246,7 @@ mod tests {
     use std::sync::Arc;
     use std::time::Instant;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn execution_lock_conflicts_until_last_owner_drops() {
         let dir = tempfile::tempdir().unwrap();
@@ -263,6 +264,7 @@ mod tests {
         assert_eq!(next.session_path, canonical_session_path(&path));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn release_keeps_the_lock_inode_and_old_handle_cannot_unlock_successor() {
         let dir = tempfile::tempdir().unwrap();
@@ -296,6 +298,7 @@ mod tests {
         held_inode.try_lock().unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn courtesy_header_never_decides_ownership() {
         let dir = tempfile::tempdir().unwrap();
@@ -325,6 +328,7 @@ mod tests {
         acquire_runtime_session_lease(&path, dir.path()).unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn resident_execution_lock_does_not_hold_the_append_lock() {
         let dir = tempfile::tempdir().unwrap();
@@ -342,6 +346,7 @@ mod tests {
 
     // A real process holds the production lock until stdin closes. The parent
     // waits for an explicit ready line, not a timer or PID-based guess.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn execution_lock_process_helper() {
         let Some(dir) = std::env::var_os("PA_EXECUTION_LOCK_TEST_DIR") else {
@@ -355,6 +360,7 @@ mod tests {
         let _ = std::io::stdin().read(&mut byte).unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn process_exit_and_crash_release_execution_ownership_immediately() {
         for crash in [false, true] {

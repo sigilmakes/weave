@@ -180,6 +180,7 @@ mod tests {
         path
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn latest_valid_entry_wins() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -193,6 +194,7 @@ mod tests {
         assert_eq!(state.continuations_used, 2);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn missing_or_invalid_files_answer_none() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -224,6 +226,7 @@ mod tests {
         assert_eq!(persisted_goal_state(Some(&empty)), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn invalid_entry_data_is_skipped() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -260,6 +263,7 @@ mod tests {
     /// Parity fixture: a real `thread_goal_state` row captured from the TS
     /// binary's session file (the f18 battery run, 2026-09-19) parses and
     /// rehydrates through the Rust reader unchanged.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn captured_ts_row_rehydrates_unchanged() {
         let ts_row = json!({
@@ -289,6 +293,7 @@ mod tests {
         assert_eq!(state.created_at, Some(1_789_781_423_253));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_entry_scan_matches_the_store_read() {
         let dir = tempfile::TempDir::new().unwrap();

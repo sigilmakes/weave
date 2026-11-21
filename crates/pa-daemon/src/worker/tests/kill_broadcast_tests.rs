@@ -5,6 +5,7 @@ use super::*;
 /// accounting skips it.
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn aborted_turn_row_broadcasts_and_persists_through_the_worker_gate() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()
@@ -189,6 +190,7 @@ async fn aborted_turn_row_broadcasts_and_persists_through_the_worker_gate() {
 /// revives the session.
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn kill_cancels_the_sessions_scheduled_jobs() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()
@@ -284,6 +286,7 @@ async fn kill_cancels_the_sessions_scheduled_jobs() {
 /// `session_closed` frame.
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn kill_cancels_a_mid_provider_wait_turn_and_surfaces_the_aborted_row() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()
@@ -428,6 +431,7 @@ async fn kill_cancels_a_mid_provider_wait_turn_and_surfaces_the_aborted_row() {
 /// stays off the wire and file while `abort` broadcasts it.
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_interrupt_swallows_the_aborted_row() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()
@@ -527,6 +531,7 @@ async fn compact_interrupt_swallows_the_aborted_row() {
 /// row. Its actual empty vector must survive the worker's collector and writer.
 #[allow(clippy::await_holding_lock)] // the unchanged first response uses the process-global faux registry
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn provider_aborted_empty_content_survives_worker_wire_and_journal() {
     use crate::agent_engine::tests::abort_fixture::{AbortCase, AbortFixture, NATIVE_RESPONSE_ID};
 

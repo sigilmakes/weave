@@ -3,6 +3,7 @@ use super::*;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn scripted_engine_replays_then_echoes() {
     let engine = ScriptedEngine::from_value(
@@ -42,6 +43,7 @@ fn scripted_engine_replays_then_echoes() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn scripted_assistant_and_tool_events_use_complete_native_message_wires() {
     let engine = ScriptedEngine::from_value(&json!({"responses": [{
@@ -91,6 +93,7 @@ fn scripted_assistant_and_tool_events_use_complete_native_message_wires() {
     assert_eq!(messages[2]["content"][0]["text"], "done");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cancellation_stops_the_prompt() {
     let engine = ScriptedEngine::default();

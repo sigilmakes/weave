@@ -98,6 +98,7 @@ async fn turn_session_events_with_custom_message(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_injected_custom_turn_replaces_the_user_row() {
     let engine = Arc::new(
         ScriptedEngine::from_value(&json!({
@@ -147,6 +148,7 @@ async fn an_injected_custom_turn_replaces_the_user_row() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_delivered_agent_message_turn_emits_the_custom_row() {
     let dir = std::env::temp_dir().join(format!("pa-worker-amw-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -233,6 +235,7 @@ async fn a_delivered_agent_message_turn_emits_the_custom_row() {
 
 /// TS emits one `agent_end` per agent run; the worker's trailing fallback stays silent.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_settled_turn_broadcasts_the_engine_agent_end_with_its_messages() {
     let engine = Arc::new(
         ScriptedEngine::from_value(&json!({ "responses": ["settled reply"] })).unwrap_or_default(),
@@ -278,6 +281,7 @@ async fn a_settled_turn_broadcasts_the_engine_agent_end_with_its_messages() {
 
 /// The bare `agent_end` fallback (a Rust-only shape kept for the TUI's silent-failure backstop).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_turn_without_a_model_turn_keeps_the_bare_fallback_frames() {
     let events = turn_session_events(Arc::new(DoneOnlyEngine)).await;
     let turn_ends = positions_of(&events, "turn_end");
@@ -307,6 +311,7 @@ async fn a_turn_without_a_model_turn_keeps_the_bare_fallback_frames() {
 /// carries only the retry's messages; no bare synthesized frame trails.
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_retried_turn_broadcasts_one_agent_end_per_run() {
     fn roles_of(frame: &Value) -> Vec<String> {
         frame["messages"]

@@ -808,6 +808,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn registrations_bump_epoch_and_records_survive_removal() {
         let registry = SessionRegistry::new();
         let worker = resident("abc123def456");
@@ -825,6 +826,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn resolve_by_suffix_and_name() {
         let registry = SessionRegistry::new();
         let named = resident("aaa111bbb222");
@@ -845,6 +847,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn forget_drops_registration_and_adoption_gate() {
         let registry = SessionRegistry::new();
         registry.insert(resident("abc123def456")).await;
@@ -865,6 +868,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn adoption_guard_serializes_same_worker() {
         let registry = Arc::new(SessionRegistry::new());
         let first = {
@@ -885,6 +889,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_older_catalog_read_never_poisons_the_stored_snapshot() {
         use serde_json::json;
 
@@ -941,6 +946,7 @@ mod tests {
         )
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn owned_reap_binding_rejects_mismatched_or_uncertain_identity() {
         let (record, _sender) = owned_reap_record(7, Some("generation"), Some(true));
@@ -979,6 +985,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn owned_reap_rejects_stale_completed_record_and_descriptor_successors() {
         let budget = std::time::Duration::from_millis(20);
         let (resident, record, _sender) = reap_fixture(Some(true)).await;
@@ -998,6 +1005,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn owned_reap_error_closed_channel_and_timeout_fail_closed() {
         let budget = std::time::Duration::from_millis(20);
         let (resident, record, _sender) = reap_fixture(Some(false)).await;
@@ -1018,6 +1026,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn owned_reap_revalidates_descriptor_after_completion_without_holding_locks() {
         let (resident, record, sender) = reap_fixture(None).await;
         let waiting_resident = Arc::clone(&resident);
@@ -1044,6 +1053,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn owned_reap_revalidates_token_after_completion() {
         let (resident, record, sender) = reap_fixture(None).await;
         let waiting_resident = Arc::clone(&resident);
@@ -1070,6 +1080,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn adopted_reap_capture_rejects_later_owned_or_descriptor_generation() {
         let resident = resident("adopted-reap");
         {

@@ -159,6 +159,7 @@ fn spawn_request(name: &str, prompt: &str) -> RlmSpawnRequest {
 /// The reservation lifecycle: the name is held across the parked admission — a racing same-name
 /// spawn fails closed — and freed at the settle, after which the live registry owns the name.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn holds_a_spawn_name_reservation_until_admission_settles_then_frees_it() {
     let (create_seen_tx, mut create_seen_rx) = mpsc::unbounded_channel();
     let (verdict_tx, verdict_rx) = mpsc::unbounded_channel();
@@ -202,6 +203,7 @@ async fn holds_a_spawn_name_reservation_until_admission_settles_then_frees_it() 
 /// A cancelled admission frees the reserved name: the boxed
 /// `RlmHostFuture` is cancellable, so the reservation must release with it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_cancelled_spawn_admission_frees_the_reserved_name() {
     let (create_seen_tx, mut create_seen_rx) = mpsc::unbounded_channel();
     let (verdict_tx, verdict_rx) = mpsc::unbounded_channel();
@@ -239,6 +241,7 @@ async fn a_cancelled_spawn_admission_frees_the_reserved_name() {
 /// The failure path: a failed admission (the create errors after the
 /// reservation was held) frees the name, so the same name spawns again.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_failed_admission_frees_the_reserved_name() {
     let (create_seen_tx, mut create_seen_rx) = mpsc::unbounded_channel();
     let (verdict_tx, verdict_rx) = mpsc::unbounded_channel();
@@ -273,6 +276,7 @@ async fn a_failed_admission_frees_the_reserved_name() {
 /// name never selects — and a miss outside the caller's own session and
 /// its direct children fails closed.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rename_resolves_child_targets_by_id_only() {
     let (create_seen_tx, mut create_seen_rx) = mpsc::unbounded_channel();
     let (verdict_tx, verdict_rx) = mpsc::unbounded_channel();
@@ -311,6 +315,7 @@ async fn rename_resolves_child_targets_by_id_only() {
 /// route (`renamedBy: parent`), and on success the parent-side record
 /// takes the new name — the old name stops matching, the new one hits.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn parent_rename_forwards_and_reseeds_the_record_name() {
     let (create_seen_tx, mut create_seen_rx) = mpsc::unbounded_channel();
     let (verdict_tx, verdict_rx) = mpsc::unbounded_channel();
@@ -366,6 +371,7 @@ async fn parent_rename_forwards_and_reseeds_the_record_name() {
 /// its durable session id) routes to the caller's own worker through the
 /// supervisor with no `renamedBy` marker.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn self_rename_targets_the_caller_without_the_parent_marker() {
     let (create_seen_tx, _create_seen_rx) = mpsc::unbounded_channel();
     let (_verdict_tx, verdict_rx) = mpsc::unbounded_channel();
@@ -402,6 +408,7 @@ async fn self_rename_targets_the_caller_without_the_parent_marker() {
 /// A second rename must not overtake the first command and then let its
 /// earlier parent-side record write replace the final worker name.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn concurrent_parent_renames_keep_the_last_applied_name() {
     let (create_seen_tx, mut create_seen_rx) = mpsc::unbounded_channel();
     let (verdict_tx, verdict_rx) = mpsc::unbounded_channel();

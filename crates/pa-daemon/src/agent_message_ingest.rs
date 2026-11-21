@@ -187,6 +187,7 @@ mod tests {
 
     /// A pause clears queued agent messages but keeps client prompts.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn status_pause_resume_and_clear_match_ts_shapes() {
         let worker = created_worker().await;
 
@@ -273,6 +274,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn clear_reports_the_follow_up_lane() {
         let worker = created_worker().await;
         let delivered = worker

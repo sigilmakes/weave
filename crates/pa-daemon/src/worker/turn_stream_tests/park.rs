@@ -72,6 +72,7 @@ impl SessionEngine for ReleaseCountingEngine {
 
 /// The bounded timeout is the failure bound (positive arm) and the absence bound (gated arms).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_idle_park_releases_a_parent_owned_childs_kernel_only() {
     struct ParkedProbe {
         releases: std::sync::Arc<std::sync::atomic::AtomicUsize>,
@@ -195,6 +196,7 @@ impl SessionEngine for AdmitProbeEngine {
 
 /// A resume site that clears the suspension MID-WINDOW must not admit a racing turn.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compacting_window_parks_a_cleared_suspension_until_it_ends() {
     let engine = Arc::new(AdmitProbeEngine::default());
     let runner = burst_runner(Arc::clone(&engine) as Arc<dyn SessionEngine>);
@@ -278,6 +280,7 @@ pub(super) fn passivation_settings(dir: &std::path::Path, value: &serde_json::Va
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn idle_passivation_window_arms_only_for_idle_unattached_sessions() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -325,6 +328,7 @@ async fn idle_passivation_window_arms_only_for_idle_unattached_sessions() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn idle_passivation_refuses_while_the_lanes_hold_undelivered_input() {
     // A parked steer or follow-up lives only on the resident worker, so neither
     // the window nor the fire's fence may pass while the lanes hold it.
@@ -395,6 +399,7 @@ async fn idle_passivation_refuses_while_the_lanes_hold_undelivered_input() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn idle_passivation_fire_rechecks_the_fresh_state_and_reports_the_threshold() {
     // The fire's fresh-snapshot fence: an attached client (or an armed scheduled
     // job via the engine gate) cancels the stop even when the window armed before

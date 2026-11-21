@@ -410,6 +410,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn initialize_result_matches_the_served_surface() {
         let value = serde_json::to_value(initialize_result("9.9.9")).unwrap();
@@ -429,6 +430,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tool_kind_map_matches_the_ts_map() {
         assert_eq!(AcpToolKind::of_tool("python_repl"), AcpToolKind::Execute);
@@ -439,6 +441,7 @@ mod tests {
         assert_eq!(AcpToolKind::of_tool("fetch"), AcpToolKind::Other);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prompt_blocks_split_text_and_images() {
         let prompt = json!([
@@ -459,6 +462,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn malformed_image_block_is_rejected() {
         let prompt = json!([{ "type": "image", "data": "AAAA" }]);
@@ -466,6 +470,7 @@ mod tests {
         assert_eq!(error, PromptBlockError::InvalidImage);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn config_option_update_carries_the_ts_tag_and_payload() {
         let update = AcpSessionUpdate::ConfigOptionUpdate {
@@ -495,6 +500,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn update_variants_carry_the_ts_tags() {
         let chunk = AcpSessionUpdate::AgentMessageChunk {

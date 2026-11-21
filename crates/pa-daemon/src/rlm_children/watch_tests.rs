@@ -351,6 +351,7 @@ async fn spawn_child(sessions: &SupervisorChildSessions) -> RlmSpawnHandle {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn roster_snapshot_does_not_wait_for_a_slow_child_worker() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -373,6 +374,7 @@ async fn roster_snapshot_does_not_wait_for_a_slow_child_worker() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn spawned_child_can_finish_before_the_parent_turn_ends() {
     let (follow_up_tx, mut follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -390,6 +392,7 @@ async fn spawned_child_can_finish_before_the_parent_turn_ends() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn spawn_admits_the_kickoff_before_it_returns() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let child_subagents = Arc::new(FakeChildSubagents {
@@ -420,6 +423,7 @@ async fn spawn_admits_the_kickoff_before_it_returns() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_settled_child_without_a_reply_delivers_the_terminal_notice() {
     let (follow_up_tx, mut follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -454,6 +458,7 @@ async fn a_settled_child_without_a_reply_delivers_the_terminal_notice() {
 /// leaves inside the grace (the idle passivation's stop, a crash) keeps
 /// the settled verdict, and the settle tail (notice, funnel) still runs.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_worker_leaving_inside_the_settle_grace_keeps_the_verdict() {
     let (follow_up_tx, mut follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) = sessions_with_fake_supervisor(
@@ -481,6 +486,7 @@ async fn a_worker_leaving_inside_the_settle_grace_keeps_the_verdict() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn child_updates_surface_through_the_sink() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -532,6 +538,7 @@ async fn child_updates_surface_through_the_sink() {
 /// A cancelled run's watcher settle leaves the display `running`, so a
 /// restart relists the child as `error` instead of `completed`.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_cancelled_child_keeps_its_display_running_through_the_watcher_settle() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -577,6 +584,7 @@ fn assert_failure_row(follow_up: &Value, child_id: &str, error: &str) {
 /// A child whose task prompt cannot be routed settles `error`, delivers
 /// the TS failure row and releases the owed continuation.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_child_whose_task_prompt_cannot_be_routed_delivers_the_failure_notice() {
     let (follow_up_tx, mut follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -611,6 +619,7 @@ async fn a_child_whose_task_prompt_cannot_be_routed_delivers_the_failure_notice(
 /// A short tick keeps the paused clock's auto-advance from firing link
 /// deadlines while the real-socket round trips are in flight.
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn an_unreachable_child_delivers_the_failure_notice_instead_of_no_reply() {
     tokio::spawn(async {
         let mut tick = tokio::time::interval(Duration::from_secs(1));
@@ -644,6 +653,7 @@ static VERDICT_LANDED: tokio::sync::Notify = tokio::sync::Notify::const_new();
 /// read and its unreachable give-up claim: the claim keeps that verdict,
 /// and the watcher still runs its settle tail.
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn a_verdict_landing_inside_the_unreachable_give_up_still_runs_the_settle_tail() {
     tokio::spawn(async {
         let mut tick = tokio::time::interval(Duration::from_secs(1));
@@ -691,6 +701,7 @@ async fn a_verdict_landing_inside_the_unreachable_give_up_still_runs_the_settle_
 /// marks settled (post-#3171 an unsettled failed run parks
 /// `waitForRlmQuiescence` forever).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_failed_prompt_is_settled_before_spawn_returns() {
     let (follow_up_tx, mut follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -737,6 +748,7 @@ async fn a_failed_prompt_is_settled_before_spawn_returns() {
 /// task prompt fails: TS sends the catch-arm row regardless of reply
 /// count (`agent-session.ts:13026-13045`).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_replied_child_whose_prompt_fails_still_delivers_the_failure_row() {
     let (follow_up_tx, mut follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -764,6 +776,7 @@ async fn a_replied_child_whose_prompt_fails_still_delivers_the_failure_row() {
 /// once the grandchild finishes, the child settles and the parent is
 /// quiet again.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_child_with_a_running_grandchild_keeps_the_parent_running() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let grandchild = Arc::new(FakeChildSubagents {
@@ -805,6 +818,7 @@ async fn a_child_with_a_running_grandchild_keeps_the_parent_running() {
 /// A `collect` with a timeout waits out a child whose own turn ended but
 /// whose grandchild still runs, instead of answering `running` at once.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn collect_with_a_timeout_waits_for_a_running_grandchild() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let grandchild = Arc::new(FakeChildSubagents {
@@ -864,6 +878,7 @@ async fn one_running_child(sessions: &SupervisorChildSessions) {
 /// `close_children`: every tracked child is stopped through the supervisor — a plain stop, no
 /// delete marker; the registry empties, and no terminal notice is owed.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn close_children_stops_the_child_and_clears_the_roster() {
     let (follow_up_tx, mut follow_up_rx) = mpsc::unbounded_channel();
     // A long idle keeps the child mid-run while the close fires, so the
@@ -901,6 +916,7 @@ async fn close_children_stops_the_child_and_clears_the_roster() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn close_children_treats_an_already_gone_child_as_a_no_op() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) = sessions_with_fake_supervisor(
@@ -926,6 +942,7 @@ async fn close_children_treats_an_already_gone_child_as_a_no_op() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn close_children_keeps_a_failed_child_tracked() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -948,6 +965,7 @@ async fn close_children_keeps_a_failed_child_tracked() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_replied_child_gets_no_terminal_notice() {
     let (follow_up_tx, mut follow_up_rx) = mpsc::unbounded_channel();
     // A slow idle wait keeps the child "running" while the test marks
@@ -966,6 +984,7 @@ async fn a_replied_child_gets_no_terminal_notice() {
 /// A target whose delete receipt already returned resolves immediately to the settled cancelled
 /// envelope without spending the timeout budget; unknown selectors keep erroring.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn collect_answers_a_just_deleted_target_with_the_cancelled_envelope() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -1043,6 +1062,7 @@ async fn collect_answers_a_just_deleted_target_with_the_cancelled_envelope() {
 /// a same-name spawn admits again — and the delete of a settled child
 /// returns the terminal row instead of erroring.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_deleted_settled_child_releases_its_name_slot_and_deletes_idempotently() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -1096,6 +1116,7 @@ async fn a_deleted_settled_child_releases_its_name_slot_and_deletes_idempotently
 /// the live read first, the durable session file second — so the parent-side
 /// reader sees the child's final say, not a bare failure row.
 #[tokio::test(start_paused = true)]
+#[pa_test_scratch::pa_test]
 async fn a_failed_settle_captures_the_childs_last_assistant_text() {
     tokio::spawn(async {
         let mut tick = tokio::time::interval(Duration::from_secs(1));
@@ -1136,6 +1157,7 @@ async fn a_failed_settle_captures_the_childs_last_assistant_text() {
 /// fill now runs on every refresh: it writes only when the fresh round trip
 /// produced a text AND the row has no answer yet.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_none_first_answer_capture_recovers_on_a_later_collect() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -1179,6 +1201,7 @@ async fn a_none_first_answer_capture_recovers_on_a_later_collect() {
 /// the roster preview stays the compact form; the deleted envelope's
 /// binding lane is empty (the tombstone only keeps the preview).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn collect_carries_the_full_answer_text_of_a_settled_child() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -1230,6 +1253,7 @@ async fn collect_carries_the_full_answer_text_of_a_settled_child() {
 /// The inactive delete (a settled retained child) leaves the same tombstone as the live delete, so
 /// `collect` answers a just-deleted selector with the settled cancelled envelope.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn collect_answers_the_cancelled_envelope_after_an_inactive_delete() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let (sessions, _kill_rx) =
@@ -1271,6 +1295,7 @@ async fn collect_answers_the_cancelled_envelope_after_an_inactive_delete() {
 
 /// A child that already settled never re-scores as an error when its worker leaves afterward; a
 /// still-RUNNING child does (the crash class the error verdict exists for).
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_already_settled_child_never_re_scores_as_an_unreachable_error() {
     let base = || ChildRecord {
@@ -1330,6 +1355,7 @@ fn an_already_settled_child_never_re_scores_as_an_unreachable_error() {
 /// the capture entirely — zero `get_last_assistant_text` reads, the
 /// standing capture unchanged.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_unreachable_give_up_skips_the_exit_capture_when_a_capture_stands() {
     let (follow_up_tx, _follow_up_rx) = mpsc::unbounded_channel();
     let child_subagents = Arc::new(FakeChildSubagents::default());

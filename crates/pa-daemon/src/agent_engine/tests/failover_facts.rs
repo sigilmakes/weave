@@ -46,6 +46,7 @@ fn request(listener: &TcpListener) -> TcpStream {
     stream
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[allow(clippy::too_many_lines)] // One real primary-failure / held-backup / restore episode.
 fn failover_rebinds_model_facts_before_the_backup_can_restore_primary() {

@@ -543,6 +543,7 @@ pub(crate) mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn descent_matches_at_any_parent_walk_step() {
         let edges = [
@@ -592,6 +593,7 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn seeded_rows_shape_matches_the_ts_entry() {
         let dir = std::env::temp_dir().join(format!("pa-seed-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -821,6 +823,7 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn boot_seed_hydrates_once_and_publishes_one_update() {
         let (dir, supervisor, root_file, child_file) = roster_fixture().await;
         register_root_worker(&supervisor, "w-root", &root_file).await;
@@ -862,6 +865,7 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn boot_seed_skips_rows_the_roster_already_holds() {
         let (dir, supervisor, root_file, child_file) = roster_fixture().await;
         register_root_worker(&supervisor, "w-root", &root_file).await;
@@ -893,6 +897,7 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn family_seed_renders_edges_then_hydrates_in_the_background() {
         let (dir, supervisor, root_file, child_file) = roster_fixture().await;
         register_root_worker(&supervisor, "w-root", &root_file).await;
@@ -946,6 +951,7 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn hydration_loses_to_a_newer_worker_write() {
         let (dir, supervisor, root_file, child_file) = roster_fixture().await;
         register_root_worker(&supervisor, "w-root", &root_file).await;
@@ -980,6 +986,7 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn stale_seeded_snapshots_never_publish() {
         let (dir, supervisor, root_file, child_file) = roster_fixture().await;
         let agent_dir = dir.join("agent");
@@ -1026,6 +1033,7 @@ pub(crate) mod tests {
 
     /// The row is corrupt but present (the liveness walk drops deleted files).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_unhydrated_seeded_row_retries_on_the_next_family_walk() {
         let (dir, supervisor, root_file, child_file) = roster_fixture().await;
         let agent_dir = dir.join("agent");
@@ -1086,6 +1094,7 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_registration_seed_publishes_a_late_worker_family() {
         let (dir, supervisor, root_file, child_file) = roster_fixture().await;
         register_root_worker(&supervisor, "w-late", &root_file).await;

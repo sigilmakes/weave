@@ -4,6 +4,7 @@ use super::*;
 /// compaction boundary: the windowed store's `session_stats` equals the full
 /// open's — the ACTIVE totals (TS cuts `state.messages` at the compaction) —
 /// never losing or double-counting the attributed child spend.
+#[pa_test_scratch::pa_test]
 #[test]
 fn windowed_open_folds_attributions_on_both_sides_of_the_boundary() {
     let dir = tempfile::tempdir().unwrap();
@@ -87,6 +88,7 @@ fn windowed_open_folds_attributions_on_both_sides_of_the_boundary() {
     assert_eq!(stats["cost"].as_f64(), Some(0.03));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn window_preserves_transcript_metadata_and_append_then_hydrate() {
     let dir = tempfile::tempdir().unwrap();
@@ -181,6 +183,7 @@ fn window_preserves_transcript_metadata_and_append_then_hydrate() {
     assert_eq!(reopened.entries.len(), window.entries.len());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "requires a captured local session path"]
 fn captured_window_matches_full_transcript_and_stats() {
@@ -285,6 +288,7 @@ fn usage_of(input: u64, output: u64, cache_read: u64, total: f64) -> Value {
 /// One shared walk backs both the materialized fold and the scalar scan:
 /// across every window shape the scan must reproduce exactly the scalars the
 /// old full-clone fold computed.
+#[pa_test_scratch::pa_test]
 #[test]
 fn scan_message_scalars_match_the_materialized_fold_across_window_shapes() {
     let dir = tempfile::tempdir().unwrap();
@@ -428,6 +432,7 @@ fn scan_message_scalars_match_the_materialized_fold_across_window_shapes() {
 
 /// The compaction boundary shapes pin the materialized fold itself (the
 /// scan's reference): the exact windowed sequence.
+#[pa_test_scratch::pa_test]
 #[test]
 fn walk_pins_the_compaction_boundary_sequences() {
     let dir = tempfile::tempdir().unwrap();
@@ -495,6 +500,7 @@ fn assert_windowed_restored_settings_match_the_full_open(name: &str, path: &std:
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn windowed_restored_settings_match_the_full_open() {
     let dir = tempfile::tempdir().unwrap();
@@ -536,6 +542,7 @@ fn windowed_restored_settings_match_the_full_open() {
     assert_windowed_restored_settings_match_the_full_open("whole-file window", &path);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn non_message_compaction_boundary_retains_the_persisted_timeline() {
     for boundary_type in ["custom", "session_state"] {

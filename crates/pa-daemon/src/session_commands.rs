@@ -172,6 +172,7 @@ pub(crate) fn custom_message_value(
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn session_command_prompt_parsing() {
         let command = parse_prompt_session_command("/goal status").unwrap();
@@ -182,6 +183,7 @@ mod tests {
         assert!(parse_prompt_session_command("/model").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn custom_rows_serialize_with_custom_role() {
         let command = parse_prompt_session_command("/compact focus").unwrap();

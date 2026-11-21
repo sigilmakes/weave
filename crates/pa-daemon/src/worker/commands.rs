@@ -973,6 +973,7 @@ mod bounce_text_tests {
     use super::cleared_agent_message_bounce_text;
     use pa_core::session_engine::agent_messaging::DEFAULT_AGENT_MESSAGE_MAX_CHARS;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn bounce_text_limits_receiver_and_body_without_losing_the_notice() {
         for (receiver, message) in [

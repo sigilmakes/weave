@@ -519,6 +519,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn overflow_compacts_retries_once_then_reports_the_failure() {
         let _faux = FAUX_TEST_LOCK
@@ -609,6 +610,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn overflow_retry_succeeds_on_the_compacted_context() {
         let _faux = FAUX_TEST_LOCK
@@ -653,6 +655,7 @@ mod tests {
         assert_eq!(user_messages(&probe_events).len(), 1);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn combined_limit_overflow_compacts_and_retries() {
         let _faux = FAUX_TEST_LOCK
@@ -697,6 +700,7 @@ mod tests {
         assert!(outcome_rows(&probe_events).is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn overflow_recovery_skip_surfaces_the_warning_row() {
         let _faux = FAUX_TEST_LOCK
@@ -741,6 +745,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stale_overflow_error_recovers_before_the_next_prompt() {
         let _faux = FAUX_TEST_LOCK
@@ -809,6 +814,7 @@ mod tests {
         assert_eq!(user_messages(&next_events).len(), 1);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn non_overflow_error_never_triggers_the_arm() {
         let _faux = FAUX_TEST_LOCK
@@ -833,6 +839,7 @@ mod tests {
         assert!(matches!(done_result(&error_events), Some(Err(_))));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn overflow_recovery_aborted_mid_run_records_the_cancelled_outcome() {
         let _faux = FAUX_TEST_LOCK
@@ -903,6 +910,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn overflow_error_with_compaction_disabled_ends_without_recovery() {
         let _faux = FAUX_TEST_LOCK

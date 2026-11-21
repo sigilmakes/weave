@@ -212,6 +212,7 @@ mod tests {
     /// The fixture OAuth server's responses answer through the scripted
     /// transport; the real callback listener catches the redirect.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn worker_begin_login_persists_creds_and_unlocks_gating() -> Result<()> {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         let agent = tempfile::tempdir()?;
@@ -376,6 +377,7 @@ mod tests {
     /// An unknown server fails with the TS wording; the handler stays
     /// registered so the kernel surfaces the error to the model.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn worker_begin_login_rejects_unknown_servers() -> Result<()> {
         let agent = tempfile::tempdir()?;
         let http = Arc::new(ScriptedHttp::fixture());
@@ -411,6 +413,7 @@ mod tests {
     /// The UI contract for the worker: no manual paste channel, and the
     /// fallback prompt refuses (the callback is the only completion path).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn worker_ui_has_no_paste_surface() {
         let ui = WorkerMcpLoginUi::with_auth_url_file(None);
         assert!(ui.on_manual_code_input().is_none());
@@ -424,6 +427,7 @@ mod tests {
 
     /// `AuthCredential::Oauth` still serializes the binding fields the
     /// persisted fixture credential shows above (shape regression fence).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn oauth_credential_serializes_ts_binding_fields() {
         let credential = AuthCredential::Oauth {

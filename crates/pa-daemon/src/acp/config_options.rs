@@ -225,17 +225,20 @@ mod tests {
         names.iter().map(std::string::ToString::to_string).collect()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn model_value_is_the_serialized_pair() {
         // JSON.stringify shape, byte-identical: `["provider","model"]`.
         assert_eq!(model_value("faux", "faux-1"), r#"["faux","faux-1"]"#);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn no_model_yields_no_options() {
         assert!(session_config_options(None, "medium", &levels(&["off"]), &[]).is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_effort_picker_follows_the_map_driven_capability() {
         let flagged_false =
@@ -259,6 +262,7 @@ mod tests {
         assert_eq!(none.len(), 1, "no levels, no picker: {none:?}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn model_option_lists_discovered_and_current_models() {
         let current = PickerModel::from_model(&model("faux", "faux-1", "Faux Model", true));
@@ -309,6 +313,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn duplicate_values_collapse_and_the_current_model_wins_its_slot() {
         let current = PickerModel::from_model(&model("faux", "shared", "Live Name", false));
@@ -322,6 +327,7 @@ mod tests {
         assert_eq!(options.len(), 1);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn connection_state_metadata_parses() {
         let parsed = PickerModel::from_connection_state(&json!({
@@ -333,6 +339,7 @@ mod tests {
         assert!(PickerModel::from_connection_state(&json!({ "id": "x" })).is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn response_value_carries_config_options() {
         let current = PickerModel::from_model(&model("faux", "faux-1", "Faux Model", false));

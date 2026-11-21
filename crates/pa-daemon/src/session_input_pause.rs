@@ -267,6 +267,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn internal_pause_releases_only_its_own_hold_on_drop() {
         let table = InputPauseTable::new();
         let notify = std::sync::Arc::new(tokio::sync::Notify::new());
@@ -287,6 +288,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_pause_wakes_idle_wait_holding_queued_input() {
         let worker = created_worker().await;
         {
@@ -334,6 +336,7 @@ mod tests {
     /// Wire shape: acquire answers `{ pauseId }`, the same lease
     /// deduplicates to the same id, a different lease mints a new one.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn acquire_dedupes_on_the_lease_key() {
         let worker = created_worker().await;
         let first = worker
@@ -376,6 +379,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn release_answers_the_ts_outcome_ladder() {
         let worker = created_worker().await;
         let acquire = worker
@@ -425,6 +429,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_gate_holds_queued_input_until_released() {
         let worker = created_worker().await;
         worker

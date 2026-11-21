@@ -91,6 +91,7 @@ mod tests {
         (session.session_id().to_string(), path)
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn resolves_by_id_prefix_and_exact_name() {
         let dir = temp_dir();
@@ -107,6 +108,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn local_scope_wins_and_global_is_the_fallback() {
         let dir = temp_dir();
@@ -125,6 +127,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ambiguous_selectors_carry_the_ts_error() {
         let dir = temp_dir();
@@ -136,6 +139,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_archived_match_restores_into_the_sessions_dir() {
         let dir = temp_dir();
@@ -158,6 +162,7 @@ mod tests {
         assert_eq!(again.path, dir.join(session_file_name(&id)));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn live_matches_win_over_archived_ones() {
         let dir = temp_dir();
@@ -173,6 +178,7 @@ mod tests {
         assert!(dir.join(session_file_name(&live_id)).is_file());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_ambiguous_archive_selector_carries_the_ts_error() {
         let dir = temp_dir();
@@ -184,6 +190,7 @@ mod tests {
         assert_eq!(error.to_string(), "Ambiguous session selector \"alpha\"");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_miss_is_none_not_an_error() {
         let dir = temp_dir();

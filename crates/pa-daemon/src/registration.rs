@@ -322,6 +322,7 @@ mod tests {
     /// Only the supervisor's unknown-worker verdict is definitive: the
     /// transient failures stay retryable, and the loop's own
     /// "registration rejected" wrap still exposes the verdict inside it.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn only_the_unknown_worker_verdict_is_definitive() {
         assert!(is_definitive_rejection(
@@ -391,6 +392,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn worker_registers_then_re_registers_with_same_identity() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let supervisor_socket = dir.path().join("supervisor.sock");
@@ -469,6 +471,7 @@ mod tests {
     /// A definitive rejection on the HELD connection retires too: the
     /// in-place `SessionCreated` re-registration can carry the unknown-worker verdict.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_definitive_rejection_on_the_held_connection_retires() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let supervisor_socket = dir.path().join("supervisor.sock");
@@ -522,6 +525,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_tombstoned_registration_refusal_retires_the_worker() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let supervisor_socket = dir.path().join("supervisor.sock");
@@ -585,6 +589,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_definitive_rejection_retires_and_a_transient_one_retries() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let supervisor_socket = dir.path().join("supervisor.sock");

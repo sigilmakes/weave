@@ -107,6 +107,7 @@ async fn child_with_usage(
 
 #[allow(clippy::await_holding_lock)] // The faux provider registry is process-global.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn shutdown_flushes_child_usage_before_closing_canonical_authority() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()
@@ -151,6 +152,7 @@ async fn shutdown_flushes_child_usage_before_closing_canonical_authority() {
 
 #[allow(clippy::await_holding_lock)] // The faux provider registry is process-global.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn close_refuses_to_discard_owed_usage_after_source_conflict() {
     use std::io::Write;
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
@@ -198,6 +200,7 @@ async fn close_refuses_to_discard_owed_usage_after_source_conflict() {
 
 #[allow(clippy::await_holding_lock)] // The faux provider registry is process-global.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn close_keeps_accounting_reachable_until_child_source_can_be_read() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()

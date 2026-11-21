@@ -2,6 +2,7 @@
 use super::*;
 use serde_json::json;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn parses_wire_images_and_drops_incomplete_entries() {
     let payload = json!({
@@ -19,6 +20,7 @@ fn parses_wire_images_and_drops_incomplete_entries() {
     assert_eq!(images[0].mime_type, "image/png");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn missing_or_empty_images_admit_text_only() {
     assert!(parse_prompt_images(&json!({ "message": "plain" })).is_empty());
@@ -44,6 +46,7 @@ fn test_worker() -> Arc<Worker> {
 
 /// The attachments ride the queue item into the engine as multimodal user content.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn prompt_with_images_queues_the_images_with_the_message() {
     let worker = test_worker();
     let created = worker

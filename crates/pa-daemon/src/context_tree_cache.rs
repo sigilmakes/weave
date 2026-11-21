@@ -454,6 +454,7 @@ mod tests {
         json!({ "id": id, "label": "child", "status": status })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn settled_children_keep_their_cached_row() {
         let cache = cache_with_walk("session-a", &[("child-live", 100)], &[]);
@@ -468,6 +469,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn replaced_session_snapshots_never_serve() {
         let cache = cache_with_walk("session-old", &[("child-live", 100)], &["child-disk"]);
@@ -481,6 +483,7 @@ mod tests {
         assert_eq!(children.len(), 2, "live backfill + persisted row");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn live_identity_overlays_the_cached_body() {
         let cache = cache_with_walk("session-a", &[("child-live", 100)], &[]);
@@ -491,6 +494,7 @@ mod tests {
         assert_eq!(children[0]["totalUsage"]["input"], json!(100));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn invalidated_children_leave_the_tree_immediately() {
         let cache = cache_with_walk("session-a", &[("child-live", 100)], &["child-disk"]);
@@ -524,6 +528,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_in_flight_walk_cannot_republish_a_deleted_child() {
         let cache = cache_with_walk("session-a", &[("child-live", 100)], &[]);
@@ -549,6 +554,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_newly_live_child_rides_its_cached_persisted_usage() {
         // The persisted row carries REAL usage (the seeded tree's spend) —
@@ -583,6 +589,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cold_cache_serves_live_rows_with_the_usage_fallback() {
         let cache = ContextTreeCache::new();

@@ -77,6 +77,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_mint_consumes_exactly_once() {
         let nonce = mint();
@@ -87,6 +88,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn everything_a_caller_might_send_consumes_nothing() {
         assert!(!consume(None), "an absent nonce is no capability");
@@ -97,6 +99,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_reserved_kinds_match_exactly() {
         for kind in RESERVED_CUSTOM_KINDS {

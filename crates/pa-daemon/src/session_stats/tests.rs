@@ -6,6 +6,7 @@ use crate::session_store::log_reader_tests::write_jsonl_fixture;
 
 /// The captured-attribution fixture end to end: the folded totals — cost
 /// $0 → $0.0089957, input 2690 → 52898 — `totalTokens` stays 23032.
+#[pa_test_scratch::pa_test]
 #[test]
 fn captured_attribution_fixture_stats_count_the_fold() {
     let path = crate::session_store::log_reader_tests::captured_attribution_log();
@@ -94,6 +95,7 @@ fn entry_with_usage(total_tokens: u64) -> (&'static str, Value) {
 }
 
 /// The usage accounting bridges the gap.
+#[pa_test_scratch::pa_test]
 #[test]
 fn ghost_gap_does_not_zero_the_token_totals() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -134,6 +136,7 @@ fn ghost_gap_does_not_zero_the_token_totals() {
     assert_eq!(stats["userMessages"], json!(2));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn counts_messages_tool_calls_and_tokens() {
     let store = store_with(&[
@@ -162,6 +165,7 @@ fn counts_messages_tool_calls_and_tokens() {
     assert_eq!(stats, expected);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn aborted_assistant_usage_counts_toward_recorded_totals() {
     let store = store_with(&[
@@ -185,6 +189,7 @@ fn aborted_assistant_usage_counts_toward_recorded_totals() {
 /// The compaction boundary against the windowed reader: the windowed store
 /// never loads the pre-cut ancestry and must still report the same active
 /// numbers as the full store.
+#[pa_test_scratch::pa_test]
 #[test]
 fn compaction_boundary_serves_the_windowed_reader() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -283,6 +288,7 @@ fn compaction_boundary_serves_the_windowed_reader() {
 /// spend TS drops from the active stats; the kept region is what TS reports
 /// post-compaction. Point `PA_ACTIVE_STATS_CAPTURED_FIXTURE` at a local copy
 /// to run it (real captures are never committed).
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "set PA_ACTIVE_STATS_CAPTURED_FIXTURE to the captured session path"]
 fn captured_compaction_boundary_matches_ts_active_stats() {
@@ -321,6 +327,7 @@ fn captured_compaction_boundary_matches_ts_active_stats() {
 /// The compaction boundary in miniature: kept rows plus a ghost-parent row
 /// are what the active stats report; the side-question FORK is spend the
 /// reloaded list drops (it survives on whole-file surfaces).
+#[pa_test_scratch::pa_test]
 #[test]
 fn compaction_boundary_drops_the_pre_cut_ancestry() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -401,6 +408,7 @@ fn compaction_boundary_drops_the_pre_cut_ancestry() {
 
 /// TS `buildSessionContext` records the last compaction along its leaf-to-root path only,
 /// so the active line keeps its own full history.
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_abandoned_branchs_compaction_never_bounds_the_active_list() {
     let dir = tempfile::TempDir::new().unwrap();

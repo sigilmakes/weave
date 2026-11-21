@@ -124,6 +124,7 @@ fn canonical_binding_path(path: &str) -> String {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn record_indexes_by_active_id_and_file() {
         let table = SessionBindingTable::new();
@@ -136,6 +137,7 @@ mod tests {
         assert_eq!(binding.session_file.as_deref(), Some("/tmp/sess.jsonl"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn supersede_repoints_the_old_id_at_the_new_binding() {
         let table = SessionBindingTable::new();
@@ -159,6 +161,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_second_supersede_repoints_every_older_id() {
         let table = SessionBindingTable::new();
@@ -188,6 +191,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rebinding_the_same_id_is_not_a_supersede() {
         let table = SessionBindingTable::new();
@@ -198,6 +202,7 @@ mod tests {
             .is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unknown_and_empty_ids_have_no_binding() {
         let table = SessionBindingTable::new();
@@ -208,6 +213,7 @@ mod tests {
         assert!(table.binding_for("").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_binding_without_a_session_file_never_supersedes() {
         let table = SessionBindingTable::new();
@@ -219,6 +225,7 @@ mod tests {
         assert!(table.binding_for("worker-2").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_deleted_session_file_forgets_its_ids() {
         let table = SessionBindingTable::new();
@@ -243,6 +250,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn forgetting_one_file_keeps_other_files_bound() {
         let table = SessionBindingTable::new();
@@ -261,6 +269,7 @@ mod tests {
         assert!(table.binding_for("worker-1").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_different_session_at_a_reused_file_path_never_supersedes() {
         let table = SessionBindingTable::new();
@@ -288,6 +297,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_identity_less_record_never_supersedes() {
         // A boot registration racing the create carries no session id: it
@@ -312,6 +322,7 @@ mod tests {
         assert_eq!(superseded.0, vec!["worker-1".to_string()]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn two_identity_less_records_never_supersede_each_other() {
         let table = SessionBindingTable::new();
@@ -333,6 +344,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn distinct_files_keep_distinct_bindings() {
         let table = SessionBindingTable::new();

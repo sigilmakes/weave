@@ -906,6 +906,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn legacy_restore_replays_context_and_actions_before_continuing_each_interrupted_kind() {
         for flag in [
             "streaming",
@@ -976,6 +977,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn legacy_restore_resumes_an_accepted_turn_without_duplicating_its_prompt() {
         let mut row = two_row_roster().sessions.remove(0);
         row.should_resume = true;
@@ -1014,6 +1016,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn legacy_restore_does_not_resume_idle_sessions_and_reports_failed_queue_restore() {
         let mut row = two_row_roster().sessions.remove(0);
         row.queue.actions = json!({ "formatVersion": 1, "actions": [{"id": "queued"}] });
@@ -1062,6 +1065,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn legacy_restore_releases_input_pause_when_abort_fails() {
         let mut row = two_row_roster().sessions.remove(0);
         row.should_resume = true;
@@ -1102,6 +1106,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn legacy_manifest_restores_real_worker_context_and_both_queue_lanes() {
         let dir = tempfile::TempDir::new().unwrap();
         let worker = crate::worker::Worker::new(
@@ -1163,6 +1168,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn legacy_busy_restore_keeps_follow_up_behind_continuation_with_a_running_worker() {
         let dir = tempfile::TempDir::new().unwrap();
         let worker = crate::worker::Worker::new(
@@ -1247,6 +1253,7 @@ mod tests {
         worker.work_notify.notify_one();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn legacy_child_metadata_replaces_only_the_old_parent_handle() {
         let mut payload = json!({ "runtimeMetadata": {
@@ -1269,6 +1276,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn hello_resume_reports_progress_before_and_after_settle() {
         let progress = RestoreProgress::new();
@@ -1299,6 +1307,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn queued_attach_unblocks_when_only_its_target_settles() {
         let progress = std::sync::Arc::new(RestoreProgress::new());
         progress.begin(Some(&two_row_roster()));
@@ -1321,6 +1330,7 @@ mod tests {
         assert!(tokio::time::timeout(tick, queued_a).await.is_ok());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn settle_target_failure_answers_the_typed_attach_error_per_row() {
         let progress = RestoreProgress::new();
@@ -1336,6 +1346,7 @@ mod tests {
         assert!(progress.settled_failure("unknown-id").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn registry_shaped_selectors_own_their_row_and_ambiguous_ones_own_nothing() {
         let progress = RestoreProgress::new();
@@ -1362,6 +1373,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn an_adoption_settle_skips_a_row_pending_its_continuation() {
         let mut roster = two_row_roster();
         roster.sessions[0].should_resume = true;
@@ -1386,6 +1398,7 @@ mod tests {
         assert!(tokio::time::timeout(tick, queued_a).await.is_ok());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn legacy_adoption_waits_for_manifest_queue_replay_even_when_idle() {
         let mut roster = two_row_roster();
@@ -1399,6 +1412,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn a_continuation_skip_is_still_progress_for_the_other_waiters() {
         let mut roster = two_row_roster();
         roster.sessions[0].should_resume = true;
@@ -1430,6 +1444,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn settle_progress_rearms_a_waiters_quiet_budget_past_the_first_deadline() {
         let progress = std::sync::Arc::new(RestoreProgress::new());
         progress.begin(Some(&two_row_roster()));
@@ -1455,6 +1470,7 @@ mod tests {
         assert!(tokio::time::timeout(tick, queued_a).await.is_ok());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn settle_target_without_a_registered_pass_is_a_no_op() {
         let progress = RestoreProgress::new();
@@ -1464,6 +1480,7 @@ mod tests {
         assert!(progress.settled_failure("a-1").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn restore_rows_sort_bottom_up_deepest_first() {
         let row = |id: &str, depth: u32, subagent: bool| UpdateRosterSession {
@@ -1499,6 +1516,7 @@ mod tests {
         assert_eq!(ids, ["grandchild", "child", "top"]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn settled_failure_matches_durable_active_and_stem_selectors() {
         let progress = RestoreProgress::new();
@@ -1546,6 +1564,7 @@ mod tests {
         assert!(progress.settled_failure("unknown-id").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn boot_sweep_removes_socket_dir_and_legacy_names() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -1570,6 +1589,7 @@ mod tests {
         assert!(other_socket_dir.exists());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn boot_sweep_preserves_socket_bound_lost_reply_sources_until_attempts_finish() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -1643,6 +1663,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn consume_roster_env_none_without_the_env() {
         // NOTE: process env is global; this documents the None path only when no

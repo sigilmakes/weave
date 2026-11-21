@@ -324,6 +324,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn export_html_writes_the_session_data() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let core = Arc::new(Mutex::new(core_with_session(dir.path())));
@@ -347,6 +348,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn export_jsonl_rechains_the_branch() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let core = Arc::new(Mutex::new(core_with_session(dir.path())));
@@ -380,6 +382,7 @@ mod tests {
         assert_eq!(second["parentId"], "e1");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn jsonl_export_refuses_the_source_and_a_live_destination() {
         let dir = tempfile::TempDir::new().expect("temp dir");
@@ -416,6 +419,7 @@ mod tests {
         assert_eq!(std::fs::read(&source).expect("source bytes"), source_before);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn failed_jsonl_export_preserves_the_source_and_existing_destination() {
         let dir = tempfile::TempDir::new().expect("temp dir");
@@ -446,6 +450,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn export_requires_the_session_store() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let mut core = core_with_session(dir.path());

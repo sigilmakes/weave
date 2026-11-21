@@ -123,6 +123,7 @@ fn child_file(dir: &Path) -> PathBuf {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn emit_reads_once_and_advances_the_cursor() {
     let tmp = tempfile::tempdir().unwrap();
     let file = child_file(tmp.path());
@@ -154,6 +155,7 @@ async fn emit_reads_once_and_advances_the_cursor() {
 /// A failed delivery keeps the cursor so the next emission re-delivers the
 /// same rows; once the sink persists, the report lands exactly once.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn emit_keeps_the_cursor_until_the_sink_persists() {
     let tmp = tempfile::tempdir().unwrap();
     let file = child_file(tmp.path());
@@ -182,6 +184,7 @@ async fn emit_keeps_the_cursor_until_the_sink_persists() {
 /// A failed final observation keeps its report owed; the follow-up forget
 /// replays it before the registration drops instead of orphaning it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn forget_replays_the_retained_report_before_unregistering() {
     let tmp = tempfile::tempdir().unwrap();
     let file = child_file(tmp.path());
@@ -209,6 +212,7 @@ async fn forget_replays_the_retained_report_before_unregistering() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn emit_without_a_sink_consumes_nothing() {
     let tmp = tempfile::tempdir().unwrap();
     let file = child_file(tmp.path());
@@ -220,6 +224,7 @@ async fn emit_without_a_sink_consumes_nothing() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn emit_tolerates_missing_and_absent_files() {
     let tmp = tempfile::tempdir().unwrap();
     let sessions = registry(Path::new("/agent"));
@@ -239,6 +244,7 @@ async fn emit_tolerates_missing_and_absent_files() {
 /// (tombstones/torn/`meta`/foreign parents excluded), the cursor lazy
 /// until a delivery primes it at the tail.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reseed_lists_live_ledger_children_settled_and_bills_only_after_a_delivery() {
     let tmp = tempfile::tempdir().unwrap();
     let agent = tmp.path().join("agent");
@@ -385,6 +391,7 @@ async fn reseed_lists_live_ledger_children_settled_and_bills_only_after_a_delive
 /// Cancellation after delivery starts retains the exact interval; rows arriving
 /// behind it are drained once before the caller's final forget.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn canceled_interval_keeps_identity_and_drains_new_rows_before_forget() {
     struct CancelFirstSink {
         attempts: std::sync::Mutex<Vec<RlmChildUsageReport>>,
@@ -481,6 +488,7 @@ async fn canceled_interval_keeps_identity_and_drains_new_rows_before_forget() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn failed_final_replay_preserves_report_and_registration_for_a_bounded_retry() {
     let tmp = tempfile::tempdir().unwrap();
     let file = child_file(tmp.path());
@@ -603,6 +611,7 @@ async fn retirement_registry(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn repeated_delete_replays_retired_usage_without_repeating_lifecycle_work() {
     let tmp = tempfile::tempdir().unwrap();
     let file = child_file(tmp.path());
@@ -693,6 +702,7 @@ async fn repeated_delete_replays_retired_usage_without_repeating_lifecycle_work(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn repeated_close_replays_retired_usage_without_a_second_kill() {
     let tmp = tempfile::tempdir().unwrap();
     let file = child_file(tmp.path());
@@ -960,16 +970,19 @@ async fn cancellation_after_ack_preserves_retirement(caller: RetirementCaller) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn delete_canceled_after_kill_ack_retries_without_a_second_kill() {
     cancellation_after_ack_preserves_retirement(RetirementCaller::Delete).await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn close_canceled_after_kill_ack_retries_without_a_second_kill() {
     cancellation_after_ack_preserves_retirement(RetirementCaller::Close).await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn concurrent_close_replays_debt_after_the_first_caller_retires_the_roster() {
     let tmp = tempfile::tempdir().unwrap();
     let file = child_file(tmp.path());
@@ -1051,11 +1064,13 @@ async fn concurrent_close_replays_debt_after_the_first_caller_retires_the_roster
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn inactive_delete_finishes_a_running_record_whose_kill_already_acknowledged() {
     cancellation_after_ack_preserves_retirement(RetirementCaller::InactiveAfterDelete).await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn close_preserves_final_usage_across_a_transient_child_file_read_failure() {
     let tmp = tempfile::tempdir().unwrap();
     let file = child_file(tmp.path());
@@ -1317,11 +1332,13 @@ async fn settled_watcher_replays_only_one_failed_final_interval(failure: FinalWa
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn settled_watcher_replays_a_failed_final_emit_before_its_notice_and_settle() {
     settled_watcher_replays_only_one_failed_final_interval(FinalWatcherFailure::Transient).await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn settled_watcher_caps_a_persistent_final_failure_and_preserves_the_debt() {
     settled_watcher_replays_only_one_failed_final_interval(FinalWatcherFailure::Persistent).await;
 }

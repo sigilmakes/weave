@@ -1,6 +1,7 @@
 //! The goal tests (recovery, continuation minting, the goal loop's turn-end accounting).
 use super::*;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn recovery_rebuild_rehydrates_the_goal_from_the_session_file() {
     let _faux = FAUX_TEST_LOCK
@@ -98,6 +99,7 @@ fn recovery_rebuild_rehydrates_the_goal_from_the_session_file() {
 /// injected context row (TS `createGoalContextMessage`: text first, images
 /// after) — the row is the turn's only image carrier, session commands
 /// never admit a user row.
+#[pa_test_scratch::pa_test]
 #[test]
 fn goal_start_keeps_the_prompt_images_on_the_context_row() {
     let _faux = FAUX_TEST_LOCK
@@ -208,6 +210,7 @@ fn wire_assistant_message(text: String) -> Value {
 /// One-store recovery: the worker respawns with `--resume <sessionFile>`,
 /// so the rebuilt session's branch carries the pre-crash history and a
 /// post-recovery compact runs over it — never a skip on the empty branch.
+#[pa_test_scratch::pa_test]
 #[test]
 fn recovered_engine_compaction_walk_sees_the_durable_history() {
     let _faux = FAUX_TEST_LOCK
@@ -283,6 +286,7 @@ fn recovered_engine_compaction_walk_sees_the_durable_history() {
     assert!(compaction_entry_in_entries(&engine));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn post_compaction_goal_continuation_mint() {
     let _faux = FAUX_TEST_LOCK
@@ -386,6 +390,7 @@ fn post_compaction_goal_continuation_mint() {
 /// post-compaction mint over an ALREADY-armed deferral delivers the
 /// OWED continuation exactly once; a fresh mint would leave the
 /// armed flag behind and the settle sites deliver a second one.
+#[pa_test_scratch::pa_test]
 #[test]
 fn post_compaction_mint_delivers_the_armed_deferral_once() {
     let _faux = FAUX_TEST_LOCK
@@ -463,6 +468,7 @@ pub(crate) fn admit_request(
     });
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn goal_turn_end_mints_the_loop_until_the_goal_completes() {
     let _faux = FAUX_TEST_LOCK
@@ -566,6 +572,7 @@ fn goal_turn_end_mints_the_loop_until_the_goal_completes() {
     assert!(goal_work.lock().unwrap().is_empty());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn paused_goal_mints_no_turn_end_continuation() {
     let _faux = FAUX_TEST_LOCK
@@ -607,6 +614,7 @@ fn paused_goal_mints_no_turn_end_continuation() {
     assert_eq!(engine.goal_state_value()["status"], "idle");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn budget_exhausted_stops_with_the_ts_budget_steer() {
     let _faux = FAUX_TEST_LOCK
@@ -667,6 +675,7 @@ fn budget_exhausted_stops_with_the_ts_budget_steer() {
     assert_eq!(events.last(), Some(&EngineEvent::Done(Ok(()))));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn queued_input_defers_the_turn_end_mint() {
     let _faux = FAUX_TEST_LOCK
@@ -712,6 +721,7 @@ fn queued_input_defers_the_turn_end_mint() {
     assert_eq!(engine.goal_state_value()["continuationsUsed"], 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn running_children_owe_the_continuation_and_settle_delivers_it() {
     let _faux = FAUX_TEST_LOCK
@@ -814,6 +824,7 @@ fn engine_session_entries(engine: &AgentSessionEngine) -> Vec<pa_types::session:
     })
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn injected_custom_turn_holds_one_representation() {
     let _faux = FAUX_TEST_LOCK
@@ -912,6 +923,7 @@ fn injected_custom_turn_holds_one_representation() {
     assert_eq!(assistant_rows, 1, "entries: {entries:?}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn goal_start_continuation_holds_one_representation() {
     let _faux = FAUX_TEST_LOCK
@@ -972,6 +984,7 @@ fn goal_start_continuation_holds_one_representation() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn active_goal_aborted_turn_row_broadcasts_and_goal_accounting_skips_it() {
     let _faux = FAUX_TEST_LOCK
@@ -1126,6 +1139,7 @@ fn active_goal_aborted_turn_row_broadcasts_and_goal_accounting_skips_it() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn shared_window_goal_seed_matches_persisted_goal_state() {
     let header = || {

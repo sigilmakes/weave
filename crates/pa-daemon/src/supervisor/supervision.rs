@@ -1276,6 +1276,7 @@ mod tests {
     /// token never wins), and `RLM_DEPTH` is an explicit removal even
     /// when the client forwarded one — the only removal, so the daemon's
     /// own env stays the inherited base.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_client_env_rides_under_the_internal_overrides() {
         let client = std::collections::BTreeMap::from([
@@ -1324,6 +1325,7 @@ mod tests {
     /// The recursion marker is stripped even with no client env at all
     /// (audit #9): a supervisor started inside an agent's shell spawns
     /// depth-0 workers.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rlm_depth_is_stripped_without_a_client_env() {
         let internal = std::collections::BTreeMap::from([(
@@ -1380,6 +1382,7 @@ mod owned_reap_causal_tests {
 
     /// Terminal shutdown must join OS reaping, not merely observe zombie death.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn terminal_shutdown_waits_for_owned_os_reaping() {
         let dir = tempfile::tempdir().expect("fixture");
         let supervisor = Arc::new(
@@ -1528,6 +1531,7 @@ mod launch_rollback_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancelled_owned_launch_retains_admission_until_exact_child_is_reaped() {
         let (dir, supervisor) = fixture();
         let admission = supervisor
@@ -1591,6 +1595,7 @@ mod launch_rollback_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unpolled_rollback_cancellation_records_debt_before_permit_release() {
         let (dir, supervisor) = fixture();
         let admission = supervisor
@@ -1657,6 +1662,7 @@ mod launch_rollback_tests {
         .expect("fixture child reaped by Tokio drop cleanup");
     }
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancelled_physical_launch_before_spawn_releases_admission_without_publication() {
         let (dir, supervisor) = fixture();
         let resident = resident(&supervisor, dir.path(), 0);
@@ -1698,6 +1704,7 @@ mod launch_rollback_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancelled_physical_launch_before_descriptor_drains_actual_child_cleanup() {
         let (dir, supervisor) = fixture();
         let resident = resident(&supervisor, dir.path(), 0);
@@ -1757,6 +1764,7 @@ mod orphan_callback_truth_tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn rollback_admission_covers_orphan_callback_success_panic_and_abort() {
         // Each case owns a fresh supervisor, child, journal path and pause.
         for mode in ["success", "panic", "abort"] {
@@ -1866,6 +1874,7 @@ mod spawn_identity_capture_tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn owned_record_and_descriptor_reuse_one_spawn_identity_observation_including_none() {
         for captured in [None, Some("captured-once".to_string())] {
             let dir = tempfile::tempdir().expect("fixture");

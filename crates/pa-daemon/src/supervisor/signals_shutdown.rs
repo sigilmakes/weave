@@ -265,6 +265,7 @@ mod terminal_truth_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn tombstone_write_failure_never_clears_resident_or_publishes_terminal_exit() {
         let (dir, supervisor) = fixture();
         let blocked_parent = dir.path().join("not-a-directory");
@@ -283,6 +284,7 @@ mod terminal_truth_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unresolved_typed_retirement_never_clears_resident_or_publishes_terminal_exit() {
         use super::super::worker_lifecycle::{retirement_overrides, WorkerRetirement};
         for outcome in [
@@ -317,6 +319,7 @@ mod terminal_truth_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn incomplete_first_resident_does_not_skip_independent_resident_or_retry() {
         use super::super::worker_lifecycle::{retirement_overrides, WorkerRetirement};
         for failure in [

@@ -398,6 +398,7 @@ mod tests {
 
     const NOW: u64 = 1_000_000;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn grant_issue_burn_single_use() {
         let store = PeerGrantStore::new();
@@ -413,6 +414,7 @@ mod tests {
         assert_eq!(replay.unwrap_err(), PEER_AUTH_FAILED);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn grant_burns_even_on_wrong_token() {
         let store = PeerGrantStore::new();
@@ -435,6 +437,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn grant_expires() {
         let store = PeerGrantStore::new();
@@ -451,6 +454,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn grant_registration_rejects_bad_shape() {
         let store = PeerGrantStore::new();
@@ -507,6 +511,7 @@ mod tests {
             .expect("register");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn grant_cap_sweeps_expired() {
         let store = PeerGrantStore::new();
@@ -545,6 +550,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn peer_gate_requires_session_plane_and_matching_session() {
         let grant = grant(&soon(NOW, 10_000));
@@ -575,6 +581,7 @@ mod tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_purpose_grants_burn_and_gate_to_delivery() {
         let store = PeerGrantStore::new();
@@ -621,6 +628,7 @@ mod tests {
         assert!(!role.streams_events());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn peer_session_attach_gates_event_stream() {
         let role = ConnectionRole::SessionClient {

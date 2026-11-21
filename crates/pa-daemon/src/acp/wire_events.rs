@@ -457,6 +457,7 @@ fn ipython_rich_output(result: Option<&Value>) -> Option<Value> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn assistant_deltas_map_to_chunks() {
         let mut state = WireMappingState::default();
@@ -488,6 +489,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn goal_update_maps_to_the_namespaced_goal_meta() {
         // The GoalState fields the meta carries,
@@ -523,6 +525,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn user_messages_and_lifecycle_events_map_to_nothing() {
         let mut state = WireMappingState::default();
@@ -542,6 +545,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tool_calls_and_completions_map_like_the_ts_adapter() {
         let mut state = WireMappingState::default();
@@ -573,6 +577,7 @@ mod tests {
         assert_eq!(value["content"][0]["content"]["text"], "1\n");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn compaction_end_publishes_the_meta_payload() {
         let mut state = WireMappingState::default();
@@ -591,6 +596,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn assistant_stop_reason_is_captured_from_message_end() {
         let stop = assistant_stop(&json!({
@@ -606,6 +612,7 @@ mod tests {
         .is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn empty_tool_results_carry_no_content() {
         let mut state = WireMappingState::default();
@@ -624,6 +631,7 @@ mod tests {
         assert!(value.get("content").is_none(), "no empty content: {value}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn empty_text_blocks_drop_out_of_the_joined_result() {
         let mut state = WireMappingState::default();
@@ -647,6 +655,7 @@ mod tests {
         update.to_bare_value()["_meta"]["ai.primeintellect.prime-agent"].clone()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rlm_child_update_maps_to_the_subagents_meta() {
         let mut state = WireMappingState::default();
@@ -699,6 +708,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ipython_sent_agent_message_maps_the_target_fallback() {
         let mut state = WireMappingState::default();

@@ -892,6 +892,7 @@ mod exit_capture_tests {
 
     /// The exit capture reads the child's last say from its durable file
     /// after the worker is gone: the newest non-empty assistant text wins.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_exit_capture_reader_takes_the_last_assistant_row() {
         let dir = tempfile::tempdir().unwrap();
