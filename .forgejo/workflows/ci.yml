@@ -1,12 +1,11 @@
 name: CI
 
 on:
+    pull_request:
     push:
         branches:
-            - "**"
+            - main
     workflow_dispatch:
-    schedule:
-        - cron: "23 3 * * *"
 
 concurrency:
     group: ci-${{ github.ref }}
@@ -24,16 +23,22 @@ env:
     CARGO_PROFILE_TEST_DEBUG: "0"
     # The workspace scheduler owns whole-binary slots. Eight over-subscribed the
     # runner: timing-sensitive targets stretched to 250-270 s and their 60 s
-    # harness deadlines started timing out. Four bounds the tail.
+    # harness deadlines started timing out. Four bounds the tail while the package
+    # job builds alongside.
     PA_WORKSPACE_TEST_SLOTS: "4"
 
 jobs:
-    verify:
-        name: verify
+    # Lint stays a cheap gate. The heavy package and workspace jobs start
+    # together after it, and the package job now builds + smoke-tests the
+    # release artifact instead of rerunning the test suite.
+    lint:
+        name: lint
         runs-on: gaia-runner
-        timeout-minutes: 100
+        timeout-minutes: 15
         container:
             image: fleet-ci:latest
+        outputs:
+            docs_only: ${{ steps.scope.outputs.docs_only }}
         steps:
             - name: Checkout
               uses: https://data.forgejo.org/actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -81,17 +86,45 @@ jobs:
             - name: Documentation-only change
               if: steps.scope.outputs.docs_only == 'true'
               run: echo "No build-affecting files changed; the gates stay green."
+
+    package:
+        name: package
+        needs: lint
+        runs-on: gaia-runner
+        timeout-minutes: 30
+        container:
+            image: fleet-ci:latest
+        steps:
+            - name: Checkout
+              uses: https://data.forgejo.org/actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+              with:
+                  persist-credentials: false
+              timeout-minutes: 5
             - name: Build release package and static checks
-              if: steps.scope.outputs.docs_only != 'true'
+              if: needs.lint.outputs.docs_only != 'true'
               timeout-minutes: 20
               run: |
                   nix build .#prime-agent-ci --no-update-lock-file --print-build-logs --out-link "$RUNNER_TEMP/pa-package"
                   nix build .#checks.x86_64-linux.static --no-update-lock-file --print-build-logs --out-link "$RUNNER_TEMP/pa-static"
             - name: Documentation-only change
-              if: steps.scope.outputs.docs_only == 'true'
+              if: needs.lint.outputs.docs_only == 'true'
               run: echo "No build-affecting files changed; the package is unchanged."
+
+    workspace:
+        name: workspace
+        needs: lint
+        runs-on: gaia-runner
+        timeout-minutes: 40
+        container:
+            image: fleet-ci:latest
+        steps:
+            - name: Checkout
+              uses: https://data.forgejo.org/actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+              with:
+                  persist-credentials: false
+              timeout-minutes: 5
             - name: Checkout pinned TypeScript parity reference
-              if: steps.scope.outputs.docs_only != 'true'
+              if: needs.lint.outputs.docs_only != 'true'
               uses: https://data.forgejo.org/actions/checkout@11d5960a326750d5838078e36cf38b85af677262
               with:
                   ref: 239dbe344fcaf671af9898906ff952be73995614
@@ -99,16 +132,16 @@ jobs:
                   persist-credentials: false
               timeout-minutes: 5
             - name: Build pinned TypeScript parity reference
-              if: steps.scope.outputs.docs_only != 'true'
+              if: needs.lint.outputs.docs_only != 'true'
               timeout-minutes: 10
               run: nix build ./ts-reference#prime-agent --no-update-lock-file --out-link "$RUNNER_TEMP/pa-ts-reference"
             - name: Full workspace gates with private state and a real kernel
-              if: steps.scope.outputs.docs_only != 'true'
+              if: needs.lint.outputs.docs_only != 'true'
               timeout-minutes: 30
               run: |
                   export PA_TS_BINARY="$RUNNER_TEMP/pa-ts-reference/bin/prime-agent"
                   export PA_TS_REFERENCE="$GITHUB_WORKSPACE/ts-reference"
                   nix develop --no-update-lock-file --command python3 -B scripts/check_workspace.py --require-ts-reference --skip-lint --timeout 1740
             - name: Documentation-only change
-              if: steps.scope.outputs.docs_only == 'true'
+              if: needs.lint.outputs.docs_only == 'true'
               run: echo "No build-affecting files changed; the workspace tests are unchanged."
