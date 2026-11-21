@@ -25,8 +25,8 @@
 //! response byte, an error, or 500 ms):
 //!
 //! ```json
-//! {"id":"herdr:pi:<ms>:<rand>","method":"pane.report_agent","params":{"pane_id":"<HERDR_PANE_ID>","source":"herdr:pi","agent":"wv","state":"working","seq":1780000000000000,"agent_session_path":"/home/me/.prime/agent/sessions/<id>.jsonl"}}
-//! {"id":"herdr:pi:release:<ms>:<rand>","method":"pane.release_agent","params":{"pane_id":"…","source":"herdr:pi","agent":"wv","seq":1780000000000001}}
+//! {"id":"herdr:pi:<ms>:<rand>","method":"pane.report_agent","params":{"pane_id":"<HERDR_PANE_ID>","source":"herdr:pi","agent":"prime-agent","state":"working","seq":1780000000000000,"agent_session_path":"/home/me/.prime/agent/sessions/<id>.jsonl"}}
+//! {"id":"herdr:pi:release:<ms>:<rand>","method":"pane.release_agent","params":{"pane_id":"…","source":"herdr:pi","agent":"prime-agent","seq":1780000000000001}}
 //! ```
 //!
 //! `message` rides only blocked reports. `seq` is per-process monotonic
@@ -1229,7 +1229,7 @@ mod tests {
         let params = &report["params"];
         assert_eq!(params["pane_id"], "w1:p1");
         assert_eq!(params["source"], "herdr:pi");
-        assert_eq!(params["agent"], "wv");
+        assert_eq!(params["agent"], "prime-agent");
         assert_eq!(params["state"], "idle");
         assert_eq!(
             params["agent_session_path"],
