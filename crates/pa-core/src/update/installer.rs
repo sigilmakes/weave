@@ -35,11 +35,10 @@ pub const ENV_DOWNLOAD_BASE_URL: &str = "PRIME_AGENT_DOWNLOAD_BASE_URL";
 /// manifests (`latest.json`, `beta.json`) are published.
 pub const DEFAULT_DOWNLOAD_BASE_URL: &str = "https://pub-728493de92a943e2a9b2d17b4719f318.r2.dev";
 
-/// The stable installer's file under the download base. The release
-/// workflow publishes this repo's `install-rust.sh` there as `install.sh`;
-/// never a GitHub raw or workflow URL (the override env var stays for
-/// tests and pinned installs).
-pub const STABLE_INSTALLER_FILE: &str = "install.sh";
+/// The official domain's install endpoint — the stable channel's installer
+/// source; never a GitHub raw or workflow URL (the override env var stays
+/// for tests and pinned installs).
+pub const OFFICIAL_INSTALLER_URL: &str = "https://app.primeintellect.ai/prime-agent/install.sh";
 /// The nightly installer's file under the download base (the domain only
 /// forwards `install.sh`, so nightly updates fetch it from the base).
 pub const BETA_INSTALLER_FILE: &str = "install-beta.sh";
@@ -72,11 +71,13 @@ pub fn installer_script_url(channel: Option<&str>) -> String {
             return url;
         }
     }
-    let file = match channel {
-        Some("beta") => BETA_INSTALLER_FILE,
-        _ => STABLE_INSTALLER_FILE,
-    };
-    format!("{}/{file}", download_base_url().trim_end_matches('/'))
+    match channel {
+        Some("beta") => format!(
+            "{}/{BETA_INSTALLER_FILE}",
+            download_base_url().trim_end_matches('/')
+        ),
+        _ => OFFICIAL_INSTALLER_URL.to_string(),
+    }
 }
 
 /// The download base `--check` reads the channel manifest from: the

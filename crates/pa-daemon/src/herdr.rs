@@ -66,7 +66,7 @@ const SEND_TIMEOUT_MS: u64 = 500;
 /// The reporter identity on every report (TS main `herdr:pi` source;
 /// `herdr integration install pi` reports under the same pair).
 pub(crate) const HERDR_SOURCE: &str = "herdr:pi";
-pub(crate) const HERDR_AGENT: &str = "wv";
+pub(crate) const HERDR_AGENT: &str = "prime-agent";
 
 /// The Herdr socket target (TS `herdrSocketTarget`): Herdr exports a
 /// Unix-style socket path; on Windows that dials the local named-pipe
