@@ -20,7 +20,7 @@ impl Worker {
                 match engine.prompt_acceptance_build_guard().await {
                     Ok(guard) => Some(guard),
                     Err(error) => {
-                        return response_failure(None, command_type, &error.to_string(), None)
+                        return response_failure(None, command_type, &format!("{error:#}"), None)
                     }
                 }
             } else {
@@ -466,7 +466,7 @@ impl Worker {
             match engine.prompt_acceptance_build_guard().await {
                 Ok(guard) => Some(guard),
                 Err(error) => {
-                    return response_failure(None, "get_state", &error.to_string(), None);
+                    return response_failure(None, "get_state", &format!("{error:#}"), None);
                 }
             }
         } else {

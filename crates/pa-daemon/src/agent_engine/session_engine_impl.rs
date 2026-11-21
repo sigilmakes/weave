@@ -616,7 +616,7 @@ impl SessionEngine for AgentSessionEngine {
         };
         if let Err(error) = self.session_agent(&model) {
             return CompactionOutcome::Failed {
-                error: error.to_string(),
+                error: format!("{error:#}"),
             };
         }
         let custom_instructions = request.custom_instructions;
@@ -701,7 +701,7 @@ impl SessionEngine for AgentSessionEngine {
         };
         if let Err(error) = self.ensure_core_session(&model) {
             return BranchSummaryOutcome::Failed {
-                error: error.to_string(),
+                error: format!("{error:#}"),
             };
         }
         let api_key = self.resolve_request_api_key(&model);
@@ -957,7 +957,7 @@ impl SessionEngine for AgentSessionEngine {
             Err(error) => {
                 return SideQuestionOutcome::Failed {
                     answer: String::new(),
-                    error: error.to_string(),
+                    error: format!("{error:#}"),
                 };
             }
         };
@@ -1402,7 +1402,7 @@ impl SessionEngine for AgentSessionEngine {
         let acceptance_guard = match self.runtime.block_on(self.prompt_acceptance_build_guard()) {
             Ok(build) => build,
             Err(error) => {
-                emit(EngineEvent::Done(Err(error.to_string())));
+                emit(EngineEvent::Done(Err(format!("{error:#}"))));
                 return;
             }
         };

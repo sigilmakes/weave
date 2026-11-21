@@ -34,7 +34,7 @@ impl AgentSessionEngine {
         }
         if let Err(error) = self.apply_scheduled_model_metadata_refresh() {
             return TurnResult::Error {
-                error: error.to_string(),
+                error: format!("{error:#}"),
                 assistant: None,
             };
         }

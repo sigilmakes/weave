@@ -368,6 +368,121 @@ end}}}
 }
 
 #[tokio::test]
+async fn cached_build_failure_keeps_the_leaf_diagnostic_in_display_reads() {
+    let dir = tempfile::TempDir::new().expect("temp dir");
+    let agent_dir = dir.path().join("agent");
+    let session_dir = agent_dir.join("sessions");
+    std::fs::create_dir_all(&session_dir).expect("session dir");
+    std::fs::write(
+        agent_dir.join("broken.lua"),
+        "error('cached-build-leaf-diagnostic')",
+    )
+    .expect("broken plugin");
+    std::fs::write(
+        agent_dir.join("settings.json"),
+        serde_json::json!({
+            "enableBuiltinSkills": false, "prewarmIpythonKernel": false,
+            "contextStrategy": "broken/view",
+            "plugins": {"broken": {"enabled": true, "path": "broken.lua"}},
+        })
+        .to_string(),
+    )
+    .expect("settings");
+    let supervisor = spawn_supervisor(dir.path());
+
+    let script = serde_json::json!({ "engine": "faux", "responses": [
+        { "text": "hello from scripted" },
+    ] });
+    let script_path = dir.path().join("script.json");
+    std::fs::write(&script_path, script.to_string()).expect("write script");
+    let (client, _events) = pa_tui::daemon_client::DaemonClient::connect(&supervisor.socket)
+        .await
+        .expect("connect supervisor");
+    let data = client
+        .request_ok(DaemonCommand::Create {
+            id: None,
+            session_path: None,
+            continue_recent: None,
+            no_session: None,
+            name: None,
+            config: Some(serde_json::json!({
+                "cwd": dir.path().display().to_string(),
+                "sessionDir": session_dir.display().to_string(),
+                "script": script_path.display().to_string(),
+            })),
+            runtime_metadata: None,
+            lifecycle: None,
+            env: None,
+            launch_env: None,
+            rest: serde_json::Map::default(),
+        })
+        .await
+        .expect("create session");
+    let session_id = data
+        .get("activeSessionId")
+        .or_else(|| data.get("id"))
+        .and_then(serde_json::Value::as_str)
+        .expect("session id")
+        .to_string();
+
+    let export = client
+        .request(DaemonCommand::ExportHtml {
+            id: None,
+            active_session_id: session_id.clone(),
+            output_path: Some(dir.path().join("export.html").display().to_string()),
+            rest: serde_json::Map::default(),
+        })
+        .await
+        .expect("export response");
+    assert!(!export.success, "broken plugin must reject export");
+    assert!(
+        export
+            .error
+            .as_deref()
+            .is_some_and(|error| error.contains("cached-build-leaf-diagnostic")),
+        "export leaf cause: {export:?}"
+    );
+    for command in [
+        DaemonCommand::Prompt {
+            id: None,
+            active_session_id: session_id.clone(),
+            message: "must not run".to_string(),
+            input: serde_json::from_value(serde_json::json!({})).expect("prompt input"),
+            rest: serde_json::Map::default(),
+        },
+        DaemonCommand::GetState {
+            id: None,
+            active_session_id: session_id.clone(),
+            rest: serde_json::Map::default(),
+        },
+        DaemonCommand::GetMessages {
+            id: None,
+            active_session_id: session_id.clone(),
+            before: None,
+            capabilities: None,
+            rest: serde_json::Map::default(),
+        },
+    ] {
+        let response = client
+            .request(command)
+            .await
+            .expect("cached build response");
+        assert!(
+            !response.success,
+            "cached build failure must refuse command: {response:?}"
+        );
+        assert!(
+            response
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("cached-build-leaf-diagnostic")),
+            "cached leaf cause missing: {response:?}"
+        );
+    }
+    client.close();
+}
+
+#[tokio::test]
 async fn tui_export_and_share_surface() {
     use base64::Engine as _;
     let dir = tempfile::TempDir::new().expect("temp dir");

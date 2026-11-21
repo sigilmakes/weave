@@ -19,7 +19,7 @@ impl Worker {
             match engine.prompt_acceptance_build_guard().await {
                 Ok(guard) => Some(guard),
                 Err(error) => {
-                    return response_failure(None, "prompt", &error.to_string(), None);
+                    return response_failure(None, "prompt", &format!("{error:#}"), None);
                 }
             }
         } else {
