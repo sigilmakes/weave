@@ -1,0 +1,1237 @@
+{
+  "binary_sha256": "83515c733d72a987f5c613d084a189af54296675c1c13c5461bd12e94d1f97ec",
+  "daemon_pid": 3474800,
+  "turns": [
+    {
+      "phase": "root_plain",
+      "wall_seconds": 0.22995851299492642,
+      "tree_cpu_seconds": 0.30000000000000004,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3475311,
+          "17966172"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3475311,
+          "17966172"
+        ]
+      ]
+    },
+    {
+      "phase": "root_tool_cold",
+      "wall_seconds": 4.415661736973561,
+      "tree_cpu_seconds": 1.22,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3475311,
+          "17966172"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ]
+      ]
+    },
+    {
+      "phase": "spawn_one",
+      "wall_seconds": 0.38235421699937433,
+      "tree_cpu_seconds": 0.32000000000000006,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ]
+      ]
+    },
+    {
+      "phase": "spawn_two",
+      "wall_seconds": 0.5001229050103575,
+      "tree_cpu_seconds": 0.3,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ]
+    },
+    {
+      "phase": "root_tool",
+      "wall_seconds": 0.7594091680075508,
+      "tree_cpu_seconds": 0.7099999999999999,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ]
+    },
+    {
+      "phase": "root_followup",
+      "wall_seconds": 0.0784690730215516,
+      "tree_cpu_seconds": 0.07,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ]
+    },
+    {
+      "phase": "child_one_tool",
+      "wall_seconds": 7.198386834003031,
+      "tree_cpu_seconds": 1.4200000000000002,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ],
+        [
+          3482073,
+          "17967425"
+        ]
+      ]
+    },
+    {
+      "phase": "child_one_followup",
+      "wall_seconds": 0.26868815001216717,
+      "tree_cpu_seconds": 0.07,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ],
+        [
+          3482073,
+          "17967425"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ]
+    },
+    {
+      "phase": "child_two_tool",
+      "wall_seconds": 4.52374602999771,
+      "tree_cpu_seconds": 1.35,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ],
+        [
+          3490386,
+          "17968290"
+        ]
+      ]
+    },
+    {
+      "phase": "child_two_followup",
+      "wall_seconds": 0.12899106100667268,
+      "tree_cpu_seconds": 0.07999999999999996,
+      "before_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ],
+      "after_identities": [
+        [
+          3474800,
+          "17966038"
+        ],
+        [
+          3475114,
+          "17966129"
+        ],
+        [
+          3477928,
+          "17966588"
+        ],
+        [
+          3478692,
+          "17966783"
+        ],
+        [
+          3479536,
+          "17966886"
+        ]
+      ]
+    }
+  ],
+  "provider": "loopback fake SSE; no external inference",
+  "sessions": [
+    {
+      "id": "4ef54c851503",
+      "lifecycle": "live",
+      "activity": "idle",
+      "isSessionActive": false,
+      "hasRegisteredCronJob": false,
+      "lastActivityAt": "2026-11-21T16:02:33.378Z",
+      "rlmDepth": 0,
+      "activeSessionId": "4ef54c851503",
+      "sessionId": "01a1fed8-30fe-7297-abb4-997a4e292917",
+      "sessionFile": "/tmp/t9-measure-run6/agent/session-logs/01a1fed8-30fe-7297-abb4-997a4e292917.jsonl",
+      "sessionName": "measure-root",
+      "cwd": "/tmp/t9-measure-run6",
+      "thinkingLevel": "off",
+      "isStreaming": false,
+      "isCompacting": false,
+      "isQuotaParked": false,
+      "isBashRunning": false,
+      "isRunningTools": false,
+      "hasRunningSubagents": false,
+      "attachedClients": 1,
+      "messageCount": 22,
+      "sessionActions": {
+        "queuedCount": 0,
+        "steering": [],
+        "followUps": []
+      },
+      "created": "2026-11-21T16:02:23.614Z",
+      "modified": "2026-11-21T16:02:33.383Z",
+      "firstMessage": "PLAIN_ROOT",
+      "workerState": "ready",
+      "workerPid": 3475114,
+      "rosterDeltaSequence": 61,
+      "workerInstanceId": "993a8d8b-91e8-422f-9bbf-3b5f057a3b91",
+      "model": {
+        "id": "measure-1",
+        "name": "Measurement",
+        "api": "openai-completions",
+        "provider": "measurement-local",
+        "reasoning": false
+      },
+      "runtimeKind": "top-level",
+      "unfinishedActionCount": 0,
+      "anthropicWarningShown": false
+    },
+    {
+      "id": "40e04f084549",
+      "lifecycle": "live",
+      "activity": "idle",
+      "isSessionActive": false,
+      "hasRegisteredCronJob": false,
+      "lastActivityAt": "2026-11-21T16:02:41.658Z",
+      "rlmDepth": 1,
+      "activeSessionId": "40e04f084549",
+      "sessionId": "01a1fed8-4a36-71ea-aeb1-b00b47165aef",
+      "sessionFile": "/tmp/t9-measure-run6/agent/session-artifacts/01a1fed8-30fe-7297-abb4-997a4e292917/sub-e0578c47/01a1fed8-4a36-71ea-aeb1-b00b47165aef.jsonl",
+      "sessionName": "measure-one",
+      "cwd": "/tmp/t9-measure-run6",
+      "thinkingLevel": "off",
+      "isStreaming": false,
+      "isCompacting": false,
+      "isQuotaParked": false,
+      "isBashRunning": false,
+      "isRunningTools": false,
+      "hasRunningSubagents": false,
+      "attachedClients": 0,
+      "messageCount": 7,
+      "sessionActions": {
+        "queuedCount": 0,
+        "steering": [],
+        "followUps": []
+      },
+      "created": "2026-11-21T16:02:30.070Z",
+      "modified": "2026-11-21T16:02:41.672Z",
+      "firstMessage": "CPU_TOOL",
+      "parentSessionPath": "/tmp/t9-measure-run6/agent/session-logs/01a1fed8-30fe-7297-abb4-997a4e292917.jsonl",
+      "parentActiveSessionId": "4ef54c851503",
+      "parentSessionId": "01a1fed8-30fe-7297-abb4-997a4e292917",
+      "rlmChildId": "sub-e0578c47",
+      "workerState": "ready",
+      "workerPid": 3478692,
+      "rosterDeltaSequence": 17,
+      "workerInstanceId": "a60c734e-77f5-4bc9-97b7-1e2fe94633e2",
+      "model": {
+        "id": "measure-1",
+        "name": "Measurement",
+        "api": "openai-completions",
+        "provider": "measurement-local",
+        "reasoning": false
+      },
+      "runtimeKind": "subagent",
+      "unfinishedActionCount": 0,
+      "anthropicWarningShown": false
+    },
+    {
+      "id": "ef583c222f6c",
+      "lifecycle": "live",
+      "activity": "idle",
+      "isSessionActive": false,
+      "hasRegisteredCronJob": false,
+      "lastActivityAt": "2026-11-21T16:02:47.153Z",
+      "rlmDepth": 1,
+      "activeSessionId": "ef583c222f6c",
+      "sessionId": "01a1fed8-4e49-7115-92c6-f97be37fb277",
+      "sessionFile": "/tmp/t9-measure-run6/agent/session-artifacts/01a1fed8-30fe-7297-abb4-997a4e292917/sub-04b37294/01a1fed8-4e49-7115-92c6-f97be37fb277.jsonl",
+      "sessionName": "measure-two",
+      "cwd": "/tmp/t9-measure-run6",
+      "thinkingLevel": "off",
+      "isStreaming": false,
+      "isCompacting": false,
+      "isQuotaParked": false,
+      "isBashRunning": false,
+      "isRunningTools": false,
+      "hasRunningSubagents": false,
+      "attachedClients": 0,
+      "messageCount": 7,
+      "sessionActions": {
+        "queuedCount": 0,
+        "steering": [],
+        "followUps": []
+      },
+      "created": "2026-11-21T16:02:31.113Z",
+      "modified": "2026-11-21T16:02:47.163Z",
+      "firstMessage": "CPU_TOOL",
+      "parentSessionPath": "/tmp/t9-measure-run6/agent/session-logs/01a1fed8-30fe-7297-abb4-997a4e292917.jsonl",
+      "parentActiveSessionId": "4ef54c851503",
+      "parentSessionId": "01a1fed8-30fe-7297-abb4-997a4e292917",
+      "rlmChildId": "sub-04b37294",
+      "workerState": "ready",
+      "workerPid": 3479536,
+      "rosterDeltaSequence": 20,
+      "workerInstanceId": "fc8c7d8c-cc0e-40be-bbac-b633e1be3dca",
+      "model": {
+        "id": "measure-1",
+        "name": "Measurement",
+        "api": "openai-completions",
+        "provider": "measurement-local",
+        "reasoning": false
+      },
+      "runtimeKind": "subagent",
+      "unfinishedActionCount": 0,
+      "anthropicWarningShown": false
+    }
+  ],
+  "requests": [
+    {
+      "tag": "plain",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "PLAIN_ROOT"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "CPU_TOOL",
+      "tool": true,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "CPU_TOOL"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "CPU_TOOL",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "CPU_TOOL"
+          }
+        ]
+      },
+      "following_roles": [
+        "assistant",
+        "tool"
+      ]
+    },
+    {
+      "tag": "SPAWN_ONE",
+      "tool": true,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "SPAWN_ONE"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "SPAWN_ONE",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "SPAWN_ONE"
+          }
+        ]
+      },
+      "following_roles": [
+        "assistant",
+        "tool"
+      ]
+    },
+    {
+      "tag": "plain",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "[task from parent]\n\nCHILD_READY"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "plain",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "[child-exited: no-reply child:measure-one]\n\nLast assistant text: Measurement turn completed."
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "SPAWN_TWO",
+      "tool": true,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "SPAWN_TWO"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "SPAWN_TWO",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "SPAWN_TWO"
+          }
+        ]
+      },
+      "following_roles": [
+        "assistant",
+        "tool"
+      ]
+    },
+    {
+      "tag": "plain",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "[task from parent]\n\nCHILD_READY"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "plain",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "[child-exited: no-reply child:measure-two]\n\nLast assistant text: Measurement turn completed."
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "CPU_TOOL",
+      "tool": true,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "CPU_TOOL"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "CPU_TOOL",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "CPU_TOOL"
+          }
+        ]
+      },
+      "following_roles": [
+        "assistant",
+        "tool"
+      ]
+    },
+    {
+      "tag": "plain",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "PLAIN_FOLLOWUP"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "CPU_TOOL",
+      "tool": true,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "CPU_TOOL"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "CPU_TOOL",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "CPU_TOOL"
+          }
+        ]
+      },
+      "following_roles": [
+        "assistant",
+        "tool"
+      ]
+    },
+    {
+      "tag": "plain",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "PLAIN_FOLLOWUP"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "CPU_TOOL",
+      "tool": true,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "CPU_TOOL"
+          }
+        ]
+      },
+      "following_roles": []
+    },
+    {
+      "tag": "CPU_TOOL",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "CPU_TOOL"
+          }
+        ]
+      },
+      "following_roles": [
+        "assistant",
+        "tool"
+      ]
+    },
+    {
+      "tag": "plain",
+      "tool": false,
+      "last_user": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "PLAIN_FOLLOWUP"
+          }
+        ]
+      },
+      "following_roles": []
+    }
+  ],
+  "tool_results": [
+    {
+      "tag": "CPU_TOOL",
+      "results": [
+        {
+          "role": "tool",
+          "content": "CPU_TOOL_DONE\n",
+          "tool_call_id": "measure_call_4"
+        }
+      ]
+    },
+    {
+      "tag": "SPAWN_ONE",
+      "results": [
+        {
+          "role": "tool",
+          "content": "SPAWN_DONE=sub-e0578c47\n",
+          "tool_call_id": "measure_call_8"
+        }
+      ]
+    },
+    {
+      "tag": "SPAWN_TWO",
+      "results": [
+        {
+          "role": "tool",
+          "content": "SPAWN_DONE=sub-04b37294\n",
+          "tool_call_id": "measure_call_14"
+        }
+      ]
+    },
+    {
+      "tag": "CPU_TOOL",
+      "results": [
+        {
+          "role": "tool",
+          "content": "CPU_TOOL_DONE\n",
+          "tool_call_id": "measure_call_20"
+        }
+      ]
+    },
+    {
+      "tag": "CPU_TOOL",
+      "results": [
+        {
+          "role": "tool",
+          "content": "CPU_TOOL_DONE\n",
+          "tool_call_id": "measure_call_4"
+        }
+      ]
+    },
+    {
+      "tag": "CPU_TOOL",
+      "results": [
+        {
+          "role": "tool",
+          "content": "CPU_TOOL_DONE\n",
+          "tool_call_id": "measure_call_4"
+        }
+      ]
+    }
+  ],
+  "process_commands": [
+    {
+      "pid": 3474800,
+      "start_id": "17966038",
+      "command_shape": "prime-agent"
+    },
+    {
+      "pid": 3475114,
+      "start_id": "17966129",
+      "command_shape": "prime-agent"
+    },
+    {
+      "pid": 3475311,
+      "start_id": "17966172",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3476147,
+      "start_id": "17966389",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3476244,
+      "start_id": "17966408",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3476312,
+      "start_id": "17966422",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3476360,
+      "start_id": "17966429",
+      "command_shape": "python"
+    },
+    {
+      "pid": 3476420,
+      "start_id": "17966441",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3477299,
+      "start_id": "17966493",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3477362,
+      "start_id": "17966508",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3477419,
+      "start_id": "17966518",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3477494,
+      "start_id": "17966539",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3477614,
+      "start_id": "17966548",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3477692,
+      "start_id": "17966557",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3477754,
+      "start_id": "17966566",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3477898,
+      "start_id": "17966574",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3477928,
+      "start_id": "17966588",
+      "command_shape": "python -m rlm.repl"
+    },
+    {
+      "pid": 3478692,
+      "start_id": "17966783",
+      "command_shape": "prime-agent"
+    },
+    {
+      "pid": 3479536,
+      "start_id": "17966886",
+      "command_shape": "prime-agent"
+    },
+    {
+      "pid": 3480243,
+      "start_id": "17967136",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3480580,
+      "start_id": "17967232",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3480596,
+      "start_id": "17967243",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3480687,
+      "start_id": "17967257",
+      "command_shape": "python"
+    },
+    {
+      "pid": 3480695,
+      "start_id": "17967261",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3481291,
+      "start_id": "17967305",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3481335,
+      "start_id": "17967319",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3481395,
+      "start_id": "17967337",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3481402,
+      "start_id": "17967347",
+      "command_shape": "python"
+    },
+    {
+      "pid": 3481406,
+      "start_id": "17967353",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3481412,
+      "start_id": "17967361",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3481503,
+      "start_id": "17967375",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3481761,
+      "start_id": "17967388",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3481923,
+      "start_id": "17967403",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3482026,
+      "start_id": "17967414",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3482073,
+      "start_id": "17967425",
+      "command_shape": "python -m rlm.repl"
+    },
+    {
+      "pid": 3489209,
+      "start_id": "17967987",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3489757,
+      "start_id": "17968102",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3489834,
+      "start_id": "17968121",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3489894,
+      "start_id": "17968141",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3489898,
+      "start_id": "17968146",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3489910,
+      "start_id": "17968150",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490068,
+      "start_id": "17968190",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490124,
+      "start_id": "17968203",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490236,
+      "start_id": "17968222",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490301,
+      "start_id": "17968232",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490306,
+      "start_id": "17968237",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490313,
+      "start_id": "17968245",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490325,
+      "start_id": "17968253",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490342,
+      "start_id": "17968261",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490348,
+      "start_id": "17968270",
+      "command_shape": "python"
+    },
+    {
+      "pid": 3490350,
+      "start_id": "17968273",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490354,
+      "start_id": "17968281",
+      "command_shape": "python -c (probe; source omitted)"
+    },
+    {
+      "pid": 3490386,
+      "start_id": "17968290",
+      "command_shape": "python -m rlm.repl"
+    }
+  ],
+  "remaining_owned_pids": [],
+  "daemon_exit": 0
+}
