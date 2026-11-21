@@ -52,6 +52,28 @@ class WorkspaceTestScheduling(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "custom test harness"):
                 gate.target_groups({"workspace_members": ["sample"], "packages": [package]})
 
+    def test_proc_macro_member_joins_the_units_group(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            macro = root / "macros" / "Cargo.toml"
+            macro.parent.mkdir()
+            macro.write_text('[package]\nname="macros"\nversion="0.1.0"\n\n[lib]\nproc-macro = true\n')
+            fixture = root / "fixture" / "Cargo.toml"
+            fixture.parent.mkdir()
+            fixture.write_text('[package]\nname="fixture"\nversion="0.1.0"\n')
+            packages = [
+                {"id": "macros", "manifest_path": str(macro),
+                 "targets": [{"kind": ["proc-macro"], "name": "macros", "test": True}]},
+                {"id": "fixture", "manifest_path": str(fixture),
+                 "targets": [{"kind": ["test"], "name": "macros_e2e", "test": True}]},
+            ]
+            ordinary, exclusive = gate.target_groups({"workspace_members": ["macros", "fixture"],
+                                                       "packages": packages})
+            self.assertEqual(ordinary, [("workspace-units", ["--lib", "--bins"]),
+                                        ("test-macros_e2e", ["--test", "macros_e2e"])])
+            self.assertNotIn(("test-macros", ["--test", "macros"]), ordinary)
+            self.assertEqual(exclusive, [])
+
     def test_private_home_has_the_qualified_fallback_kernel(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
