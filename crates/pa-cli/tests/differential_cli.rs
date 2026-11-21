@@ -460,9 +460,11 @@ fn sandbox(prefix: &str) -> PathBuf {
 }
 
 // These are declared native contracts, not stream fallbacks. Help snapshots are
-// derived from each command registry and its formatter. Native update/package
-// behavior is documented in docs/legacy-upgrade-contract.md. args.rs tests pin
-// bounded u32 and unknown-option validation; model list declares only [search],
+// derived from each command registry and its formatter. The `sessions` table
+// appends native id/size/artifacts cells; its daemon e2e compares shared cells.
+// Native update/package behavior is documented in
+// docs/legacy-upgrade-contract.md. args.rs tests pin bounded u32 and
+// unknown-option validation; model list declares only [search],
 // not a --json option. ACP shares the native non-interactive @file rejection.
 // TypeScript reference: archive/typescript-2026-10-18, commit
 // 239dbe344fcaf671af9898906ff952be73995614.

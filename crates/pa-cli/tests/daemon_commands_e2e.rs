@@ -495,7 +495,9 @@ impl CliPair {
             ));
         }
         for (ts_row, rs_row) in ts_rows.iter().zip(&rs_rows) {
-            let ts_fields: Vec<&str> = ts_row.split_whitespace().collect();
+            // Shared cells carry ages and unnamed display ids; fold them the
+            // same way `compare` does, but keep the native id check raw.
+            let ts_fields: Vec<String> = ts_row.split_whitespace().map(normalize_token).collect();
             let fields: Vec<&str> = rs_row.split_whitespace().collect();
             let id_ok = fields
                 .get(1)
@@ -512,8 +514,8 @@ impl CliPair {
                 problems.push(format!("row sizes {rs_row:?}"));
                 continue;
             }
-            let mut shared = vec![fields[0]];
-            shared.extend_from_slice(&fields[2..tail]);
+            let mut shared = vec![normalize_token(fields[0])];
+            shared.extend(fields[2..tail].iter().copied().map(normalize_token));
             if shared != ts_fields {
                 problems.push(format!(
                     "shared cells {shared:?} vs ts {ts_fields:?} in {rs_row:?}"
