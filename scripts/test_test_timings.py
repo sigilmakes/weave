@@ -10,7 +10,7 @@ import sys
 import tempfile
 import unittest
 
-from test_timings import Children, load_timing_run, reconcile, span_totals, statuses
+from test_timings import Children, configure_timing, load_timing_run, reconcile, span_totals, statuses
 
 
 def target(required=True):
@@ -138,6 +138,28 @@ class ChildOwnership(unittest.TestCase):
 
 
 class TimingReports(unittest.TestCase):
+    def test_disabled_timing_has_no_destination_or_records_directory(self):
+        with tempfile.TemporaryDirectory() as state:
+            directory = Path(state)
+            pid_file = directory / "binary.pid"
+            pid_file.write_text("123\n")
+            env = {"PA_TEST_TIMING_DIR": "inherited-destination", "PA_TEST_TIMING": "1"}
+            records = directory / "records"
+            configure_timing(env, records, disabled=True)
+            self.assertNotIn("PA_TEST_TIMING_DIR", env)
+            self.assertNotIn("PA_TEST_TIMING", env)
+            self.assertFalse(records.exists())
+            self.assertEqual(pid_file.read_text(), "123\n")
+            self.assertEqual(reconcile(target(), [], disabled=True), [])
+
+    def test_enabled_timing_uses_explicit_destination(self):
+        with tempfile.TemporaryDirectory() as state:
+            records = Path(state) / "records"
+            env = {"PA_TEST_TIMING_DIR": "inherited-destination", "PA_TEST_TIMING": "0"}
+            configure_timing(env, records, disabled=False)
+            self.assertTrue(records.is_dir())
+            self.assertEqual(env, {"PA_TEST_TIMING_DIR": str(records)})
+
     def test_harness_status_keeps_expected_panic_success_separate_from_guard(self):
         fixture = target()
         fixture["statuses"] = statuses(

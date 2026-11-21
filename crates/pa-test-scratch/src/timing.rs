@@ -24,15 +24,17 @@ pub(crate) fn capture_config() {
 }
 
 fn config() -> &'static TimingConfig {
-    CONFIG.get_or_init(|| TimingConfig {
-        enabled: !std::env::var_os("PA_TEST_TIMING").is_some_and(|value| value == "0"),
-        directory: std::env::var_os("PA_TEST_TIMING_DIR").map_or_else(
-            || PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/test-timings"),
-            PathBuf::from,
-        ),
+    CONFIG.get_or_init(|| {
+        let directory = std::env::var_os("PA_TEST_TIMING_DIR").filter(|value| !value.is_empty());
+        TimingConfig {
+            enabled: directory.is_some()
+                && !std::env::var_os("PA_TEST_TIMING").is_some_and(|value| value == "0"),
+            directory: directory.map_or_else(PathBuf::new, PathBuf::from),
+        }
     })
 }
 
+#[derive(Default)]
 pub struct TestTiming {
     state: Option<TestState>,
 }
@@ -63,8 +65,13 @@ struct SpanState {
 
 impl TestTiming {
     #[must_use]
+    pub fn is_enabled() -> bool {
+        config().enabled
+    }
+
+    #[must_use]
     pub fn start(full_name: &str) -> Self {
-        if !config().enabled {
+        if !Self::is_enabled() {
             return Self { state: None };
         }
         let started = Instant::now();

@@ -115,6 +115,14 @@ def environment(repo, state, ambient):
     return env
 
 
+def configure_timing(env, directory, disabled):
+    env.pop("PA_TEST_TIMING", None)
+    env.pop("PA_TEST_TIMING_DIR", None)
+    if not disabled:
+        directory.mkdir()
+        env["PA_TEST_TIMING_DIR"] = str(directory)
+
+
 def checked(command, cwd, env, log, commands, children):
     commands.append({"command": command, "cwd": str(cwd), "environment": env})
     child = children.spawn(command, cwd=cwd, env=env, stdout=subprocess.PIPE,
@@ -257,9 +265,7 @@ def execute(target, repo, ambient, run_dir, disabled, children):
     try:
         env = environment(repo, private, ambient)
         timing_dir = directory / "records"
-        timing_dir.mkdir()
-        env["PA_TEST_TIMING"] = "0" if disabled else "1"
-        env["PA_TEST_TIMING_DIR"] = str(timing_dir)
+        configure_timing(env, timing_dir, disabled)
         deps = str(Path(target["binary"]).parent)
         loader = "DYLD_FALLBACK_LIBRARY_PATH" if os.uname().sysname == "Darwin" else "LD_LIBRARY_PATH"
         env[loader] = os.pathsep.join(filter(None, [deps, env.get(loader)]))
@@ -331,7 +337,7 @@ def execute_doctests(repo, ambient, run_dir, selection, children):
     try:
         env = environment(repo, private, ambient)
         env.pop("PA_TEST_TIMING_DIR", None)
-        env["PA_TEST_TIMING"] = "0"
+        env.pop("PA_TEST_TIMING", None)
         command = ["cargo", "test", "--locked", "--offline", *selection, "--doc"]
         target.update(command=command, cwd=str(repo), environment=env, state_root=str(private))
         with (directory / "harness.log").open("w") as output:
@@ -600,7 +606,8 @@ def main():
                         help="require lib/bin/proc-macro unit coverage too; doctest timing remains uncovered")
     runner.add_argument("--target", action="append", help="integration target name; repeat to select whole binaries")
     runner.add_argument("--output", type=Path)
-    runner.add_argument("--disable-timing", action="store_true", help="measure harness overhead without guard records")
+    runner.add_argument("--disable-timing", action="store_true",
+                        help="exercise timing off path: unset PA_TEST_TIMING_DIR; do not create a records directory")
     viewer = commands.add_parser("table")
     viewer.add_argument("run_dir", type=Path, help="runner run directory or raw JSONL sidecar directory")
     args = parser.parse_args()

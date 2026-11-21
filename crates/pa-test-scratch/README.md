@@ -19,7 +19,9 @@ the wrapper's first executable statement and first local, so it drops after
 runtime and fixture locals. Leading item declarations stay in place; they do not
 execute before the guard.
 
-- `TestTiming::start(full_name)` starts a test manually.
+- `TestTiming::is_enabled()` reads the captured opt-in configuration.
+- `TestTiming::default()` creates an inactive guard without recording.
+- `TestTiming::start(full_name)` starts a test manually when enabled.
 - `_pa_test_timing.span("fixture")` returns an owned `TimingSpan`.
 - `_pa_test_timing.recorder()` returns a cloneable `TimingRecorder`.
 - `TimingRecorder::span(name)` starts an owned span from helpers or spawned tasks.
@@ -34,10 +36,12 @@ Timing configuration is captured once by the startup hook before test bodies run
 Platforms without that hook capture it on first use. Later environment changes
 do not alter the enabled flag or destination.
 
-Timing is enabled by default. `PA_TEST_TIMING=0` disables timing and file output
-for overhead comparisons. `PA_TEST_TIMING_DIR` selects the destination; otherwise
-it is the workspace `target/test-timings` directory. Each process appends to
-`<binary>-<pid>.jsonl`, with writes serialized within that process.
+Timing is opt-in: set `PA_TEST_TIMING_DIR` to a non-empty destination to record.
+An unset or empty destination disables timing without creating directories or
+sidecars. `PA_TEST_TIMING=0` also disables timing for overhead comparisons, even
+when a destination is configured. There is no default output directory.
+Each enabled process appends to `<binary>-<pid>.jsonl` in the configured
+destination, with writes serialized within that process.
 
 Each JSON line has `kind: "test"`, `test` (libtest name without the crate prefix),
 `binary`, `pid`, `start_unix_ns`, `end_unix_ns`, `elapsed_ns`, `panicking`,
