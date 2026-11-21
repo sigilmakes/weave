@@ -1287,9 +1287,9 @@ async def _handle_state(req: dict[str, Any], ns: dict[str, Any]) -> None:
         # A finishing-targeted SIGINT can raise anywhere between _run_guarded's
         # finally publishing _finishing_rid and _finish_request clearing it; the
         # handler only raises once _finishing_rid is set, so the task is already
-        # complete (destructively so for a pruning snapshot). Consume the
-        # interrupt and report the task's real outcome; escaping to the backstop
-        # would misreport a committed snapshot as failed.
+        # complete. Consume the interrupt and report the task's real outcome;
+        # escaping to the backstop would misreport a committed snapshot as
+        # failed.
         _finish_request(rid)
         if outcome is None:
             # The KeyboardInterrupt pre-empted _run_guarded's return: recover
