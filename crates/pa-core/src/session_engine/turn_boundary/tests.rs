@@ -495,7 +495,7 @@ fn context_usage_after_a_compaction_falls_back_to_the_view_estimate() {
 
 #[tokio::test]
 #[pa_test_scratch::pa_test]
-async fn a_failing_live_view_falls_back_to_the_edit_aware_walk() {
+async fn no_live_view_falls_back_to_the_edit_aware_walk() {
     let requests = Arc::new(TurnBoundaryRequests::new());
     let handlers = registered(&requests);
     let dir = tempfile::TempDir::new().unwrap();
@@ -523,9 +523,6 @@ async fn a_failing_live_view_falls_back_to_the_edit_aware_walk() {
         })
         .unwrap();
     let session = Arc::new(tokio::sync::Mutex::new(session));
-    requests.set_live_view(Arc::new(|| {
-        Box::pin(async { Err(anyhow::anyhow!("assembly failed")) })
-    }));
     requests.bind(TurnBoundaryRuntime {
         agent: Arc::new(Agent::new(AgentOptions {
             initial_state: AgentInitialState {
@@ -548,6 +545,27 @@ async fn a_failing_live_view_falls_back_to_the_edit_aware_walk() {
         status["tokens"], 60_000,
         "the anchor's 70_000 minus the 10_000-token row the edit dropped"
     );
+}
+
+#[tokio::test]
+#[pa_test_scratch::pa_test]
+async fn a_failing_installed_live_view_propagates_the_assembly_error() {
+    let requests = Arc::new(TurnBoundaryRequests::new());
+    let handlers = registered(&requests);
+    let (_session_dir, session) = session_with_history(false);
+    requests.set_live_view(Arc::new(|| {
+        Box::pin(async { Err(anyhow::anyhow!("assembly failed")) })
+    }));
+    requests.bind(TurnBoundaryRuntime {
+        agent: Arc::new(Agent::new(AgentOptions::default())),
+        session: Arc::new(Mutex::new(session)),
+        context_window: Some(100_000),
+        model_info: model_info(),
+    });
+    let error = handler(&handlers, "compact.status")(payload(json!({})))
+        .await
+        .unwrap_err();
+    assert_eq!(error.to_string(), "assembly failed");
 }
 
 /// One scripted probe: a tool whose execution calls a registered host handler with `data` (the
