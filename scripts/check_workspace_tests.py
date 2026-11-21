@@ -240,6 +240,10 @@ def run_groups(groups, *, repo, state, env, deadline, jobs):
     return timings, failures
 
 
+def format_failure(name, code, command):
+    return f"  {name}: exit {code} ({shlex.join(command)})"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state-root", type=Path, required=True)
@@ -286,7 +290,7 @@ def main():
     if failures:
         print(f"{len(failures)} test target(s) failed:", flush=True)
         for name, code, command in failures:
-            print(f"  {name}: exit {code} ({shlex.join(command)})", flush=True)
+            print(format_failure(name, code, command), flush=True)
         raise subprocess.CalledProcessError(failures[0][1], failures[0][2])
     print("All workspace test targets and doctests passed", flush=True)
     return 0

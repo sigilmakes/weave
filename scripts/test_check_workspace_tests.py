@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Offline scheduling, selection and state isolation regressions."""
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import redirect_stdout
+import io
 import json
 import os
 from pathlib import Path
@@ -16,6 +18,14 @@ import check_workspace_tests as gate
 
 
 class WorkspaceTestScheduling(unittest.TestCase):
+    def test_failing_target_line_names_target_exit_code_and_quoted_command(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            print(gate.format_failure("test-fake", 7,
+                                      ["cargo", "test", "--test", "fake target"]), flush=True)
+        self.assertEqual(output.getvalue(),
+                         "  test-fake: exit 7 (cargo test --test 'fake target')\n")
+
     def test_default_inventory_keeps_units_integrations_examples_and_exclusives(self):
         with tempfile.TemporaryDirectory() as tmp:
             manifest = Path(tmp) / "Cargo.toml"
