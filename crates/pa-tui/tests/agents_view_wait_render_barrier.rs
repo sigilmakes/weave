@@ -327,8 +327,11 @@ async fn the_barrier_deadline_pops_the_hold_and_the_plan_proceeds() {
                 needle: "carried one".to_string(),
                 timeout_ms: 500,
             },
-            // The settle window paints the pop's status note before the Enter opens the row.
-            AgentsStep::WaitSettle { timeout_ms: 300 },
+            // Observe the deadline's rendered status without waiting for the withheld catalog.
+            AgentsStep::WaitRender {
+                needle: "timed out waiting for the headless render condition".to_string(),
+                timeout_ms: 300,
+            },
             AgentsStep::Key("enter".to_string()),
         ],
         width: 120,
