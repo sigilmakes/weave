@@ -41,7 +41,7 @@ The next request carries the edit, in the same run, not only after the next prom
 
 An edit that changes or removes a turn also changes everything after it, so the next request re-reads from there. Edits near the end are nearly free; edits near the beginning cost a full re-read, and an insert at the end costs only the inserted turn.
 
-The index figure follows the edits: it starts from the newest provider-reported usage and subtracts what an edit dropped above it, and adds what a sent replacement or insertion above it contributed. It falls back to a chars/4 count of the whole view whenever no observation describes what is sent: the view has no usage at all, an edit removed or replaced the turn that usage was reported on, a replacement or a compaction happened after that usage, or an edit removed or replaced the archive row that carried it. The same figure is what `compact.status` reports and what decides auto-compaction.
+The index figure follows the edits: it starts from the newest provider-reported usage and subtracts what a sent drop above it dropped, and adds what a sent replacement or insertion above it contributed. It falls back to a chars/4 count of the whole view whenever no observation describes what is sent: the view has no usage at all, the turn that usage was reported on was removed or replaced, a compaction happened after that usage, or an edit removed or replaced the archive row that carried it. The same figure is what `compact.status` reports and what decides auto-compaction.
 
 A row the provider expands rather than receives, a compaction summary in an archive representation the provider replays, shows the summary text here while the request carries the expanded representation the provider replays.
 

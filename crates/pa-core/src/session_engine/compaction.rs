@@ -322,9 +322,13 @@ fn message_timestamp(message: &AgentMessage) -> u64 {
 }
 
 /// Whether the live context crossed the effective threshold
-/// ([`compaction_threshold`]) and an automatic compaction should run. Usage
-/// from before the newest compaction never re-triggers: the view it described
-/// is no longer what is sent, so the whole-view char count decides instead.
+/// ([`compaction_threshold`]) and an automatic compaction should run.
+///
+/// A messages-only caller can see a portable summary, whose message carries the
+/// boundary; a native archive leaves no message, so this reports on the usage
+/// alone. Production passes the walk's drift to
+/// [`threshold_compaction_due_with_drift`], which knows every boundary.
+#[cfg(test)]
 #[must_use]
 pub fn threshold_compaction_due(
     messages: &[AgentMessage],

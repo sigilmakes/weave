@@ -1499,6 +1499,63 @@ mod tests {
     }
 
     #[test]
+    fn a_usage_reported_after_a_compaction_is_honoured_and_clears_the_correction() {
+        let lines = [
+            header(),
+            user_row("u0", "", "old"),
+            user_row("u1", "u0", "kept"),
+            assistant_row_with_usage("a0", "u1", 90_000),
+            compaction_row("c0", "a0", Some("u1")),
+            edit_row(
+                "e0",
+                "c0",
+                &serde_json::json!([{"op": "insert", "text": "y".repeat(40_000), "role": "user", "after": 1}]),
+            ),
+            assistant_row_with_usage("a1", "e0", 20_000),
+        ];
+        let mut entries = parse_session_entries(&lines.join("\n"));
+        if let Some(FileEntry::Message {
+            message: AgentMessage::Assistant(assistant),
+            ..
+        }) = entries.iter_mut().find(|entry| entry.id() == Some("a1"))
+        {
+            assistant.timestamp = 1_704_067_209_000;
+        }
+        let retired = walk_history(&entries, Some("e0"));
+        assert!(retired.usage_drift.boundary.is_some());
+        assert_eq!(
+            retired.usage_drift.tokens, 10_000,
+            "the insert above the retired anchor corrects nothing yet"
+        );
+        let retired_figure = crate::session_engine::compaction::context_tokens_with_drift(
+            &retired.messages(),
+            retired.usage_drift,
+        );
+        let chars: u64 = retired.messages().iter().map(estimate_tokens).sum();
+        assert_eq!(retired_figure, chars, "the anchor is behind the boundary");
+
+        let walk = walk_history(&entries, None);
+        let messages = walk.messages();
+        let fresh = crate::session_engine::compaction::context_tokens_with_drift(
+            &messages,
+            walk.usage_drift,
+        );
+        assert_eq!(
+            walk.usage_drift.tokens, 0,
+            "the fresh anchor needs no correction"
+        );
+        assert!(
+            walk.usage_drift.boundary.is_some(),
+            "the boundary outlives the correction"
+        );
+        assert_eq!(
+            fresh, 20_001,
+            "the observation after the boundary is used, with nothing trailing it"
+        );
+        assert_ne!(fresh, chars);
+    }
+
+    #[test]
     fn dropping_the_compaction_row_clears_its_archive() {
         let lines = [
             header(),

@@ -29,7 +29,9 @@ fn test_lock() -> MutexGuard<'static, ()> {
 }
 
 /// The kernel Python with prime-agent-runtime installed; set
-/// `PA_CORE_KERNEL_PYTHON` to point at an explicit interpreter instead.
+/// `PA_CORE_KERNEL_PYTHON` to point at an explicit interpreter instead. The
+/// prewarm reads `PRIME_AGENT_KERNEL_PYTHON`, so an explicit interpreter is
+/// handed to it as well.
 fn kernel_python() -> Option<PathBuf> {
     if let Some(explicit) = std::env::var_os("PA_CORE_KERNEL_PYTHON") {
         let explicit = PathBuf::from(explicit);
@@ -38,6 +40,9 @@ fn kernel_python() -> Option<PathBuf> {
             "PA_CORE_KERNEL_PYTHON {} not found",
             explicit.display()
         );
+        if std::env::var_os("PRIME_AGENT_KERNEL_PYTHON").is_none() {
+            std::env::set_var("PRIME_AGENT_KERNEL_PYTHON", &explicit);
+        }
         return Some(explicit);
     }
     let home = std::env::var("HOME").unwrap_or_default();
