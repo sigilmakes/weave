@@ -1080,6 +1080,13 @@ class ReplTest(unittest.TestCase):
             self.assertIn("over save limit", unsaved_row)
             self.assertIn("saved", next(line for line in out.splitlines() if " small " in line))
 
+    def test_vars_lists_an_underscore_name_as_not_saved(self):
+        self.repl.execute("u1", "_scratch = 7")
+        out = stream_text(self.repl.execute("u2", "vars()"), "stdout")
+        row = next(line for line in out.splitlines() if " _scratch " in line)
+        self.assertTrue(row.startswith("unsaved"))
+        self.assertIn('not saved: name starts with "_"', row)
+
     def test_emit_display(self):
         payloads = {
             "application/vnd.prime-agent.diff+json": {

@@ -1382,7 +1382,10 @@ def _format_bytes(count: int, *, tenths: bool = False) -> str:
 def _shallow_size(value: Any) -> int:
     """sys.getsizeof, plus array data and frame columns: never a deep walk."""
     size = sys.getsizeof(value)
-    nbytes = getattr(value, "nbytes", None)
+    try:
+        nbytes = getattr(value, "nbytes", None)
+    except Exception:  # noqa: BLE001 - a broken accessor must not break the listing
+        nbytes = None
     if isinstance(nbytes, int):
         size += nbytes
     memory_usage = getattr(value, "memory_usage", None)
@@ -1433,13 +1436,17 @@ def _namespace_listing(ns: dict[str, Any]) -> str:
             skipped[entry["name"]] = str(entry.get("reason") or "")
 
     rows: list[tuple[str, str, str, int | None, str]] = []
-    live = _list_names(ns)
+    # The listing covers the whole live namespace, not only the names the
+    # snapshot writes: an underscore name is real state the harness will not save.
+    live = sorted(name for name in ns if isinstance(name, str) and name not in _ALWAYS_SKIP)
     for name in live:
         try:
             value = ns[name]
         except KeyError:  # a background thread deleted it after the key listing
             continue
-        if name in saved:
+        if name.startswith("_"):
+            reason = 'not saved: name starts with "_"'
+        elif name in saved:
             reason = ""
         elif name in skipped:
             reason = _reason_text(skipped[name])

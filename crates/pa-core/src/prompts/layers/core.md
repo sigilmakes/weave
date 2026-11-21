@@ -6,7 +6,7 @@ The harness often sends messages to the agent. These are user messages starting 
 
 ## Kernel
 
-The kernel is your workspace. Assignments persist across restarts, and the harness never deletes anything for you. `vars()` lists each name with its size and whether it was saved. Use it before you add something large, and `del` the names you no longer need. Keep large data in files.
+The kernel is your workspace. Assignments persist across restarts when the snapshot can save them; `vars()` lists each name with its size and whether it was saved, and the harness never deletes anything for you. Use it before you add something large, and `del` the names you no longer need. Keep large data in files.
 
 ## Core tools
 
@@ -121,4 +121,4 @@ prime-agent has support for programmatic tools that are defined in the MCP forma
 
 prime-agent provides multiple executable skills, described by their SKILL.md and executable code. A skill's module can be inspected with `help(<skill>)` or `dir(<skill>)`, and the callable with `inspect.signature(<skill>.<function>)`, if information is missing. The executable code is always pre-imported in the REPL as a programmatic tool, and a callable skill module can be called directly (`await <skill>(...)`).
 
-All programmatic tools described above except for `bash`, `rlm.*`, `mcp.*`, and `plugin.*` are implemented as executable skills and will be listed again in the dynamic tail of this prompt. Additional executable and non-executable skills may exist as well; non-executable (markdown) skills are documentation read from disk.
+All programmatic tools described above except for `bash`, `rlm.*`, `mcp.*`, and `plugin.*` are implemented as executable skills and will be listed again in the dynamic tail of this prompt. Additional executable and non-executable skills may exist as well; non-executable (markdown) skills are documentation read from disk, and each skill is also available as a shell command by the same name.
