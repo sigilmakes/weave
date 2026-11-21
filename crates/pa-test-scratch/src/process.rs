@@ -4,6 +4,11 @@ use std::ops::{Deref, DerefMut};
 use std::path::Path;
 use std::process::{Child, ExitStatus, Output, Stdio};
 
+#[cfg(all(test, target_os = "linux"))]
+std::thread_local! {
+    static INJECTED_SURVIVOR: std::cell::Cell<Option<u32>> = const { std::cell::Cell::new(None) };
+}
+
 /// A test command whose child and descendants remain owned until the guard is dropped.
 #[derive(Debug)]
 pub struct Command {
@@ -209,6 +214,32 @@ impl OwnedChild {
         }
     }
 
+    /// Terminates and verifies the owned tree before further fixture teardown.
+    pub fn terminate(&mut self) {
+        let group = self.group.take();
+        if let Some(group) = &group {
+            group.kill();
+        }
+        if let Some(child) = &mut self.child {
+            let _ = child.kill();
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+            loop {
+                match child.try_wait() {
+                    Ok(Some(_)) => break,
+                    Ok(None) if std::time::Instant::now() < deadline => {
+                        std::thread::sleep(std::time::Duration::from_millis(10));
+                    }
+                    result => {
+                        eprintln!("test process {} could not be reaped: {result:?}", self.pid);
+                        crate::record_cleanup_failure();
+                        break;
+                    }
+                }
+            }
+        }
+        drop(group);
+    }
+
     pub fn wait_with_output(mut self) -> io::Result<Output> {
         self.child.take().expect("owned child").wait_with_output()
     }
@@ -230,26 +261,7 @@ impl DerefMut for OwnedChild {
 
 impl Drop for OwnedChild {
     fn drop(&mut self) {
-        if let Some(group) = &self.group {
-            group.kill();
-        }
-        if let Some(child) = &mut self.child {
-            let _ = child.kill();
-            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
-            loop {
-                match child.try_wait() {
-                    Ok(Some(_)) => break,
-                    Ok(None) if std::time::Instant::now() < deadline => {
-                        std::thread::sleep(std::time::Duration::from_millis(10));
-                    }
-                    result => {
-                        eprintln!("test process {} could not be reaped: {result:?}", self.pid);
-                        crate::record_cleanup_failure();
-                        break;
-                    }
-                }
-            }
-        }
+        self.terminate();
     }
 }
 
@@ -338,6 +350,10 @@ impl Drop for ProcessGroup {
 
 #[cfg(target_os = "linux")]
 fn group_processes(group: u32, marker: Option<&[u8]>) -> Vec<u32> {
+    #[cfg(test)]
+    if INJECTED_SURVIVOR.with(std::cell::Cell::get) == Some(group) {
+        return vec![group];
+    }
     let Ok(entries) = std::fs::read_dir("/proc") else {
         crate::record_cleanup_failure();
         return Vec::new();
@@ -497,6 +513,80 @@ mod tests {
             !living(pid),
             "transferred guard did not reap detached subprocess"
         );
+    }
+
+    #[test]
+    fn post_kill_survivor_failure_fixture() {
+        if std::env::var_os("PA_TEST_POST_KILL_SURVIVOR_FIXTURE").is_none() {
+            return;
+        }
+        let mut child = Command::new("sleep")
+            .arg("60")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("spawn owned fixture child");
+        let pid = child.id();
+        let group = child.group.take().expect("owned fixture group");
+        println!("reported-survivor-pid:{pid}");
+        super::INJECTED_SURVIVOR.with(|survivor| survivor.set(Some(pid)));
+        drop(group);
+        super::INJECTED_SURVIVOR.with(|survivor| survivor.set(None));
+        assert!(!child.wait().expect("reap actual fixture child").success());
+    }
+
+    #[test]
+    fn reported_post_kill_survivor_names_owner_and_pid_and_fails_binary() {
+        let root = std::env::temp_dir().join(format!("reported-survivor-{}", std::process::id()));
+        std::fs::create_dir_all(&root).expect("isolated failed cleanup root");
+        let fixture = "process::tests::post_kill_survivor_failure_fixture";
+        let mut child = Command::new(std::env::current_exe().expect("test binary"))
+            .args(["--exact", fixture, "--nocapture"])
+            .env("PA_TEST_POST_KILL_SURVIVOR_FIXTURE", "1")
+            .env("PA_TEST_SCRATCH_ROOT", &root)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("run failed cleanup fixture");
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+        while child.try_wait().expect("observe fixture exit").is_none() {
+            assert!(
+                std::time::Instant::now() < deadline,
+                "failed cleanup fixture exceeded its bounded lifetime"
+            );
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        let output = child
+            .wait_with_output()
+            .expect("capture failed cleanup fixture");
+        let stdout = String::from_utf8(output.stdout).expect("fixture stdout");
+        let stderr = String::from_utf8(output.stderr).expect("fixture stderr");
+        let pid = stdout
+            .lines()
+            .find_map(|line| {
+                line.split_once("reported-survivor-pid:")
+                    .map(|(_, pid)| pid.trim())
+            })
+            .expect("reported survivor pid")
+            .parse::<u32>()
+            .expect("numeric reported pid");
+        assert_eq!(output.status.code(), Some(1), "{stdout}\n{stderr}");
+        let diagnostic = format!("test {fixture} process group {pid} survived cleanup: [{pid}]");
+        assert!(
+            stderr.lines().any(|line| line == diagnostic),
+            "expected diagnostic {diagnostic:?} in {stderr:?}"
+        );
+        assert!(
+            root.join(".pa-test-leak").exists(),
+            "failed cleanup root was not retained"
+        );
+        assert!(
+            !std::path::Path::new(&format!("/proc/{pid}")).exists(),
+            "actual fixture child {pid} was not reaped"
+        );
+        std::fs::remove_dir_all(root).expect("remove verified fixture root");
     }
 
     #[test]

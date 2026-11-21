@@ -91,44 +91,62 @@ pub(crate) fn finish() {
 }
 
 pub(crate) fn cleanup(owner: u32) -> bool {
-    let leaked = processes(owner);
-    if leaked.is_empty() {
+    let mut alive = processes(owner);
+    if alive.is_empty() {
         return true;
     }
-    let details = leaked
-        .iter()
-        .map(|pid| {
-            let label = std::fs::read(format!("/proc/{pid}/environ"))
-                .ok()
-                .and_then(|environment| {
-                    environment
-                        .split(|byte| *byte == 0)
-                        .find_map(|value| value.strip_prefix(b"PA_TEST_COMMAND_TEST="))
-                        .map(|label| String::from_utf8_lossy(label).into_owned())
-                })
-                .unwrap_or_else(|| "unlabelled test subprocess".to_owned());
-            format!("{pid} ({label})")
-        })
-        .collect::<Vec<_>>();
-    eprintln!("test binary {owner} leaked subprocesses: {details:?}; retaining scratch root");
+    let grace_deadline = Instant::now() + Duration::from_millis(50);
+    while Instant::now() < grace_deadline {
+        std::thread::sleep(Duration::from_millis(10));
+        alive = processes(owner);
+        if alive.is_empty() {
+            return true;
+        }
+    }
     let deadline = Instant::now() + Duration::from_secs(2);
     loop {
-        let alive = processes(owner);
-        if alive.is_empty() {
-            break;
-        }
         for pid in &alive {
             unsafe {
                 libc::kill(*pid, libc::SIGKILL);
             }
         }
+        alive = processes(owner);
+        if alive.is_empty() {
+            return true;
+        }
         if Instant::now() >= deadline {
-            eprintln!("test binary {owner} subprocess cleanup failed: {alive:?}");
-            break;
+            let details = alive
+                .iter()
+                .map(|pid| {
+                    let argv = std::fs::read(format!("/proc/{pid}/cmdline"))
+                        .map(|bytes| {
+                            bytes
+                                .split(|byte| *byte == 0)
+                                .filter(|arg| !arg.is_empty())
+                                .map(|arg| String::from_utf8_lossy(arg).into_owned())
+                                .collect::<Vec<_>>()
+                        })
+                        .unwrap_or_default();
+                    let test = std::fs::read(format!("/proc/{pid}/environ")).ok().and_then(
+                        |environment| {
+                            environment
+                                .split(|byte| *byte == 0)
+                                .find_map(|value| value.strip_prefix(b"PA_TEST_COMMAND_TEST="))
+                                .map(|label| String::from_utf8_lossy(label).into_owned())
+                        },
+                    );
+                    format!("pid={pid} argv={argv:?} test={test:?}")
+                })
+                .collect::<Vec<_>>();
+            eprintln!("test binary {owner} subprocess cleanup failed: {details:?}; retaining scratch root");
+            return false;
         }
         std::thread::sleep(Duration::from_millis(10));
+        alive = processes(owner);
+        if alive.is_empty() {
+            return true;
+        }
     }
-    false
 }
 
 fn processes(owner: u32) -> Vec<libc::pid_t> {
@@ -197,6 +215,94 @@ mod tests {
         loop {
             std::thread::park();
         }
+    }
+
+    #[test]
+    fn cleanup_success_fixture() {
+        let Ok(mode) = std::env::var("PA_TEST_GUARDIAN_CLEANUP_FIXTURE") else {
+            return;
+        };
+        use std::os::unix::process::ExitStatusExt;
+        let script = match mode.as_str() {
+            "natural" => "echo ready; read release; exec sleep 0.01",
+            "stubborn" => "trap '' TERM; echo ready; read release; exec sleep 60",
+            other => panic!("unknown cleanup fixture {other}"),
+        };
+        let mut command = Command::new("sh");
+        command
+            .args(["-c", script])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null());
+        unsafe {
+            command.pre_exec(|| {
+                if libc::setsid() == -1 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+        let mut child = command.spawn().unwrap();
+        let mut readiness = String::new();
+        BufReader::new(child.stdout.take().unwrap())
+            .read_line(&mut readiness)
+            .unwrap();
+        assert_eq!(readiness, "ready\n");
+        assert!(super::processes(std::process::id()).contains(&(child.id() as libc::pid_t)));
+        child.stdin.take().unwrap().write_all(b"release\n").unwrap();
+        assert!(
+            super::cleanup(std::process::id()),
+            "cleanup must confirm the fixture is gone"
+        );
+        let status = child.wait().unwrap();
+        match mode.as_str() {
+            "natural" => assert!(status.success(), "natural exit was killed: {status}"),
+            "stubborn" => assert_eq!(status.signal(), Some(libc::SIGKILL)),
+            other => panic!("unknown cleanup fixture {other}"),
+        }
+        assert!(super::processes(std::process::id()).is_empty());
+    }
+
+    fn run_cleanup_fixture(mode: &str) {
+        let scratch =
+            std::env::temp_dir().join(format!("guardian-cleanup-{}-{mode}", std::process::id()));
+        std::fs::create_dir_all(&scratch).unwrap();
+        let child = Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "guardian::tests::cleanup_success_fixture",
+                "--nocapture",
+            ])
+            .env("PA_TEST_GUARDIAN_CLEANUP_FIXTURE", mode)
+            .env("PA_TEST_SCRATCH_ROOT", &scratch)
+            .env_remove("PA_TEST_PROCESS_OWNER")
+            .env_remove("PA_TEST_COMMAND_OWNER")
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .process_group(0)
+            .spawn()
+            .unwrap();
+        let _group = crate::ProcessGroup::new(child.id());
+        let output = child.wait_with_output().unwrap();
+        assert!(
+            output.status.success(),
+            "isolated {mode} fixture failed: {}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(!scratch.join(".pa-test-leak").exists());
+        std::fs::remove_dir_all(scratch).unwrap();
+    }
+
+    #[test]
+    fn cleanup_accepts_delayed_natural_exit() {
+        run_cleanup_fixture("natural");
+    }
+
+    #[test]
+    fn cleanup_accepts_confirmed_kill_of_a_long_lived_child() {
+        run_cleanup_fixture("stubborn");
     }
 
     #[test]

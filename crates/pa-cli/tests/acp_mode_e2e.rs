@@ -25,6 +25,10 @@ use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
 
+#[cfg(target_os = "linux")]
+#[path = "acp_mode_e2e/shutdown_tests.rs"]
+mod shutdown_tests;
+
 /// The child plus the tempdir it runs in.
 struct AcpChild {
     child: Child,
@@ -277,7 +281,7 @@ impl Drop for AcpChild {
         }
         let _ = self.child.kill();
         let _ = self.child.wait();
-        shutdown_sandboxed_daemon(&self.socket);
+        shutdown_sandboxed_daemon(&self.socket, &mut self.child);
         if let Some(mut stderr) = self.spawn_stderr.take() {
             use std::io::Read;
             let mut text = String::new();
@@ -1538,7 +1542,12 @@ fn acp_daemon_attached_image_only_prompt_reaches_the_session() {
 
 /// Stop the sandboxed supervisor a test spawned (the shared-daemon
 /// product behavior leaves it running; a test owns its sandbox).
-fn shutdown_sandboxed_daemon(socket: &std::path::Path) {
+fn shutdown_sandboxed_daemon(socket: &std::path::Path, child: &mut Child) {
+    request_sandboxed_daemon_shutdown(socket);
+    child.terminate();
+}
+
+fn request_sandboxed_daemon_shutdown(socket: &std::path::Path) {
     let Ok(mut stream) = pa_types::platform::transport::connect_blocking(socket) else {
         return;
     };
@@ -1548,9 +1557,26 @@ fn shutdown_sandboxed_daemon(socket: &std::path::Path) {
         .expect("bound supervisor shutdown handshake");
     let mut reader = BufReader::new(stream.try_clone_box().expect("clone supervisor stream"));
     let mut line = String::new();
-    reader
-        .read_line(&mut line)
-        .expect("supervisor shutdown hello");
+    let hello_bytes = match reader.read_line(&mut line) {
+        Ok(bytes) => bytes,
+        Err(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+            ) =>
+        {
+            eprintln!("supervisor at {} did not send a shutdown hello within 300 ms; terminating owned process tree", socket.display());
+            return;
+        }
+        Err(error) => panic!("supervisor shutdown hello at {}: {error}", socket.display()),
+    };
+    if hello_bytes == 0 {
+        eprintln!(
+            "supervisor at {} closed before its shutdown hello; terminating owned process tree",
+            socket.display()
+        );
+        return;
+    }
     let hello: Value = serde_json::from_str(&line).expect("supervisor hello JSON");
     let pid = hello["supervisorPid"].as_u64().expect("supervisor pid");
     let _group =

@@ -4,7 +4,7 @@
 //! remove owned roots only after successful cleanup; failures exit nonzero and retain scratch.
 //! Linux additionally starts a guardian that
 //! watches a close-on-exec liveness pipe, cleans inherited subprocess ownership markers after
-//! abrupt binary termination, and preserves scratch roots when leaks are found.
+//! abrupt binary termination, and preserves scratch roots when cleanup cannot complete.
 //!
 //! Use [`Command`] rather than `std::process::Command` for test subprocesses. Its [`OwnedChild`]
 //! guard kills the dedicated process group and, on Linux, uniquely marked descendants even if
