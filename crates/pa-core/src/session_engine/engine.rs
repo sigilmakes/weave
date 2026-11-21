@@ -661,7 +661,7 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
                     .read()
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
                     .clone();
-                let (messages, accepted, drift) = super::context_strategy::assemble_session_view(
+                let (view, accepted) = super::context_strategy::assemble_session_view(
                     Some(&plugins),
                     &session,
                     model.as_ref(),
@@ -670,7 +670,7 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
                 *archive
                     .write()
                     .unwrap_or_else(std::sync::PoisonError::into_inner) = accepted;
-                Ok(super::turn_boundary::LiveViewSnapshot { messages, drift })
+                Ok(view)
             })
         })
     };

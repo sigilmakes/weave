@@ -112,7 +112,12 @@ impl TurnBoundary {
             None => {
                 // The threshold arm: the live context crossing the reserve headroom
                 // compacts before the next prompt; the pair streams in json mode.
-                if engine.session.auto_compaction_due(model).await {
+                if engine
+                    .session
+                    .auto_compaction_due(model)
+                    .await
+                    .map_err(|error| error.to_string())?
+                {
                     self.emit_json(&compaction_start_event(
                         CompactionOutcomeReason::Threshold.wire(),
                         None,

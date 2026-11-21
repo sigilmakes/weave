@@ -59,18 +59,39 @@ impl AgentSessionEngine {
             .armed_image_route()
             .map_or_else(|| model.clone(), |route| route.target.model);
         let due = {
-            let guard = self.session.blocking_lock();
-            match guard.as_deref() {
+            let engine = self.session.blocking_lock().clone();
+            match engine.as_deref() {
                 Some(engine) => self
                     .runtime
                     .block_on(async { engine.session.auto_compaction_due(&run_model).await }),
                 // No built session: the live context is empty, matching the
                 // TS pre-turn check on a fresh session.
-                None => false,
+                None => Ok(false),
             }
         };
-        if !due {
-            return AutoCompactionRun::NotDue;
+        match due {
+            Ok(false) => return AutoCompactionRun::NotDue,
+            Ok(true) => {}
+            Err(error) => {
+                if !emit(EngineEvent::CompactionStart {
+                    event: crate::compaction::compaction_start_event("threshold", None),
+                })
+                .continues()
+                {
+                    return AutoCompactionRun::Cancelled;
+                }
+                return if self.emit_unsuccessful_compaction(
+                    CompactionOutcomeReason::Threshold,
+                    CompactionOutcomeKind::Failed,
+                    &format!("Auto-compaction check failed: {error:#}"),
+                    None,
+                    emit,
+                ) {
+                    AutoCompactionRun::Ran
+                } else {
+                    AutoCompactionRun::Cancelled
+                };
+            }
         }
         // TS `_runAutoCompaction` emits the start event before the
         // summarizer runs, so attached surfaces see the loader.

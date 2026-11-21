@@ -231,8 +231,7 @@ fn index_payload(
         .and_then(Value::as_bool)
         .unwrap_or(false);
 
-    let live_tokens =
-        crate::session_engine::compaction::context_tokens_with_drift(&live.messages, live.drift);
+    let live_tokens = live.tokens;
     let hidden_tokens = walk.hidden.iter().map(|entry| entry.tokens).sum::<u64>();
 
     let mut rows: Vec<&HistoryEntry> = walk
@@ -437,8 +436,7 @@ async fn edit(
             "window": window,
         }));
     };
-    let live_tokens =
-        crate::session_engine::compaction::context_tokens_with_drift(&live.messages, live.drift);
+    let live_tokens = live.tokens;
     Ok(json!({
         "status": format!(
             "{counts_line} \u{2014} live {} / {}",
@@ -539,9 +537,14 @@ mod tests {
                 let session = Arc::clone(&session);
                 Box::pin(async move {
                     let context = { session.lock().await.active_context() };
+                    let tokens = crate::session_engine::compaction::context_tokens_with_drift(
+                        &context.messages,
+                        context.usage_drift,
+                    );
                     Ok(crate::session_engine::turn_boundary::LiveViewSnapshot {
                         messages: context.messages,
                         drift: context.usage_drift,
+                        tokens,
                     })
                 })
             }
@@ -951,9 +954,14 @@ mod tests {
                             .await;
                     }
                     let context = { session.lock().await.active_context() };
+                    let tokens = crate::session_engine::compaction::context_tokens_with_drift(
+                        &context.messages,
+                        context.usage_drift,
+                    );
                     Ok(crate::session_engine::turn_boundary::LiveViewSnapshot {
                         messages: context.messages,
                         drift: context.usage_drift,
+                        tokens,
                     })
                 })
             }
