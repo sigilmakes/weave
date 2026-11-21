@@ -18,6 +18,11 @@ const DIRECTORIES: &[(&str, &str, &str)] = &[
 const INHERITED_DIRECTORIES: &[(&str, &str, &str)] = &[
     ("PRIME_AGENT_AGENT_DIR", "PA_TEST_REAL_AGENT_DIR", "agent"),
     (
+        "PI_CODING_AGENT_DIR",
+        "PA_TEST_REAL_PI_CODING_AGENT_DIR",
+        "agent",
+    ),
+    (
         "PRIME_AGENT_CODING_AGENT_SESSION_DIR",
         "PA_TEST_REAL_CODING_AGENT_SESSION_DIR",
         "coding-sessions",
