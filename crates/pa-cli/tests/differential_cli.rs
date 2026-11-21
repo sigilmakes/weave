@@ -33,6 +33,7 @@ const CORPUS: &[&[&str]] = &[
     &["help", "agents"],
     &["help", "list"],
     &["help", "sessions"],
+    &["help", "sessions", "delete"],
     &["help", "attach"],
     &["help", "stop"],
     &["help", "rename"],
@@ -459,12 +460,13 @@ fn sandbox(prefix: &str) -> PathBuf {
 }
 
 // These are declared native contracts, not stream fallbacks. Help snapshots are
-// derived from each command registry and its formatter. `list` and `sessions`
-// declare the `--check` artifacts report, which has no TypeScript counterpart.
-// Native update/package behavior is documented in docs/legacy-upgrade-contract.md.
-// args.rs tests pin bounded u32 and unknown-option validation; model list
-// declares only [search], not a --json option. ACP shares the native
-// non-interactive @file rejection.
+// derived from each command registry and its formatter. The `sessions` table
+// appends native id/size/artifacts cells; its daemon e2e compares shared cells.
+// `list` and `sessions` declare the `--check` artifacts report, which has no
+// TypeScript counterpart. Native update/package behavior is documented in
+// docs/legacy-upgrade-contract.md. args.rs tests pin bounded u32 and
+// unknown-option validation; model list declares only [search],
+// not a --json option. ACP shares the native non-interactive @file rejection.
 // TypeScript reference: archive/typescript-2026-10-18, commit
 // 239dbe344fcaf671af9898906ff952be73995614.
 fn declared_output_matches(
@@ -513,10 +515,6 @@ fn declared_native_contract(
             ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-list-help.txt"), "", roots))
                 && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-list-help.txt"), "", roots),
         ),
-        ["help", "sessions"] => Some(
-            ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-sessions-help.txt"), "", roots))
-                && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-sessions-help.txt"), "", roots),
-        ),
         ["help", "package"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-package-help.txt"), "", roots))
                 && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-package-help.txt"), "", roots),
@@ -525,6 +523,20 @@ fn declared_native_contract(
             ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-update-help.txt"), "", roots))
                 && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-update-help.txt"), "", roots),
         ),
+        // A fork-only child and a fork-only flag: the TS sessions help has
+        // neither the `delete` command nor `--check`, so the TS reference is
+        // pinned by ts-sessions-help.txt and the native page by its fixture.
+        ["help", "sessions"] => Some(
+            ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-sessions-help.txt"), "", roots))
+                && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-sessions-help.txt"), "", roots),
+        ),
+        ["help", "sessions", "delete"] => Some(declared_output_matches(
+            native,
+            0,
+            include_str!("fixtures/native-cli-contract/native-sessions-delete-help.txt"),
+            "",
+            roots,
+        )),
         ["--mode", "rpc" | "daemon", "@file.txt"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 1, "", "Error: @file arguments are not supported in RPC or daemon mode\n", roots))
                 && declared_output_matches(native, 1, "", "Error: @file arguments are not supported in RPC, daemon, or ACP mode\n", roots),
@@ -589,6 +601,7 @@ fn native_cli_contract_fixtures() {
         &["help"],
         &["help", "list"],
         &["help", "sessions"],
+        &["help", "sessions", "delete"],
         &["help", "package"],
         &["help", "update"],
         &["--mode", "rpc", "@file.txt"],

@@ -3,17 +3,19 @@
 //! request shaping, and output rendering. `schedule` maps to the internal
 //! `cron` command and `stop` to `kill`.
 
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Result};
 use pa_core::session::artifacts::NestedArtifactsRoot;
+use pa_core::session::storage::{SessionStorage, SessionStorageSizes};
 use pa_types::daemon::DaemonCommand;
 use serde_json::{json, Value};
 
 use crate::daemon_client::DaemonClient;
 use crate::daemon_session_list::{
-    format_session_list_table, get_session_summaries, live_session_summary,
-    matches_session_id_suffix,
+    format_bytes, format_session_list_table, get_session_summaries, live_session_summary,
+    matches_session_id_suffix, string_field,
 };
 
 #[derive(Debug)]
@@ -174,21 +176,6 @@ fn artifacts_check_report(root: &Path, nested: &[NestedArtifactsRoot]) -> String
     report
 }
 
-/// A byte count with a binary unit, two decimals above a kibibyte.
-fn format_bytes(bytes: u64) -> String {
-    const UNITS: [&str; 4] = ["KiB", "MiB", "GiB", "TiB"];
-    if bytes < 1024 {
-        return format!("{bytes} B");
-    }
-    let mut value = bytes as f64 / 1024.0;
-    let mut unit = 0;
-    while value >= 1024.0 && unit + 1 < UNITS.len() {
-        value /= 1024.0;
-        unit += 1;
-    }
-    format!("{value:.2} {}", UNITS[unit])
-}
-
 fn default_socket_path() -> PathBuf {
     crate::config::resolve_daemon_socket_path(None)
 }
@@ -274,6 +261,9 @@ fn list_command(all: bool) -> DaemonCommand {
 /// The same list RPC as `prime-agent list`, rendered as the
 /// one-line-per-agent operator table.
 fn run_sessions(client: &mut DaemonClient, args: &[String], json: bool) -> Result<()> {
+    if args.first().map(String::as_str) == Some("delete") {
+        return run_sessions_delete(client, &args[1..], json);
+    }
     let mut all = false;
     for arg in args {
         if arg == "-a" || arg == "--all" {
@@ -311,6 +301,212 @@ fn run_sessions(client: &mut DaemonClient, args: &[String], json: bool) -> Resul
         )
     );
     Ok(())
+}
+
+/// The `sessions delete` operands.
+#[derive(Debug)]
+struct DeleteArgs {
+    dry_run: bool,
+    ids: Vec<String>,
+}
+
+/// One preflighted deletion: the resolved storage and the sizes the command
+/// reports. Every id is planned before the first unlink, so a bad id in the
+/// list cannot leave the earlier ones half-gone.
+struct PlannedDeletion {
+    id: String,
+    storage: SessionStorage,
+    sizes: SessionStorageSizes,
+}
+
+fn parse_delete_args(args: &[String]) -> Result<DeleteArgs> {
+    let mut dry_run = false;
+    let mut ids: Vec<String> = Vec::new();
+    for arg in args {
+        match arg.as_str() {
+            "--dry-run" => dry_run = true,
+            value if value.starts_with('-') => bail!("Unknown sessions delete option: {value}"),
+            value if !ids.iter().any(|id| id == value) => ids.push(value.to_string()),
+            _ => {}
+        }
+    }
+    if ids.is_empty() {
+        bail!("Missing session id. Run \"prime-agent help sessions delete\" for usage.");
+    }
+    Ok(DeleteArgs { dry_run, ids })
+}
+
+fn run_sessions_delete(client: &mut DaemonClient, args: &[String], json: bool) -> Result<()> {
+    let args = parse_delete_args(args)?;
+    let live_sessions = daemon_sessions(client.request(list_command(false))?)?;
+    let live: Vec<String> = args
+        .ids
+        .iter()
+        .filter_map(|id| live_session_refusal(&live_sessions, id))
+        .collect();
+    if !live.is_empty() {
+        bail!("{}; nothing was deleted", live.join("; "));
+    }
+    let catalog = daemon_sessions(client.request(list_command(true))?)?;
+    let planned: Vec<PlannedDeletion> = args
+        .ids
+        .iter()
+        .map(|id| plan_deletion(id, &catalog))
+        .collect::<Result<_>>()?;
+
+    if args.dry_run {
+        if json {
+            print_json(&deletion_json("wouldDelete", &planned));
+            return Ok(());
+        }
+        for plan in &planned {
+            println!(
+                "would delete: artifacts {}, kernel {}, log {}, cache {} \u{2014} {}",
+                format_bytes(plan.sizes.artifacts_excluding_kernel()),
+                format_bytes(plan.sizes.kernel),
+                format_bytes(plan.sizes.log),
+                format_bytes(plan.sizes.cache),
+                format_bytes(plan.sizes.total()),
+            );
+        }
+        return Ok(());
+    }
+
+    for plan in &planned {
+        delete_storage(&plan.storage)?;
+    }
+    if json {
+        print_json(&deletion_json("deleted", &planned));
+        return Ok(());
+    }
+    for plan in &planned {
+        println!(
+            "deleted {} \u{2014} log {}, artifacts {}, kernel {}, {} freed",
+            short_session_id(&plan.id),
+            format_bytes(plan.sizes.log),
+            format_bytes(plan.sizes.artifacts_excluding_kernel()),
+            format_bytes(plan.sizes.kernel),
+            format_bytes(plan.sizes.total()),
+        );
+    }
+    Ok(())
+}
+
+fn daemon_sessions(response: pa_types::daemon::DaemonResponse) -> Result<Vec<Value>> {
+    let data = require_success(response)?.unwrap_or(Value::Null);
+    match data.get("sessions").and_then(Value::as_array).cloned() {
+        Some(sessions) => Ok(sessions),
+        None => bail!("Daemon returned an invalid sessions response"),
+    }
+}
+
+/// A refusal line when the id names a session the daemon still hosts.
+fn live_session_refusal(live_sessions: &[Value], id: &str) -> Option<String> {
+    let row = live_sessions
+        .iter()
+        .find(|row| row_matches_session_id(row, id))?;
+    Some(match row.get("workerPid").and_then(Value::as_u64) {
+        Some(pid) => format!("Session {id} is live in daemon pid {pid}"),
+        None => format!("Session {id} is live in a daemon"),
+    })
+}
+
+/// The id is the conversation log's stem; the active id and the session id are
+/// accepted too so a live row can never hide behind an alias.
+fn row_matches_session_id(row: &Value, id: &str) -> bool {
+    string_field(row, "sessionFile")
+        .and_then(|path| Path::new(path).file_stem())
+        .and_then(|stem| stem.to_str())
+        == Some(id)
+        || ["sessionId", "activeSessionId", "id"]
+            .iter()
+            .any(|field| string_field(row, field) == Some(id))
+}
+
+fn plan_deletion(id: &str, catalog: &[Value]) -> Result<PlannedDeletion> {
+    let row = catalog
+        .iter()
+        .find(|row| {
+            string_field(row, "sessionFile")
+                .and_then(|path| Path::new(path).file_stem())
+                .and_then(|stem| stem.to_str())
+                == Some(id)
+        })
+        .ok_or_else(|| anyhow!("Session {id} does not exist"))?;
+    if let Some(pid) = row.get("workerPid").and_then(Value::as_u64) {
+        bail!("Session {id} is live in daemon pid {pid}; nothing was deleted");
+    }
+    let session_file =
+        string_field(row, "sessionFile").ok_or_else(|| anyhow!("Session {id} does not exist"))?;
+    let storage = SessionStorage::for_log(session_file)
+        .ok_or_else(|| anyhow!("Session {id} does not exist"))?;
+    if !storage.log_path().exists() {
+        bail!("Session {id} does not exist");
+    }
+    let sizes = storage.sizes();
+    Ok(PlannedDeletion {
+        id: id.to_string(),
+        storage,
+        sizes,
+    })
+}
+
+/// The ticket's order: the artifact partition, then the kernel state it
+/// contains, then the log, then the info cache. The log goes last, so an
+/// interrupted delete leaves a session that still opens.
+fn delete_storage(storage: &SessionStorage) -> Result<()> {
+    remove_artifacts(storage.artifacts_dir())?;
+    for path in storage.kernel_state_paths() {
+        remove_file_if_present(path)?;
+    }
+    remove_file_if_present(storage.log_path())?;
+    remove_file_if_present(storage.cache_path())
+}
+
+fn remove_artifacts(path: &Path) -> Result<()> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_dir() => fs::remove_dir_all(path)
+            .map_err(|error| anyhow!("Failed to remove {}: {error}", path.display())),
+        Ok(_) => fs::remove_file(path)
+            .map_err(|error| anyhow!("Failed to remove {}: {error}", path.display())),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(anyhow!("Failed to inspect {}: {error}", path.display())),
+    }
+}
+
+fn remove_file_if_present(path: &Path) -> Result<()> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_file() || metadata.file_type().is_symlink() => {
+            fs::remove_file(path)
+                .map_err(|error| anyhow!("Failed to remove {}: {error}", path.display()))
+        }
+        Ok(_) => bail!("Refusing to remove {}: it is not a file", path.display()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(anyhow!("Failed to inspect {}: {error}", path.display())),
+    }
+}
+
+fn short_session_id(id: &str) -> &str {
+    id.get(..8).unwrap_or(id)
+}
+
+fn deletion_json(key: &str, planned: &[PlannedDeletion]) -> Value {
+    let rows: Vec<Value> = planned
+        .iter()
+        .map(|plan| {
+            json!({
+                "id": plan.id,
+                "logBytes": plan.sizes.log,
+                "artifactBytes": plan.sizes.artifacts_excluding_kernel(),
+                "kernelBytes": plan.sizes.kernel,
+                "cacheBytes": plan.sizes.cache,
+                "freedBytes": plan.sizes.total(),
+            })
+        })
+        .collect();
+    let mut object = serde_json::Map::new();
+    object.insert(key.to_string(), Value::Array(rows));
+    Value::Object(object)
 }
 
 /// Match a name/id/session-id selector against the live session list,
@@ -781,10 +977,10 @@ mod tests {
             artifacts_check_report(Path::new("/agent/session-artifacts"), &nested),
             concat!(
                 "Nested session-artifacts roots under /agent/session-artifacts: 2\n",
-                "  1.50 KiB  /agent/session-artifacts/p/session-artifacts\n",
+                "    1.5 KB  /agent/session-artifacts/p/session-artifacts\n",
                 "     512 B  /agent/session-artifacts/p/session-artifacts/c/session-artifacts\n",
                 "\n",
-                "  1.50 KiB  outermost roots only\n",
+                "    1.5 KB  outermost roots only\n",
             )
         );
         assert_eq!(
@@ -820,6 +1016,36 @@ mod tests {
 
         let no_target = parse_send_args(&args(&["--message", "text"]));
         assert!(no_target.is_err());
+    }
+
+    #[test]
+    fn delete_args_take_ids_in_order_and_reject_unknown_flags() {
+        let parsed = parse_delete_args(&args(&[
+            "--dry-run",
+            "01a1fb6b-cd31-7694-a622-8cbd0fa54d8d",
+            "01a1fb6b-cd31-7694-a622-8cbd0fa54d8d",
+            "01a1fb6b-0000-0000-0000-000000000000",
+        ]))
+        .unwrap();
+        assert!(parsed.dry_run);
+        assert_eq!(
+            parsed.ids,
+            vec![
+                "01a1fb6b-cd31-7694-a622-8cbd0fa54d8d".to_string(),
+                "01a1fb6b-0000-0000-0000-000000000000".to_string(),
+            ]
+        );
+
+        assert_eq!(
+            parse_delete_args(&args(&["--all"]))
+                .unwrap_err()
+                .to_string(),
+            "Unknown sessions delete option: --all"
+        );
+        assert_eq!(
+            parse_delete_args(&args(&[])).unwrap_err().to_string(),
+            "Missing session id. Run \"prime-agent help sessions delete\" for usage."
+        );
     }
 
     #[test]

@@ -818,8 +818,8 @@ pub(crate) fn session_message_to_loop(message: &SessionAgentMessage) -> Option<A
 /// keyed by the log's session id.
 #[must_use]
 pub fn session_artifact_dir_for_log(log: &std::path::Path) -> Option<std::path::PathBuf> {
-    let id = log.file_stem()?.to_string_lossy();
-    crate::session::artifacts::session_artifact_dir(log.parent()?, &id)
+    crate::session::storage::SessionStorage::for_log(log)
+        .map(|storage| storage.artifacts_dir().to_path_buf())
 }
 
 /// Rows that fail the conversion drop.

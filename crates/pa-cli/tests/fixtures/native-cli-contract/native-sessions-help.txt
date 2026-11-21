@@ -5,6 +5,9 @@ Show agent status, activity, and usage.
 
 --check follows only the session dir an unqualified listing scans. It does not consult --session-dir, PRIME_AGENT_CODING_AGENT_SESSION_DIR, or the settings sessionDir.
 
+Commands:
+  delete  Delete saved sessions
+
 Options:
   -a, --all  Include saved agents
   --check     Report nested session-artifacts roots (text report only; no other listing options)
