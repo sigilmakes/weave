@@ -59,7 +59,7 @@ pub const COMMAND_SPECS: &[CommandSpec] = &[
     )
     .options(&[
         "-a, --all  Include saved agents",
-        "--check     Report nested session-artifacts roots (text report only; no other options)",
+        "--check     Report nested session-artifacts roots (text report only; no other listing options)",
         "--json      Print JSON",
     ]),
     CommandSpec::new(
@@ -73,7 +73,7 @@ pub const COMMAND_SPECS: &[CommandSpec] = &[
     )
     .options(&[
         "-a, --all  Include saved agents",
-        "--check     Report nested session-artifacts roots (text report only; no other options)",
+        "--check     Report nested session-artifacts roots (text report only; no other listing options)",
         "--json      Print JSON",
     ]),
     CommandSpec::new(
