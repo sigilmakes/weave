@@ -21,6 +21,8 @@
         actionlint -shellcheck="" \
             -ignore '^label "gaia-runner" is unknown' \
             -ignore '^specifying action "https://data.forgejo.org/actions/checkout@11d5960a326750d5838078e36cf38b85af677262" in invalid format' \
+            -ignore '^specifying action "https://data.forgejo.org/actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830" in invalid format' \
+            -ignore '^specifying action "https://data.forgejo.org/actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830" in invalid format' \
             .forgejo/workflows/ci.yml
         touch "$out"
     '';

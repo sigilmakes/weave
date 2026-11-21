@@ -71,6 +71,9 @@ jobs:
                   fi
                   echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
                   echo "Documentation-only change: $docs_only"
+            - name: Report cache service endpoints
+              run: |
+                  printf 'ACTIONS_CACHE_URL=%s\nACTIONS_RESULTS_URL=%s\n' "$ACTIONS_CACHE_URL" "$ACTIONS_RESULTS_URL"
             - name: Identify Rust toolchain
               id: rust
               if: steps.scope.outputs.docs_only != 'true'
