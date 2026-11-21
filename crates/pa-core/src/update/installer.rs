@@ -1118,12 +1118,9 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
         std::env::remove_var(ENV_DOWNLOAD_BASE_URL);
         assert_eq!(
             installer_script_url(Some("stable")),
-            "https://pub-728493de92a943e2a9b2d17b4719f318.r2.dev/install.sh"
+            "https://app.primeintellect.ai/prime-agent/install.sh"
         );
-        assert_eq!(
-            installer_script_url(None),
-            format!("{DEFAULT_DOWNLOAD_BASE_URL}/install.sh")
-        );
+        assert_eq!(installer_script_url(None), OFFICIAL_INSTALLER_URL);
         assert_eq!(
             installer_script_url(Some("beta")),
             "https://pub-728493de92a943e2a9b2d17b4719f318.r2.dev/install-beta.sh"
@@ -1133,10 +1130,7 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
             installer_script_url(Some("beta")),
             "https://mirror.example/install-beta.sh"
         );
-        assert_eq!(
-            installer_script_url(Some("stable")),
-            "https://mirror.example/install.sh"
-        );
+        assert_eq!(installer_script_url(Some("stable")), OFFICIAL_INSTALLER_URL);
         std::env::set_var(ENV_INSTALLER_URL, "http://127.0.0.1:9/pinned.sh");
         assert_eq!(
             installer_script_url(Some("beta")),
