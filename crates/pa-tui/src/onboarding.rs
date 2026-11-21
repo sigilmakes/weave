@@ -238,12 +238,8 @@ impl OnboardingScreen {
         let mut row: Line = vec![Span::styled(" ".to_string(), Style::default())];
         row.push(Span::styled("Welcome to ".to_string(), text));
         row.push(Span::styled(
-            "PRIME".to_string(),
+            "Weave".to_string(),
             text.add_modifier(Modifier::BOLD),
-        ));
-        row.push(Span::styled(
-            " Agent".to_string(),
-            text.add_modifier(Modifier::ITALIC),
         ));
         row
     }
