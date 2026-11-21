@@ -420,6 +420,111 @@ impl CliPair {
         }
     }
 
+    /// The sessions operator table is a declared native extension (ticket #70):
+    /// Rust adds the file-backed `id`, `size`, and `artifacts` cells after the
+    /// TS columns. Compare the shared shape and the native cells instead of
+    /// byte equality.
+    fn compare_sessions_table(&self, failures: &mut Vec<String>, args: &[&str], label: &str) {
+        let ts_out = run_cli(&self.ts, &self.dir, &self.ts_agent_dir, args);
+        let rs_out = run_cli(&self.rust, &self.dir, &self.rust_agent_dir, args);
+        let ts_text = stdout(&ts_out);
+        let rs_text = stdout(&rs_out);
+        let ts_header: Vec<&str> = ts_text
+            .lines()
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .collect();
+        let rs_header: Vec<&str> = rs_text
+            .lines()
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .collect();
+        let ts_columns = [
+            "name", "status", "activity", "last", "heard", "error", "usage",
+        ];
+        let rust_columns = [
+            "name",
+            "id",
+            "status",
+            "activity",
+            "last",
+            "heard",
+            "error",
+            "usage",
+            "size",
+            "artifacts",
+        ];
+        let mut problems = Vec::new();
+        if ts_out.status.code() != Some(0) || !stderr(&ts_out).is_empty() {
+            problems.push(format!(
+                "ts exit {:?} stderr {:?}",
+                ts_out.status.code(),
+                stderr(&ts_out)
+            ));
+        }
+        if rs_out.status.code() != Some(0) || !stderr(&rs_out).is_empty() {
+            problems.push(format!(
+                "rs exit {:?} stderr {:?}",
+                rs_out.status.code(),
+                stderr(&rs_out)
+            ));
+        }
+        if ts_header != ts_columns {
+            problems.push(format!("ts header {ts_header:?}"));
+        }
+        if rs_header != rust_columns {
+            problems.push(format!("rs header {rs_header:?}"));
+        }
+        let ts_rows: Vec<&str> = ts_text
+            .lines()
+            .skip(1)
+            .filter(|line| !line.trim().is_empty())
+            .collect();
+        let rs_rows: Vec<&str> = rs_text
+            .lines()
+            .skip(1)
+            .filter(|line| !line.trim().is_empty())
+            .collect();
+        if ts_rows.len() != rs_rows.len() {
+            problems.push(format!(
+                "row count ts {} rs {}",
+                ts_rows.len(),
+                rs_rows.len()
+            ));
+        }
+        for (ts_row, rs_row) in ts_rows.iter().zip(&rs_rows) {
+            let ts_fields: Vec<&str> = ts_row.split_whitespace().collect();
+            let fields: Vec<&str> = rs_row.split_whitespace().collect();
+            let id_ok = fields
+                .get(1)
+                .is_some_and(|id| id.len() == 36 && id.chars().filter(|c| *c == '-').count() == 4);
+            if !id_ok {
+                problems.push(format!("row id {rs_row:?}"));
+                continue;
+            }
+            let tail = fields.len().saturating_sub(4);
+            let bytes_ok = fields.len() >= 6
+                && matches!(fields[tail + 1], "B" | "KB" | "MB" | "GB" | "TB")
+                && matches!(fields[tail + 3], "B" | "KB" | "MB" | "GB" | "TB");
+            if !bytes_ok {
+                problems.push(format!("row sizes {rs_row:?}"));
+                continue;
+            }
+            let mut shared = vec![fields[0]];
+            shared.extend_from_slice(&fields[2..tail]);
+            if shared != ts_fields {
+                problems.push(format!(
+                    "shared cells {shared:?} vs ts {ts_fields:?} in {rs_row:?}"
+                ));
+            }
+        }
+        if !problems.is_empty() {
+            failures.push(format!("{label}:\n  {}", problems.join("\n  ")));
+        }
+    }
+
     /// JSON contains actual owner IDs and paths. Each CLI must preserve its own
     /// server's full payload rather than inventing cross-owner identities.
     fn compare_rpc_json(
@@ -792,6 +897,39 @@ fn sessions_delete_is_all_or_nothing_and_reports_the_freed_bytes() {
     std::fs::write(artifacts.join("kernel-state.dill"), [0_u8; 2]).expect("kernel state");
     std::fs::write(artifacts.join("kernel-state.json"), [0_u8; 1]).expect("kernel manifest");
     let cache = sessions.join(format!("{doomed_id}.info-cache.json"));
+
+    let table = run_cli(
+        &cli,
+        dir.path(),
+        &agent_dir,
+        &list_args(&socket_str, &["sessions", "--all"]),
+    );
+    assert_eq!(table.status.code(), Some(0), "{}", stderr(&table));
+    let table = stdout(&table);
+    assert_eq!(
+        table
+            .lines()
+            .next()
+            .unwrap_or_default()
+            .split_whitespace()
+            .collect::<Vec<_>>(),
+        [
+            "name",
+            "id",
+            "status",
+            "activity",
+            "last",
+            "heard",
+            "error",
+            "usage",
+            "size",
+            "artifacts"
+        ],
+        "{table}"
+    );
+    for id in [&keeper_id, &doomed_id] {
+        assert!(table.contains(id.as_str()), "{table}");
+    }
 
     let dry_run = run_cli(
         &cli,
@@ -1253,15 +1391,10 @@ fn ts_daemon_differential_cli_output() {
     );
 
     // The sessions operator table (TS #2422): the same list RPC as the one-line table.
-    compare(
+    // Ticket #70 adds the file-backed id/size/artifacts cells to the Rust table.
+    pair.compare_sessions_table(&mut failures, &["sessions"], "sessions table");
+    pair.compare_sessions_table(
         &mut failures,
-        &["sessions"],
-        &["sessions"],
-        "sessions table",
-    );
-    compare(
-        &mut failures,
-        &["sessions", "--all"],
         &["sessions", "--all"],
         "sessions table --all",
     );
