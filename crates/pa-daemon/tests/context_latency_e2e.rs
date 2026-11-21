@@ -211,12 +211,11 @@ fn seed_child_session(dir: &std::path::Path, child_id: &str) -> u64 {
         parent_id = Some(entry_id);
     }
     drop(fixture_generation);
-    let seeded_bytes = content.len() as u64;
     assert_eq!(
         write_session_rows(&file, &content),
         SEEDED_MESSAGES_PER_CHILD as u64 + CHILD_HEADER_ROWS
     );
-    seeded_bytes
+    content.len() as u64
 }
 
 #[pa_test_scratch::pa_test]
