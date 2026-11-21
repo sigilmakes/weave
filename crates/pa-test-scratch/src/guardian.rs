@@ -4,8 +4,12 @@ use std::time::{Duration, Instant};
 const OWNER: &str = "PA_TEST_PROCESS_OWNER";
 static GUARDIAN_PID: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(-1);
 static LIVENESS_FD: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(-1);
+#[cfg(test)]
+static INITIAL_HOME: std::sync::OnceLock<Option<std::path::PathBuf>> = std::sync::OnceLock::new();
 
 pub(crate) fn install(root: &Path, remove_root: bool) {
+    #[cfg(test)]
+    INITIAL_HOME.get_or_init(|| std::env::var_os("HOME").map(std::path::PathBuf::from));
     if std::env::var_os(OWNER).is_some() {
         return;
     }
@@ -181,6 +185,17 @@ mod tests {
     use std::os::unix::process::CommandExt;
     use std::process::{Command, Stdio};
     use std::time::{Duration, Instant};
+
+    #[test]
+    fn guardian_initialises_with_private_home() {
+        let home = super::INITIAL_HOME
+            .get()
+            .expect("guardian installed before tests")
+            .as_ref()
+            .expect("guardian inherits a test home");
+        let root = std::env::var_os("PA_TEST_PRIVATE_HOME_ROOT").expect("private home owner");
+        assert!(home.starts_with(&root), "guardian captured ambient HOME: {home:?}");
+    }
 
     #[test]
     #[allow(

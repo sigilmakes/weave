@@ -159,6 +159,7 @@ def target_environment(repo, state, ambient):
     # pa-test-scratch would otherwise nest a root under TMPDIR and spend `sun_path` budget the
     # socket fixtures need. This target already owns `TMPDIR`, so hand it back verbatim.
     env["PA_TEST_SCRATCH_ROOT"] = env["TMPDIR"]
+    env["PA_TEST_PRIVATE_HOME_ROOT"] = str(state)
     env.update({key: ambient[key] for key in (
         "PRIME_AGENT_KERNEL_PYTHON", "PA_E2E_KERNEL_PYTHON",
     )})
