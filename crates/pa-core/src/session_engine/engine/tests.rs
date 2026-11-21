@@ -488,3 +488,186 @@ async fn create_session_appends_missing_resume_settings_rows() {
         "entries: {entries:?}"
     );
 }
+
+/// `history.index` reports the figure the engine actually sends: the same
+/// assembled view, measured with the drift the engine publishes.
+#[tokio::test]
+async fn history_index_matches_the_request_the_engine_sends() {
+    let model = pa_agent::types::Model {
+        id: "m".into(),
+        name: "m".into(),
+        api: "test".into(),
+        provider: "test".into(),
+        base_url: "http://localhost".into(),
+        reasoning: false,
+        cost: pa_agent::types::UsageCost::default(),
+        context_window: 100_000,
+        max_tokens: 100,
+        input: Vec::new(),
+        max_tokens_explicit: false,
+    };
+    let provider = Arc::new(ScriptedProvider::new(model.clone()));
+    provider.push_text_turn("done");
+    let tmp = tempfile::tempdir().unwrap();
+    let cwd = tmp.path().join("project");
+    std::fs::create_dir_all(&cwd).unwrap();
+    let engine = create_session(SessionEngineConfig {
+        on_late_sent_agent_message: None,
+        context_startup_boundary: crate::session_engine::ContextStartupBoundary::Current,
+        context_startup_admitted_input_ids: Vec::new(),
+        on_initial_context_selection: None,
+        ollama_cloud: None,
+        semantic_edges: None,
+        cron_store: None,
+        queued_steering_probe: None,
+        should_stop_after_turn: None,
+        image_model_router: None,
+        steering_mode: None,
+        follow_up_mode: None,
+        cwd: cwd.clone(),
+        agent_dir: tmp.path().join("agent"),
+        mcp_manager: None,
+        model: Some(model.clone()),
+        thinking_level: None,
+        stream_fn: Some(provider.stream_fn()),
+        tools: vec![],
+        custom_system_prompt: None,
+        prompt_guidelines: vec![],
+        generic_mcp_servers: vec![],
+        allow_recursion: None,
+        session_manager: None,
+        extra_host_handlers: None,
+        conversation_log_path: None,
+        additional_skill_paths: vec![],
+        additional_prompt_paths: vec![],
+        extra_builtin_skill_overrides: vec![],
+        rlm_subagent_host: None,
+        rlm_usage_store: None,
+        progress_note_emit: None,
+        rlm_depth: None,
+        daemonless: true,
+        model_info: None,
+        on_background_work_settled: None,
+        prewarm_ipython_kernel: None,
+        queued_goal_context_purge: None,
+    })
+    .await
+    .unwrap();
+    engine
+        .prompt("first turn", PromptOptions::default())
+        .await
+        .unwrap();
+    engine.session.agent().wait_for_idle().await;
+
+    let mut handlers = crate::kernel::shared::HostRequestHandlers::default();
+    crate::session_engine::history_host::register_history_handlers(
+        &engine.turn_boundary,
+        &mut handlers,
+    );
+    let index =
+        handlers.get("history.index").unwrap().clone()(crate::kernel::shared::HostRequestPayload {
+            data: serde_json::json!({"limit": 5}),
+        })
+        .await
+        .unwrap();
+
+    let (sent, _) = engine.session.assembled_context(None).await.unwrap();
+    let drift = engine.session.context_usage_drift();
+    let expected = crate::session_engine::compaction::context_tokens_with_drift(&sent, drift);
+    assert_eq!(index["live_tokens"], expected);
+    assert_eq!(index["window"], model.context_window);
+}
+
+/// The engine's live view is the send path, not a build-time snapshot: an edit
+/// appended to the session changes both, and the compact figure follows.
+#[tokio::test]
+async fn the_live_view_tracks_the_session_and_the_send_path() {
+    let model = pa_agent::types::Model {
+        id: "m".into(),
+        name: "m".into(),
+        api: "test".into(),
+        provider: "test".into(),
+        base_url: "http://localhost".into(),
+        reasoning: false,
+        cost: pa_agent::types::UsageCost::default(),
+        context_window: 100_000,
+        max_tokens: 100,
+        input: Vec::new(),
+        max_tokens_explicit: false,
+    };
+    let provider = Arc::new(ScriptedProvider::new(model.clone()));
+    provider.push_text_turn("done");
+    let tmp = tempfile::tempdir().unwrap();
+    let cwd = tmp.path().join("project");
+    std::fs::create_dir_all(&cwd).unwrap();
+    let engine = create_session(SessionEngineConfig {
+        on_late_sent_agent_message: None,
+        context_startup_boundary: crate::session_engine::ContextStartupBoundary::Current,
+        context_startup_admitted_input_ids: Vec::new(),
+        on_initial_context_selection: None,
+        ollama_cloud: None,
+        semantic_edges: None,
+        cron_store: None,
+        queued_steering_probe: None,
+        should_stop_after_turn: None,
+        image_model_router: None,
+        steering_mode: None,
+        follow_up_mode: None,
+        cwd: cwd.clone(),
+        agent_dir: tmp.path().join("agent"),
+        mcp_manager: None,
+        model: Some(model.clone()),
+        thinking_level: None,
+        stream_fn: Some(provider.stream_fn()),
+        tools: vec![],
+        custom_system_prompt: None,
+        prompt_guidelines: vec![],
+        generic_mcp_servers: vec![],
+        allow_recursion: None,
+        session_manager: None,
+        extra_host_handlers: None,
+        conversation_log_path: None,
+        additional_skill_paths: vec![],
+        additional_prompt_paths: vec![],
+        extra_builtin_skill_overrides: vec![],
+        rlm_subagent_host: None,
+        rlm_usage_store: None,
+        progress_note_emit: None,
+        rlm_depth: None,
+        daemonless: true,
+        model_info: None,
+        on_background_work_settled: None,
+        prewarm_ipython_kernel: None,
+        queued_goal_context_purge: None,
+    })
+    .await
+    .unwrap();
+    engine
+        .prompt("first turn", PromptOptions::default())
+        .await
+        .unwrap();
+    engine.session.agent().wait_for_idle().await;
+
+    let before = engine.turn_boundary.assemble_live_view().await.unwrap();
+    let (sent, _) = engine.session.assembled_context(None).await.unwrap();
+    assert_eq!(before.messages, sent, "one view, two readers");
+
+    let mut handlers = crate::kernel::shared::HostRequestHandlers::default();
+    crate::session_engine::history_host::register_history_handlers(
+        &engine.turn_boundary,
+        &mut handlers,
+    );
+    handlers.get("history.edit").unwrap().clone()(crate::kernel::shared::HostRequestPayload {
+        data: serde_json::json!({"changes": [{"op": "drop", "at": 0}]}),
+    })
+    .await
+    .unwrap();
+
+    let after = engine.turn_boundary.assemble_live_view().await.unwrap();
+    let (sent, _) = engine.session.assembled_context(None).await.unwrap();
+    assert_eq!(after.messages, sent);
+    assert!(
+        after.messages.len() < before.messages.len(),
+        "the drop landed"
+    );
+}

@@ -642,6 +642,7 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
     // rebuild after a `history.edit` must see a live model switch, not the
     // model this engine was built with.
     let context_model = Arc::new(std::sync::RwLock::new(full_model.clone()));
+    let live_view_drift = Arc::new(std::sync::RwLock::new(crate::session::UsageDrift::default()));
     // A `history.edit` writes canonical history mid-turn; the view is
     // assembled through the same path a send uses, so a pinned context strategy
     // still shapes it, and the accepted archive it publishes stops expanding a
@@ -651,31 +652,31 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
         let session = wiring.session.clone();
         let context_model = Arc::clone(&context_model);
         let archive = Arc::clone(&context_archive_state);
+        let drift_slot = Arc::clone(&live_view_drift);
         Arc::new(move || {
             let plugins = Arc::clone(&plugins);
             let session = Arc::clone(&session);
             let context_model = Arc::clone(&context_model);
             let archive = Arc::clone(&archive);
+            let drift_slot = Arc::clone(&drift_slot);
             Box::pin(async move {
                 let model = context_model
                     .read()
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
                     .clone();
-                let (messages, accepted, drift, through) =
-                    super::context_strategy::assemble_session_view(
-                        Some(&plugins),
-                        &session,
-                        model.as_ref(),
-                    )
-                    .await?;
+                let (messages, accepted, drift) = super::context_strategy::assemble_session_view(
+                    Some(&plugins),
+                    &session,
+                    model.as_ref(),
+                )
+                .await?;
                 *archive
                     .write()
                     .unwrap_or_else(std::sync::PoisonError::into_inner) = accepted;
-                Ok(super::turn_boundary::LiveViewSnapshot {
-                    messages,
-                    drift,
-                    through,
-                })
+                *drift_slot
+                    .write()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner) = drift;
+                Ok(super::turn_boundary::LiveViewSnapshot { messages, drift })
             })
         })
     };
@@ -917,6 +918,7 @@ async fn create_session_inner(mut config: SessionEngineConfig) -> anyhow::Result
     session.turn_activity = turn_activity;
     session.context_archive = Arc::clone(&context_archive_state);
     session.context_model = Arc::clone(&context_model);
+    session.live_view_drift = live_view_drift;
     super::plugins::observe_turns(&agent, Arc::clone(&plugins)).await;
     session.ollama_cloud = ollama_cloud;
     session.set_agent_dir(config.agent_dir.clone());

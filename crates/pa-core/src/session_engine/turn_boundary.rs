@@ -64,10 +64,6 @@ pub struct ContextUsage {
 pub struct LiveViewSnapshot {
     pub messages: Vec<AgentMessage>,
     pub drift: crate::session::UsageDrift,
-    /// The newest session message the assembly covered: the cut a transcript
-    /// refresh keeps, so a message that arrives mid-assembly is not lost and a
-    /// dropped row is not resurrected.
-    pub through: Option<AgentMessage>,
 }
 
 /// Assembles the live view from the canonical session, through the same path a
@@ -211,8 +207,6 @@ impl TurnBoundaryRequests {
     /// Drop pending requests so an aborted turn cannot leak them into the next turn.
     pub async fn clear_pending(&self) {
         *self.compaction.lock().await = None;
-        self.pending_refresh
-            .store(false, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// Register `model.info` (always present, like the TS `_hostHandlers`

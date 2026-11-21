@@ -236,10 +236,12 @@ pub(crate) fn has_usage(message: &AgentMessage) -> bool {
 /// The token figure for one view: [`estimate_context_tokens`], corrected for
 /// context edits that changed the messages before the newest usage anchor.
 ///
-/// A dropped or replaced row was counted by the provider when the anchor was
-/// reported, so its own chars/4 estimate is subtracted (an inserted row is
-/// added). When the anchor itself stopped being sent, no observation covers
-/// the view and the estimate falls back to the whole-message char count.
+/// A dropped row was counted by the provider when the anchor was reported, so
+/// its own chars/4 estimate is subtracted; a replacement contributes its new
+/// estimate and an insertion its own. When the anchor itself stopped being
+/// sent — dropped, replaced, or the compaction row that carried it — no
+/// observation covers the view and the estimate falls back to the whole-view
+/// char count, which is also the figure for a view that never had an anchor.
 #[must_use]
 pub fn context_tokens_with_drift(
     messages: &[AgentMessage],
@@ -341,16 +343,20 @@ pub fn threshold_compaction_due_with_drift(
             return false;
         }
         context_tokens_with_drift(messages, drift)
-    }
-    // No valid usage: the last assistant's raw usage decides; error
-    // turns never trigger.
-    else {
+    } else {
+        // No valid usage anywhere: the view's own chars/4 count decides.
+        // Error turns never trigger.
         let Some(AgentMessage::Assistant(assistant)) = messages
             .iter()
             .rev()
             .find(|message| matches!(message, AgentMessage::Assistant(_)))
         else {
-            return false;
+            return should_compact(
+                context_tokens_with_drift(messages, drift),
+                context_window,
+                max_output_tokens,
+                settings,
+            );
         };
         if assistant.stop_reason == pa_types::ai::StopReason::Error {
             return false;
@@ -358,7 +364,7 @@ pub fn threshold_compaction_due_with_drift(
         if compaction_timestamp.is_some_and(|timestamp| assistant.timestamp <= timestamp) {
             return false;
         }
-        calculate_context_tokens(&assistant.usage)
+        context_tokens_with_drift(messages, drift)
     };
     should_compact(context_tokens, context_window, max_output_tokens, settings)
 }

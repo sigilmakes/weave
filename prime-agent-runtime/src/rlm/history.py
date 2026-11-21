@@ -51,10 +51,11 @@ class Entry(NamedTuple):
     role: Role
     tokens: int
     text: str | None
+    truncated: bool = False
 
 
 class IndexRow(NamedTuple):
-    id: str
+    id: str | None
     turn: int
     role: Role
     tokens: int
@@ -77,10 +78,17 @@ class HistoryIndex(NamedTuple):
 class HistoryEntries(list):
     """A list of entries that also reports what a bounded region left out."""
 
-    def __init__(self, entries: list[Entry], total: int | None = None, shown: int | None = None) -> None:
+    def __init__(
+        self,
+        entries: list[Entry],
+        total: int | None = None,
+        shown: int | None = None,
+        skipped_edits: int = 0,
+    ) -> None:
         super().__init__(entries)
         self.total = len(self) if total is None else total
         self.shown = len(self) if shown is None else shown
+        self.skipped_edits = skipped_edits
 
     @property
     def remainder(self) -> int:
@@ -177,7 +185,12 @@ def _entry_from_payload(payload: Any) -> Entry:
         raise RuntimeError("history returned an invalid entry token count")
     if text is not None and not isinstance(text, str):
         raise RuntimeError("history returned invalid entry text")
-    return Entry(id=entry_id, turn=turn, role=role, tokens=tokens, text=text)
+    truncated = payload.get("truncated", False)
+    if not isinstance(truncated, bool):
+        raise RuntimeError("history returned an invalid entry cut flag")
+    return Entry(
+        id=entry_id, turn=turn, role=role, tokens=tokens, text=text, truncated=truncated
+    )
 
 
 def _row_from_payload(payload: Any) -> IndexRow:
@@ -296,6 +309,7 @@ class HistoryNamespace:
             [_entry_from_payload(entry) for entry in entries],
             total=_int_field(payload, "total"),
             shown=_int_field(payload, "shown"),
+            skipped_edits=_int_field(payload, "skipped_edits"),
         )
 
     async def get(self, selector: Selector, *, limit: int = 200) -> HistoryEntries:

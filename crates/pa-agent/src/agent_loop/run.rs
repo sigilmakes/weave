@@ -26,6 +26,12 @@ pub(crate) async fn run_loop(
     emit: &AgentEventSink,
     stream_fn: Option<&StreamFn>,
 ) -> anyhow::Result<()> {
+    if let Some(refresh) = config.refresh_context.as_ref() {
+        if let Some(messages) = (refresh)().await? {
+            current_context.messages = messages;
+        }
+    }
+
     let mut first_turn = true;
     let mut last_turn: Option<ShouldStopAfterTurnContext> = None;
     let mut pending_messages =

@@ -141,6 +141,9 @@ pub struct AgentSession {
     turn_activity: Arc<turn_activity::TurnActivitySignal>,
     context_archive: Arc<std::sync::RwLock<Option<pa_types::session::ContextArchive>>>,
     context_model: Arc<std::sync::RwLock<Option<pa_types::ai::Model>>>,
+    /// The drift of the most recently assembled live view: what compact status
+    /// and the turn-boundary decision read instead of re-walking the session.
+    live_view_drift: Arc<std::sync::RwLock<crate::session::UsageDrift>>,
     accepted_context: std::sync::Mutex<Option<Vec<SessionAgentMessage>>>,
     /// Compaction settings; defaults until the engine wiring resolves
     /// them.
@@ -316,6 +319,7 @@ impl AgentSession {
             turn_activity: Arc::new(turn_activity::TurnActivitySignal::new()),
             context_archive: Arc::default(),
             context_model: Arc::new(std::sync::RwLock::new(None)),
+            live_view_drift: Arc::default(),
             accepted_context: std::sync::Mutex::new(None),
             compaction: std::sync::RwLock::new(compaction::CompactionSettings::default()),
             auxiliary_model: None,
@@ -808,23 +812,6 @@ fn user_prompt_message(text: &str, images: &[pa_agent::types::ImageContent]) -> 
             timestamp: now_millis() as i64,
         },
     ))
-}
-
-/// Custom rows persist as session custom messages.
-/// Replace the loop transcript with a refreshed view, keeping any message that
-/// arrived while the view was assembling: everything after the refreshed view's
-/// last message is carried over in order.
-fn merge_refreshed(
-    current: &mut Vec<AgentMessage>,
-    refreshed: Vec<AgentMessage>,
-    through: Option<AgentMessage>,
-) {
-    let after = through
-        .and_then(|last| current.iter().rposition(|message| *message == last))
-        .map_or(current.len(), |position| position + 1);
-    let arrived = current.split_off(after);
-    *current = refreshed;
-    current.extend(arrived);
 }
 
 pub(crate) fn session_message_to_loop(message: &SessionAgentMessage) -> Option<AgentMessage> {

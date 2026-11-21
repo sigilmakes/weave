@@ -91,9 +91,6 @@ pub struct HistoryWalk {
     pub skipped_edits: usize,
     /// Correction the newest usage anchor needs because edits changed the view.
     pub usage_drift: UsageDrift,
-    /// The newest message the record holds, whether or not the view still shows
-    /// it: the cut a transcript refresh keeps.
-    pub through: Option<AgentMessage>,
 }
 
 /// Walk the root-to-leaf path and apply every substitution on it.
@@ -127,7 +124,6 @@ pub fn walk_history(entries: &[FileEntry], leaf_id: Option<&str>) -> HistoryWalk
         archive_source: None,
         skipped_edits: 0,
         usage_drift: UsageDrift::default(),
-        through: None,
     };
     let Some(leaf_index) = leaf_index else {
         return walk;
@@ -233,7 +229,6 @@ impl HistoryWalk {
     }
 
     fn push_message(&mut self, id: Option<String>, source: Option<usize>, message: AgentMessage) {
-        self.through = Some(message.clone());
         let role = role_of(&message);
         let turn = self.advance_turn(role);
         let seq = self.next_seq;
@@ -361,12 +356,18 @@ impl HistoryWalk {
         let mut drift = self.usage_drift;
         let mut anchor_lost = drift.anchor_lost;
         let mut dropped: HashSet<usize> = HashSet::new();
-        let mut replaced: HashMap<usize, String> = HashMap::new();
+        let mut replaced: HashMap<usize, HistoryEntry> = HashMap::new();
         let mut inserted: Vec<(usize, HistoryEntry)> = Vec::new();
         for change in &edit.changes {
             match change {
                 ContextChange::Drop { at } => {
                     for position in self.resolve_target(&snapshot, at)? {
+                        if replaced.contains_key(&position) {
+                            return Err(format!(
+                                "context_edit drop and replace name the same entry: {}",
+                                describe(&snapshot[position], position)
+                            ));
+                        }
                         if anchor.is_some_and(|anchor| position == anchor) {
                             anchor_lost = true;
                         } else if anchor.is_some_and(|anchor| position < anchor) {
@@ -392,12 +393,20 @@ impl HistoryWalk {
                             entry.id.as_deref().unwrap_or("<inserted>")
                         ));
                     }
+                    let mut replacement = entry.clone();
+                    replacement.text.clone_from(text);
+                    replacement.message =
+                        replaced_message(replacement.role, text, entry.message.as_ref());
+                    replacement.tokens = replacement
+                        .message
+                        .as_ref()
+                        .map_or_else(|| text_tokens(&replacement.text), estimate_tokens);
                     if anchor.is_some_and(|anchor| position == anchor) {
                         anchor_lost = true;
                     } else if anchor.is_some_and(|anchor| position < anchor) {
-                        drift.tokens -= token_delta(entry);
+                        drift.tokens += token_delta(&replacement) - token_delta(entry);
                     }
-                    replaced.insert(position, text.clone());
+                    replaced.insert(position, replacement);
                 }
                 ContextChange::Insert { text, role, after } => {
                     if !matches!(role, ContextRole::User | ContextRole::Notes) {
@@ -440,16 +449,9 @@ impl HistoryWalk {
                 counts.dropped += 1;
                 continue;
             }
-            if let Some(text) = replaced.get(&position) {
-                let mut entry = entry.clone();
-                entry.text.clone_from(text);
-                entry.message = replaced_message(entry.role, text, entry.message.as_ref());
-                entry.tokens = entry
-                    .message
-                    .as_ref()
-                    .map_or_else(|| text_tokens(&entry.text), estimate_tokens);
+            if let Some(entry) = replaced.get(&position) {
                 counts.replaced += 1;
-                view.push(entry);
+                view.push(entry.clone());
                 continue;
             }
             view.push(entry.clone());
@@ -460,23 +462,26 @@ impl HistoryWalk {
             cursor += 1;
         }
         check_tool_calls(&snapshot, &view, &dropped)?;
+        let touched: HashSet<usize> = dropped
+            .iter()
+            .chain(replaced.keys())
+            .filter_map(|position| snapshot[*position].source)
+            .collect();
+        let archive_touched = self
+            .archive_source
+            .is_some_and(|source| touched.contains(&source));
+        if archive_touched {
+            // The archive's own row left the view, so the prefix it expanded is
+            // gone with it and no provider observation describes what remains.
+            anchor_lost = true;
+        }
         self.hidden.extend(hidden);
         self.entries = view;
         self.usage_drift = UsageDrift {
             tokens: if anchor_lost { 0 } else { drift.tokens },
             anchor_lost,
         };
-        let touched: HashSet<usize> = dropped
-            .iter()
-            .chain(replaced.keys())
-            .filter_map(|position| snapshot[*position].source)
-            .collect();
-        if self
-            .archive_source
-            .is_some_and(|source| touched.contains(&source))
-        {
-            // The archive's own row left the view: stop expanding a prefix whose
-            // summary the model has edited away.
+        if archive_touched {
             self.archive = None;
             self.archive_source = None;
         }
@@ -1473,6 +1478,144 @@ mod tests {
             .unwrap_err();
         assert!(error.contains("drop and replace"), "{error}");
         assert_eq!(walk.entries.len(), 4, "a rejected edit mutates nothing");
+    }
+
+    #[test]
+    fn replacing_a_row_before_the_usage_anchor_counts_the_replacement() {
+        let lines = [
+            header(),
+            user_row("u0", "", "x"),
+            user_row("u1", "u0", "kept"),
+            assistant_row_with_usage("a0", "u1", 2_000),
+            user_row("u2", "a0", "after"),
+        ];
+        let entries = parse_session_entries(&lines.join(
+            "
+",
+        ));
+        let mut walk = walk_history(&entries, None);
+        let old_tokens = walk.entries[0].tokens;
+        let before = crate::session_engine::compaction::context_tokens_with_drift(
+            &walk.messages(),
+            walk.usage_drift,
+        );
+        walk.apply(
+            &edit(vec![ContextChange::Replace {
+                at: ContextSelector::Position(0),
+                text: "y".repeat(200_000),
+            }]),
+            0,
+        )
+        .unwrap();
+        let after = crate::session_engine::compaction::context_tokens_with_drift(
+            &walk.messages(),
+            walk.usage_drift,
+        );
+        assert_eq!(
+            walk.usage_drift.tokens,
+            50_000 - i64::try_from(old_tokens).unwrap(),
+            "the replacement's own estimate less the row it replaced"
+        );
+        assert_eq!(after, before - old_tokens + 50_000, "{before} -> {after}");
+        assert!(after > 49_000, "{after}");
+    }
+
+    #[test]
+    fn a_view_without_an_anchor_compacts_on_its_own_char_count() {
+        let big = "x".repeat(500_000);
+        let lines = [
+            header(),
+            user_row("u0", "", &big),
+            assistant_row_with_usage("a0", "u0", 1_000),
+            edit_row("e0", "a0", &serde_json::json!([{"op": "drop", "at": 1}])),
+        ];
+        let entries = parse_session_entries(&lines.join(
+            "
+",
+        ));
+        let walk = walk_history(&entries, None);
+        let settings = crate::session_engine::compaction::CompactionSettings {
+            threshold_percent: 95.0,
+            enabled: true,
+            reserve_tokens: 0,
+            keep_recent_tokens: 1_000,
+        };
+        let messages = walk.messages();
+        assert!(walk.usage_drift.anchor_lost);
+        let estimate = crate::session_engine::compaction::context_tokens_with_drift(
+            &messages,
+            walk.usage_drift,
+        );
+        assert_eq!(estimate, 125_000, "500_000 chars / 4");
+        assert!(
+            crate::session_engine::compaction::threshold_compaction_due_with_drift(
+                &messages,
+                walk.usage_drift,
+                100_000,
+                0,
+                &settings
+            ),
+            "a 125_000-token view over a 100_000 window is due"
+        );
+        assert!(
+            !crate::session_engine::compaction::threshold_compaction_due_with_drift(
+                &messages,
+                walk.usage_drift,
+                200_000,
+                0,
+                &settings
+            ),
+            "and a view that fits is not"
+        );
+    }
+
+    #[test]
+    fn dropping_the_compaction_row_leaves_no_anchor_for_the_prefix() {
+        let lines = [
+            header(),
+            user_row("u0", "", "old"),
+            compaction_row("c0", "u0", Some("u1")),
+            user_row("u1", "c0", "kept"),
+            assistant_row_with_usage("a0", "u1", 90_000),
+            edit_row("e0", "a0", &serde_json::json!([{"op": "drop", "at": 0}])),
+        ];
+        let entries = parse_session_entries(&lines.join(
+            "
+",
+        ));
+        let walk = walk_history(&entries, None);
+        assert!(
+            walk.usage_drift.anchor_lost,
+            "the dropped summary was part of what the anchor counted"
+        );
+        let estimate = crate::session_engine::compaction::context_tokens_with_drift(
+            &walk.messages(),
+            walk.usage_drift,
+        );
+        let chars: u64 = walk.messages().iter().map(estimate_tokens).sum();
+        assert_eq!(estimate, chars, "no anchor: the whole view is estimated");
+        assert!(estimate < 100, "{estimate}");
+    }
+
+    #[test]
+    fn replace_then_drop_naming_one_entry_is_rejected_too() {
+        let (entries, _ids) = chain(4);
+        let mut walk = walk_history(&entries, None);
+        let error = walk
+            .apply(
+                &edit(vec![
+                    ContextChange::Replace {
+                        at: ContextSelector::Position(1),
+                        text: "rewritten".to_string(),
+                    },
+                    ContextChange::Drop { at: point(1) },
+                ]),
+                0,
+            )
+            .unwrap_err();
+        assert!(error.contains("drop and replace"), "{error}");
+        assert_eq!(walk.entries.len(), 4, "a rejected edit mutates nothing");
+        assert_eq!(walk.entries[1].text, "m1");
     }
 
     #[test]

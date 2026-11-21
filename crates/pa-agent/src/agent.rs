@@ -1038,9 +1038,15 @@ impl Agent {
     }
 
     /// Mutate the transcript under ONE state lock (the atomic form of the
-    /// `state()` + `set_messages` read-modify-write).
-    pub async fn mutate_messages(&self, mutate: impl FnOnce(&mut Vec<AgentMessage>)) {
-        mutate(&mut self.inner.shared.lock().await.state.messages);
+    /// `state()` + `set_messages` read-modify-write), returning the transcript
+    /// as it now stands.
+    pub async fn mutate_messages(
+        &self,
+        mutate: impl FnOnce(&mut Vec<AgentMessage>),
+    ) -> Vec<AgentMessage> {
+        let mut shared = self.inner.shared.lock().await;
+        mutate(&mut shared.state.messages);
+        shared.state.messages.clone()
     }
 
     /// # Panics

@@ -14,9 +14,9 @@ Your context is a session tree. Every turn is an entry, and the request you rece
 
 All four methods are coroutines: await them, or nothing happens.
 
-- `history.index(order="tokens", limit=20, role=None, query=None, include_hidden=False)`: the token figure of the request about to be sent, the window, and the entries that use it, each with id, turn, role, tokens, share of the total, and a preview
-- `history.path(limit=500)`: the live view in order; each entry previews its text and says whether it was cut, so use get for one entry in full
-- `history.get(selector, limit=200)`: one entry by id or position, or a region; -1 is the newest entry, slice(12, 41) is positions 12 through 40, slice(-20, None) is the last twenty. A region longer than limit returns the first limit entries and reports the remainder as total, shown, remainder, and note
+- `history.index(order="tokens", *, limit=20, role=None, query=None, include_hidden=False)`: the token figure of the request about to be sent, the window, the entries that use it, and how many edits no longer applied; each row carries id, turn, role, tokens, share of the total, and a preview
+- `history.path(*, limit=500)`: the live view in order, with the number of entries it holds, how many were shown, and how many edits no longer applied; each entry previews its text and says whether it was cut, so use get for one entry in full
+- `history.get(selector, *, limit=200)`: one entry by id or position, or a region; -1 is the newest entry, slice(12, 41) is positions 12 through 40, slice(-20, None) is the last twenty. A region longer than limit returns the first limit entries and reports the remainder as total, shown, and remainder
 - `history.edit(changes)`: drop, replace, or insert entries, then report what changed and the new live figure
 
 A change is one dict:
@@ -35,11 +35,15 @@ An insert takes text, an optional role of user or notes, and an optional after a
 
 Positions and slices address the live view; ids address the record. An edit removes a turn from what you see, never from the record, so an id an earlier edit dropped still returns its text from get.
 
-All changes in one call resolve against the path as it stood before the call, so they cannot invalidate each other. A call that breaks a rule writes nothing and names the rule and the entry.
+All changes in one call resolve against the path as it stood before the call, so they cannot invalidate each other. Naming one entry in a drop and a replace is rejected, in either order. A call that breaks a rule writes nothing and names the rule and the entry.
 
 The next request carries the edit, in the same run, not only after the next prompt.
 
 Every edit changes text before the end of the context, so the next request re-reads everything after it. Edits near the end are nearly free; edits near the beginning cost a full re-read.
+
+The index figure is a chars/4 estimate whenever the newest provider-reported usage no longer describes the view, as after an edit that removed the turn carrying it.
+
+A row the provider expands rather than receives, a compaction summary in an archive representation the provider replays, shows the summary text here while the request carries the archive itself.
 
 ## Core tools
 

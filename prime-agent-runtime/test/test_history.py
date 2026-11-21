@@ -118,14 +118,29 @@ class HistoryNamespaceTest(unittest.TestCase):
 
     def test_path_previews_entries_and_reports_the_remainder(self):
         second = {"turn": 4, "role": "notes", "tokens": 2, "text": "STATE", "truncated": False}
+        cut = {"id": "b2", "turn": 5, "role": "user", "tokens": 90,
+               "text": "x" * 200, "truncated": True}
         history, recorder = history_namespace({"history.path": {
-            "entries": [ENTRY, second], "total": 12, "shown": 2,
+            "entries": [ENTRY, second, cut], "total": 12, "shown": 3, "skipped_edits": 2,
         }})
-        entries = asyncio.run(history.path(limit=2))
-        self.assertEqual([entry.role for entry in entries], ["user", "notes"])
+        entries = asyncio.run(history.path(limit=3))
+        self.assertEqual([entry.role for entry in entries], ["user", "notes", "user"])
         self.assertIsNone(entries[1].id, "an inserted entry has no id")
-        self.assertEqual(entries.remainder, 10)
-        self.assertEqual(recorder.calls[0][1], {"session": "session-a", "limit": 2})
+        self.assertFalse(entries[0].truncated)
+        self.assertTrue(entries[2].truncated, "the entry came back cut")
+        self.assertEqual(entries.remainder, 9)
+        self.assertEqual(entries.skipped_edits, 2)
+        self.assertEqual(recorder.calls[0][1], {"session": "session-a", "limit": 3})
+
+    def test_a_row_without_an_id_is_an_inserted_entry(self):
+        history, _ = history_namespace({"history.index": {
+            "entries": 2, "live_tokens": 10, "window": 100, "over_by": 0,
+            "hidden": 0, "hidden_tokens": 0, "skipped_edits": 0, "shown": 1,
+            "rows": [{"turn": 2, "role": "notes", "tokens": 4, "share": 0.4, "preview": "STATE"}],
+        }})
+        index = asyncio.run(history.index())
+        self.assertIsNone(index.rows[0].id)
+        self.assertEqual(index.rows[0].preview, "STATE")
 
     def test_an_insert_without_a_role_leaves_the_role_to_the_host(self):
         history, recorder = history_namespace({"history.edit": {"status": "inserted 1"}})

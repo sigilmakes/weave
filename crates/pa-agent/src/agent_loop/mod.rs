@@ -88,9 +88,9 @@ pub type AfterToolCallFn = Arc<
         + Sync,
 >;
 
-/// Re-reads the model-facing message list before a stream request. Called after
-/// a tool batch: a tool that rewrote canonical history returns the new view, so
-/// the next request in the same run carries it.
+/// Re-reads the model-facing message list before a stream request. Called once
+/// at run start and after every tool batch: a tool that rewrote canonical
+/// history returns the new view, so the next request carries it.
 pub type RefreshContextFn = Arc<
     dyn Fn() -> crate::BoxFut<'static, anyhow::Result<Option<Vec<AgentMessage>>>> + Send + Sync,
 >;

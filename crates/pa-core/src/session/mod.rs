@@ -313,8 +313,6 @@ pub struct SessionContext {
     /// Correction the newest usage anchor needs because context edits changed
     /// the view; [`UsageDrift::default`] for an unedited session.
     pub usage_drift: UsageDrift,
-    /// The newest message the record holds, whether or not the view shows it.
-    pub through: Option<AgentMessage>,
 }
 
 #[must_use]
@@ -328,7 +326,6 @@ pub fn build_session_context(entries: &[FileEntry], leaf_id: Option<&str>) -> Se
         service_tier: walk.service_tier,
         model: walk.model,
         usage_drift: walk.usage_drift,
-        through: walk.through,
     }
 }
 

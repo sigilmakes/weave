@@ -107,9 +107,10 @@ pub fn register_history_handlers(
     );
 }
 
-/// The refresh the turn loop calls after every tool batch: when `history.edit`
-/// marked the view stale, re-assemble it, publish it to the transcript without
-/// dropping a message that arrived meanwhile, and hand it to the loop.
+/// The refresh the turn loop calls before its first request and after every
+/// tool batch: when `history.edit` marked the view stale, re-assemble it,
+/// replace the transcript without dropping a message that arrived while it was
+/// being assembled, and hand the loop the transcript it must send.
 #[must_use]
 pub fn refresh_hook(
     requests: Arc<TurnBoundaryRequests>,
@@ -122,23 +123,36 @@ pub fn refresh_hook(
             if !requests.take_refresh() {
                 return Ok(None);
             }
-            let live = requests.assemble_live_view().await?;
-            let messages: Vec<pa_agent::types::AgentMessage> = live
+            let Some(agent) = agent.upgrade() else {
+                requests.mark_refresh();
+                return Ok(None);
+            };
+            let seen = agent.state().await.messages.len();
+            let live = match requests.assemble_live_view().await {
+                Ok(live) => live,
+                Err(error) => {
+                    requests.mark_refresh();
+                    return Err(error);
+                }
+            };
+            let view: Vec<pa_agent::types::AgentMessage> = live
                 .messages
                 .iter()
                 .filter_map(super::session_message_to_loop)
                 .collect();
-            let through = live
-                .through
-                .as_ref()
-                .and_then(super::session_message_to_loop);
-            if let Some(agent) = agent.upgrade() {
-                let next = messages.clone();
-                agent
-                    .mutate_messages(move |current| super::merge_refreshed(current, next, through))
-                    .await;
-            }
-            Ok(Some(messages))
+            let merged = agent
+                .mutate_messages(move |current| {
+                    let arrived: Vec<pa_agent::types::AgentMessage> =
+                        current.get(seen..).unwrap_or_default().to_vec();
+                    *current = view;
+                    for message in arrived {
+                        if !current.contains(&message) {
+                            current.push(message);
+                        }
+                    }
+                })
+                .await;
+            Ok(Some(merged))
         })
             as pa_agent::BoxFut<'static, anyhow::Result<Option<Vec<pa_agent::types::AgentMessage>>>>
     })
@@ -246,14 +260,19 @@ fn index_payload(
         .iter()
         .take(limit)
         .map(|entry| {
-            json!({
-                "id": entry.id.clone().unwrap_or_default(),
+            let mut row = json!({
                 "turn": entry.turn,
                 "role": entry.role.as_str(),
                 "tokens": entry.tokens,
                 "share": share(entry.tokens),
                 "preview": preview(&entry.text),
-            })
+            });
+            if let Some(id) = entry.id.as_deref() {
+                if let Some(object) = row.as_object_mut() {
+                    object.insert("id".to_string(), Value::String(id.to_string()));
+                }
+            }
+            row
         })
         .collect();
 
@@ -505,11 +524,9 @@ mod tests {
                 let session = Arc::clone(&session);
                 Box::pin(async move {
                     let context = { session.lock().await.active_context() };
-                    let through = context.through.clone();
                     Ok(crate::session_engine::turn_boundary::LiveViewSnapshot {
                         messages: context.messages,
                         drift: context.usage_drift,
-                        through,
                     })
                 })
             }
@@ -876,24 +893,152 @@ mod tests {
         ))
     }
 
-    #[test]
-    fn a_refresh_keeps_a_late_message_and_never_resurrects_a_dropped_row() {
-        // `through` is the newest message the record holds, so a row the view
-        // dropped is behind the cut and stays gone.
-        let mut current = vec![user_message("u0"), user_message("u1"), user_message("u2")];
-        let refreshed = vec![user_message("u0"), user_message("u1")];
-        super::super::merge_refreshed(&mut current, refreshed, Some(user_message("u2")));
-        assert_eq!(user_texts_loop(&current), vec!["u0", "u1"]);
+    #[tokio::test]
+    async fn a_refresh_sends_a_message_that_arrived_while_the_view_was_assembled() {
+        let (_dir, session) = session_with(4);
+        let (requests, _handlers, session, _tmp) = registered(session);
+        let initial: Vec<pa_agent::types::AgentMessage> = {
+            let context = session.lock().await.active_context();
+            context
+                .messages
+                .iter()
+                .filter_map(super::super::session_message_to_loop)
+                .collect()
+        };
+        let agent = Arc::new(Agent::new(AgentOptions {
+            initial_state: AgentInitialState {
+                system_prompt: Some("s".to_string()),
+                model: Some(agent_model()),
+                thinking_level: Some(ThinkingLevel::Off),
+                tools: None,
+                messages: Some(initial),
+            },
+            ..Default::default()
+        }));
+        let arrival = user_message("arrival");
+        requests.set_live_view(Arc::new({
+            let session = Arc::clone(&session);
+            let agent = Arc::downgrade(&agent);
+            let arrival = arrival.clone();
+            move || {
+                let session = Arc::clone(&session);
+                let agent = agent.clone();
+                let arrival = arrival.clone();
+                Box::pin(async move {
+                    if let Some(agent) = agent.upgrade() {
+                        let arrival = arrival.clone();
+                        agent
+                            .mutate_messages(move |messages| {
+                                if !messages.contains(&arrival) {
+                                    messages.push(arrival);
+                                }
+                            })
+                            .await;
+                    }
+                    let context = { session.lock().await.active_context() };
+                    Ok(crate::session_engine::turn_boundary::LiveViewSnapshot {
+                        messages: context.messages,
+                        drift: context.usage_drift,
+                    })
+                })
+            }
+        }));
+        let hook = refresh_hook(Arc::clone(&requests), Arc::downgrade(&agent));
+        assert!(
+            (hook)().await.unwrap().is_none(),
+            "no edit is pending, so the loop keeps its transcript"
+        );
 
-        // A message that arrived after the assembly is past the cut and survives.
-        let mut current = vec![user_message("u0"), user_message("u1"), user_message("late")];
-        let refreshed = vec![user_message("u0")];
-        super::super::merge_refreshed(&mut current, refreshed, Some(user_message("u1")));
-        assert_eq!(user_texts_loop(&current), vec!["u0", "late"]);
+        requests.mark_refresh();
+        let sent = (hook)().await.unwrap().unwrap();
+        assert_eq!(
+            user_texts_loop(&sent),
+            vec!["m0", "m1", "m2", "m3", "arrival"],
+            "the request carries the rebuilt view and the late message, once"
+        );
+        assert_eq!(
+            user_texts_loop(&agent.state().await.messages),
+            vec!["m0", "m1", "m2", "m3", "arrival"],
+            "the transcript the loop reads back is the one it sends"
+        );
+        assert!(
+            (hook)().await.unwrap().is_none(),
+            "one assembly serves one edit"
+        );
+    }
 
-        let mut current = vec![user_message("u0")];
-        super::super::merge_refreshed(&mut current, Vec::new(), None);
-        assert!(current.is_empty(), "an emptied view is not refilled");
+    #[tokio::test]
+    async fn an_inserted_user_row_is_sent_once_and_its_drop_sticks() {
+        let (_dir, session) = session_with(3);
+        let (requests, handlers, session, _tmp) = registered(session);
+        let initial: Vec<pa_agent::types::AgentMessage> = {
+            let context = session.lock().await.active_context();
+            context
+                .messages
+                .iter()
+                .filter_map(super::super::session_message_to_loop)
+                .collect()
+        };
+        let agent = Arc::new(Agent::new(AgentOptions {
+            initial_state: AgentInitialState {
+                system_prompt: Some("s".to_string()),
+                model: Some(agent_model()),
+                thinking_level: Some(ThinkingLevel::Off),
+                tools: None,
+                messages: Some(initial),
+            },
+            ..Default::default()
+        }));
+        let hook = refresh_hook(Arc::clone(&requests), Arc::downgrade(&agent));
+        let edit = handler(&handlers, "history.edit");
+
+        edit(payload(json!({
+            "changes": [{"op": "insert", "text": "STATE", "role": "user", "after": -1}],
+        })))
+        .await
+        .unwrap();
+        let sent = (hook)().await.unwrap().unwrap();
+        assert_eq!(user_texts_loop(&sent), vec!["m0", "m1", "m2", "STATE"]);
+
+        edit(payload(json!({"changes": [{"op": "drop", "at": -1}]})))
+            .await
+            .unwrap();
+        let sent = (hook)().await.unwrap().unwrap();
+        assert_eq!(
+            user_texts_loop(&sent),
+            vec!["m0", "m1", "m2"],
+            "a view-only row is not an arrival on the next refresh"
+        );
+        assert_eq!(
+            user_texts_loop(&agent.state().await.messages),
+            vec!["m0", "m1", "m2"]
+        );
+    }
+
+    #[tokio::test]
+    async fn a_failed_assembly_keeps_the_refresh_pending() {
+        let (_dir, session) = session_with(2);
+        let (requests, _handlers, _session, _tmp) = registered(session);
+        let agent = Arc::new(Agent::new(AgentOptions {
+            initial_state: AgentInitialState {
+                system_prompt: Some("s".to_string()),
+                model: Some(agent_model()),
+                thinking_level: Some(ThinkingLevel::Off),
+                tools: None,
+                messages: None,
+            },
+            ..Default::default()
+        }));
+        let hook = refresh_hook(Arc::clone(&requests), Arc::downgrade(&agent));
+        requests.set_live_view(Arc::new(|| {
+            Box::pin(async { Err(anyhow::anyhow!("assembly failed")) })
+        }));
+        requests.mark_refresh();
+        assert!((hook)().await.is_err());
+        assert!(
+            requests.take_refresh(),
+            "the next request must still rebuild the view"
+        );
     }
 
     fn user_texts_loop(messages: &[pa_agent::types::AgentMessage]) -> Vec<String> {

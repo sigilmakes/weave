@@ -331,7 +331,6 @@ pub(crate) async fn assemble_session_view(
     Vec<AgentMessage>,
     Option<ContextArchive>,
     crate::session::UsageDrift,
-    Option<AgentMessage>,
 )> {
     let (context, leaf) = if let Some(plugins) = plugins {
         let snapshot = {
@@ -348,7 +347,6 @@ pub(crate) async fn assemble_session_view(
     };
     let drift = context.usage_drift;
     let archive = context.archive;
-    let through = context.through.clone();
     let messages = match plugins {
         Some(plugins) => {
             assemble_at(
@@ -371,7 +369,7 @@ pub(crate) async fn assemble_session_view(
         }
         None => Ok(context.messages),
     }?;
-    Ok((messages, archive, drift, through))
+    Ok((messages, archive, drift))
 }
 
 impl AgentSession {
@@ -395,7 +393,7 @@ impl AgentSession {
         &self,
         model: Option<&pa_types::ai::Model>,
     ) -> anyhow::Result<(Vec<AgentMessage>, Option<ContextArchive>)> {
-        let (messages, archive, _, _) =
+        let (messages, archive, _) =
             assemble_session_view(self.plugins.as_ref(), &self.session, model).await?;
         Ok((messages, archive))
     }
