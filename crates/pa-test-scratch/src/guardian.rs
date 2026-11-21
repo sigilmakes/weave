@@ -194,7 +194,10 @@ mod tests {
             .as_ref()
             .expect("guardian inherits a test home");
         let root = std::env::var_os("PA_TEST_PRIVATE_HOME_ROOT").expect("private home owner");
-        assert!(home.starts_with(&root), "guardian captured ambient HOME: {home:?}");
+        assert!(
+            home.starts_with(&root),
+            "guardian captured ambient HOME: {home:?}"
+        );
     }
 
     #[test]
