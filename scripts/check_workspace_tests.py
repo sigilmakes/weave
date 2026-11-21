@@ -115,7 +115,8 @@ def target_groups(metadata):
             if not target["test"]:
                 continue
             kinds = target["kind"]
-            if kinds == ["lib"] or kinds == ["bin"]:
+            # Cargo builds a proc-macro crate's unit tests through --lib.
+            if kinds in (["lib"], ["proc-macro"], ["bin"]):
                 units = True
             elif kinds == ["test"] or kinds == ["example"]:
                 selector = "--test" if kinds == ["test"] else "--example"
