@@ -27,7 +27,7 @@
             };
             devShells.${system}.default = pkgs.mkShell {
                 packages = with pkgs; [
-                    cargo rustc rustfmt clippy pkg-config openssl.dev
+                    cargo cargo-deny rustc rustfmt clippy pkg-config openssl.dev
                     git uv fd ripgrep python3 python311 actionlint shellcheck gnumake
                     util-linux iproute2 procps bash
                 ] ++ lib.optionals stdenv.hostPlatform.isLinux [ tini ];
