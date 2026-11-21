@@ -145,11 +145,27 @@ impl InitialContextSelectionStore for CoreInitialContextSelectionStore {
             return Ok(None);
         }
         store.observe_log_tail()?;
-        let entries = store
-            .entries()
-            .iter()
-            .map(|entry| serde_json::from_value(serde_json::to_value(entry)?))
-            .collect::<Result<Vec<pa_types::session::FileEntry>, serde_json::Error>>()?;
+        let session_id = store.session_id().to_owned();
+        let mut entries = Vec::with_capacity(store.entries().len());
+        for entry in store.entries() {
+            let parsed = serde_json::from_value::<pa_types::session::FileEntry>(
+                serde_json::to_value(entry)?,
+            )
+            .map_err(|error| {
+                anyhow::anyhow!(
+                    "session {session_id} cannot be read: {error}; the session file was left unchanged"
+                )
+            })?;
+            if let pa_types::session::FileEntry::Unknown { rest } = &parsed {
+                if rest.get("type").and_then(serde_json::Value::as_str) == Some("compaction") {
+                    anyhow::bail!(
+                        "session {session_id} cannot be read: {}; the session file was left unchanged",
+                        unreadable_compaction_reason(rest)
+                    );
+                }
+            }
+            entries.push(parsed);
+        }
         Ok(Some(MirrorSeed {
             header: store.header.clone(),
             entries,
@@ -194,6 +210,21 @@ impl InitialContextSelectionStore for CoreInitialContextSelectionStore {
             .context("canonical context selection commit task failed")?
         })
     }
+}
+
+/// A known `compaction` row that degrades to [`pa_types::session::FileEntry::Unknown`]
+/// has an unreadable payload. Name the archive's own refusal so the session is
+/// reported instead of silently losing the covered prefix.
+fn unreadable_compaction_reason(rest: &pa_types::JsonMap) -> String {
+    rest.get("contextArchive")
+        .cloned()
+        .and_then(|archive| {
+            serde_json::from_value::<pa_types::session::ContextArchive>(archive).err()
+        })
+        .map_or_else(
+            || "its compaction payload could not be read".to_owned(),
+            |error| format!("its context archive could not be read: {error}"),
+        )
 }
 
 #[cfg(test)]
@@ -261,5 +292,60 @@ mod tests {
             "released execution owner cannot publish"
         );
         assert!(SessionFile::open(&path).unwrap().entry("late").is_none());
+    }
+
+    #[test]
+    fn an_unreadable_compaction_row_reports_the_session_and_reason_without_touching_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("unreadable.jsonl");
+        let mut created = SessionFile::create("/fixture", None, 0);
+        created.set_path(path.clone());
+        created.rewrite().unwrap();
+        let mut store = SessionFile::open(&path).unwrap();
+        store
+            .persist_entry(
+                "compaction",
+                json!({
+                    "summary": "retired representation",
+                    "firstKeptEntryId": null,
+                    "tokensBefore": 1,
+                    "contextArchive": {
+                        "version": 1,
+                        "strategy": "fixture/strategy",
+                        "compactor": "fixture/compactor",
+                        "creatorGeneration": "fixture-generation",
+                        "preparedLeaf": "fixture-leaf",
+                        "coveredEntryIds": ["fixture-leaf"],
+                        "representation": {"kind": "future_representation"}
+                    }
+                }),
+            )
+            .unwrap();
+        let session_id = store.session_id().to_owned();
+        let before = std::fs::read(&path).unwrap();
+        let adapter = CoreInitialContextSelectionStore(Arc::new(Mutex::new(
+            SessionCore::test_core(Some(store), "/fixture".into()),
+        )));
+        let Err(error) = adapter.mirror_seed() else {
+            panic!("an unreadable row must not seed a context mirror")
+        };
+        let error = error.to_string();
+        assert!(
+            error.contains(&session_id),
+            "the report must name the session: {error}"
+        );
+        assert!(
+            error.contains("future_representation"),
+            "the report must give the reason: {error}"
+        );
+        assert!(
+            error.contains("left unchanged"),
+            "the report must say the file was not touched: {error}"
+        );
+        assert_eq!(
+            std::fs::read(&path).unwrap(),
+            before,
+            "an unreadable session file is never rewritten"
+        );
     }
 }

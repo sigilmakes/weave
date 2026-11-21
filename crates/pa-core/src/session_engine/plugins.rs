@@ -1045,7 +1045,7 @@ mod context_selection_tests {
                 .invoke_context(&strategy, json!({"stage":"prepare"}), &cancel)
                 .await
                 .unwrap(),
-            json!({"policy":"rolling","compactors":["server_compaction/server","snapcompact/snapcompact","standard_compaction/standard"]})
+            json!({"policy":"rolling","compactors":["server_compaction/server","standard_compaction/standard"]})
         );
         for (route, expected) in [
             (
@@ -1055,10 +1055,6 @@ mod context_selection_tests {
             (
                 "server_compaction/server",
                 json!({"status":"native","operation":"server","config":{}}),
-            ),
-            (
-                "snapcompact/snapcompact",
-                json!({"status":"native","operation":"snapcompact","config":{}}),
             ),
         ] {
             let compactor = f.manager.context_compactor(route).unwrap();
@@ -1070,7 +1066,7 @@ mod context_selection_tests {
                 expected
             );
         }
-        f.configure(&json!({"plugins":{"default_context":{"config":{"policy":"full","compactors":["server_compaction/server","snapcompact/snapcompact","standard_compaction/standard"]}}}}));
+        f.configure(&json!({"plugins":{"default_context":{"config":{"policy":"full","compactors":["server_compaction/server","standard_compaction/standard"]}}}}));
         f.manager.reload().await.unwrap();
         assert!(!f.manager.context_is_current(&strategy));
         let strategy = f.manager.context_selection().unwrap();
@@ -1079,7 +1075,7 @@ mod context_selection_tests {
                 .invoke_context(&strategy, json!({"stage":"prepare"}), &cancel)
                 .await
                 .unwrap(),
-            json!({"policy":"full","compactors":["server_compaction/server","snapcompact/snapcompact","standard_compaction/standard"]})
+            json!({"policy":"full","compactors":["server_compaction/server","standard_compaction/standard"]})
         );
     }
 

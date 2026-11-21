@@ -209,11 +209,6 @@ pub enum ContextRepresentation {
         #[serde(default, flatten)]
         rest: JsonMap,
     },
-    Snapcompact {
-        archive: String,
-        #[serde(default, flatten)]
-        rest: JsonMap,
-    },
 }
 
 /// Session-wide strategy choice, recorded independently of any compaction.

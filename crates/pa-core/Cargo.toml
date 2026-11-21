@@ -21,9 +21,6 @@ pa-models = { path = "../pa-models", version = "0.10.0" }
 pa-agent.workspace = true
 base64 = "0.22"
 fancy-regex = "0.14"
-# Snapcompact uses an isolated PNG renderer and bundled Unicode font rasterizer.
-fontdue = { version = "0.9.3", default-features = false }
-png = "0.18.1"
 # The provider browser login uses an RSA-2048 challenge (OAEP-SHA256).
 rsa = { version = "0.9", features = ["sha2", "pem"] }
 libc = "0.2"
