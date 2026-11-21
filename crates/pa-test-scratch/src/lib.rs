@@ -133,6 +133,7 @@ mod hook {
     }
 
     extern "C" fn install() {
+        crate::timing::capture_config();
         let _ = root();
     }
 

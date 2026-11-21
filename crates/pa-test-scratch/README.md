@@ -30,6 +30,10 @@ thread, resolved through a thread-ID registry. It does not find test context
 after task migration; use explicit recorders there. Finish all spawned work and
 drop its spans before the test returns; the test guard writes its collected spans on drop.
 
+Timing configuration is captured once by the startup hook before test bodies run.
+Platforms without that hook capture it on first use. Later environment changes
+do not alter the enabled flag or destination.
+
 Timing is enabled by default. `PA_TEST_TIMING=0` disables timing and file output
 for overhead comparisons. `PA_TEST_TIMING_DIR` selects the destination; otherwise
 it is the workspace `target/test-timings` directory. Each process appends to

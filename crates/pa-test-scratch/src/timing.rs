@@ -12,6 +12,26 @@ type Spans = Mutex<Vec<Value>>;
 
 static RECORDERS: OnceLock<Mutex<HashMap<ThreadId, Weak<Spans>>>> = OnceLock::new();
 static OUTPUT: OnceLock<Result<Mutex<File>, String>> = OnceLock::new();
+static CONFIG: OnceLock<TimingConfig> = OnceLock::new();
+
+struct TimingConfig {
+    enabled: bool,
+    directory: PathBuf,
+}
+
+pub(crate) fn capture_config() {
+    let _ = config();
+}
+
+fn config() -> &'static TimingConfig {
+    CONFIG.get_or_init(|| TimingConfig {
+        enabled: !std::env::var_os("PA_TEST_TIMING").is_some_and(|value| value == "0"),
+        directory: std::env::var_os("PA_TEST_TIMING_DIR").map_or_else(
+            || PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/test-timings"),
+            PathBuf::from,
+        ),
+    })
+}
 
 pub struct TestTiming {
     state: Option<TestState>,
@@ -44,7 +64,7 @@ struct SpanState {
 impl TestTiming {
     #[must_use]
     pub fn start(full_name: &str) -> Self {
-        if std::env::var_os("PA_TEST_TIMING").is_some_and(|value| value == "0") {
+        if !config().enabled {
             return Self { state: None };
         }
         let started = Instant::now();
@@ -189,11 +209,8 @@ fn binary_name() -> String {
 
 fn write_record(record: &Value) -> Result<(), String> {
     let output = OUTPUT.get_or_init(|| {
-        let directory = std::env::var_os("PA_TEST_TIMING_DIR").map_or_else(
-            || PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/test-timings"),
-            PathBuf::from,
-        );
-        std::fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+        let directory = &config().directory;
+        std::fs::create_dir_all(directory).map_err(|error| error.to_string())?;
         let binary = binary_name();
         let pid = std::process::id();
         OpenOptions::new()
