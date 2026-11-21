@@ -16,6 +16,17 @@
 
 #![cfg(unix)]
 
+#[path = "support/child_options.rs"]
+mod child_options;
+use child_options::child_options;
+
+#[path = "support/attach_terminal_state.rs"]
+mod attach_terminal_state;
+use attach_terminal_state::attach_data;
+
+#[path = "support/pty_wait_text.rs"]
+mod pty_wait_text;
+
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
 use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, Read, Write};
@@ -31,9 +42,7 @@ use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
 use nix::unistd::Pid;
 use serde_json::{json, Value};
 
-use pa_tui::interactive::{
-    run_interactive, InteractiveOptions, ModelSelection, SessionSelection, UiMode,
-};
+use pa_tui::interactive::{run_interactive, UiMode};
 
 /// The SGR tracking sequences the seam writes (enable: `?1002h` then `?1006h`).
 const MOUSE_ENABLE: &str = "\x1b[?1002h\x1b[?1006h";
@@ -387,25 +396,7 @@ impl PtyReader {
 
     /// Drain until the needle appears since the mark (bounded by a generous deadline).
     fn wait_from(&mut self, mark: usize, needle: &str, what: &str) {
-        let deadline = Instant::now() + Duration::from_secs(30);
-        loop {
-            if find_subsequence(&self.output[mark..], needle.as_bytes()).is_some() {
-                return;
-            }
-            let mut buffer = [0u8; 8192];
-            let result = self.file.read(&mut buffer);
-            match result {
-                Ok(0) | Err(_) => {}
-                Ok(n) => self.output.extend_from_slice(&buffer[..n]),
-            }
-            if Instant::now() > deadline {
-                let text = String::from_utf8_lossy(&self.output[mark..]);
-                panic!(
-                    "timeout waiting for {what} (needle {needle:?}); pty tail since mark:\n{text}"
-                );
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        pty_wait_text::wait_from(&mut self.file, &mut self.output, mark, needle, what);
     }
 }
 
@@ -454,41 +445,6 @@ fn spawn_child(socket: &std::path::Path, slave: &OwnedFd) -> Child {
 
 fn slave_as_stdio(slave: &OwnedFd) -> Stdio {
     slave.try_clone().expect("clone pty slave").into()
-}
-
-fn child_options(socket: PathBuf) -> InteractiveOptions {
-    InteractiveOptions {
-        models: None,
-        socket_path: socket,
-        cwd: PathBuf::from("/tmp"),
-        session_dir: None,
-        script_path: None,
-        model_selection: ModelSelection::default(),
-        model_catalog: Vec::new(),
-        model_configured_providers: std::collections::HashSet::default(),
-        model_recent_models: Vec::new(),
-        default_thinking_level: None,
-        no_session: false,
-        session: SessionSelection::New,
-        initial_message: None,
-        show_images: true,
-        fullscreen_mouse: true,
-        theme: "prime".to_string(),
-        code_block_indent: "  ".to_string(),
-        tree_filter_mode: String::new(),
-        branch_summary_skip_prompt: false,
-        version: "0.0.0".to_string(),
-        onboarding: None,
-        client_auth: None,
-        provider_auth: None,
-        update_commands: None,
-        keybindings: pa_tui::keybindings::KeybindingsManager::new(),
-        session_rlm_depth: None,
-        prompt_stash: std::sync::Arc::default(),
-        session_has_children: false,
-        restore_dock_focus: false,
-        client_settings: None,
-    }
 }
 
 /// Poll the child until SIGTSTP's default disposition stops it.
@@ -595,45 +551,4 @@ fn write_json(writer: &mut std::os::unix::net::UnixStream, value: &Value) {
     line.push('\n');
     writer.write_all(line.as_bytes()).expect("write mock frame");
     writer.flush().expect("flush mock frame");
-}
-
-fn attach_data(id: &str) -> Value {
-    let messages: Vec<Value> = (0..4)
-        .map(|index| {
-            json!({
-                "role": if index % 2 == 0 { "user" } else { "assistant" },
-                "content": [{ "type": "text", "text": format!("row {index}") }],
-            })
-        })
-        .collect();
-    json!({
-        "type": "response",
-        "id": id,
-        "command": "attach",
-        "success": true,
-        "data": {
-            "protocol": { "name": "prime-agent.daemon", "version": 7 },
-            "activeSessionId": "s1",
-            "snapshot": {
-                "activeSessionId": "s1",
-                "summary": { "id": "s1", "cwd": "/tmp" },
-                "state": {
-                    "activeSessionId": "s1",
-                    "cwd": "/tmp",
-                    "sessionId": "sess-1",
-                    "sessionName": "suspend session",
-                    "model": null,
-                    "isStreaming": false,
-                    "isCompacting": false,
-                    "sessionActions": { "queuedCount": 0, "steering": [], "followUps": [] },
-                },
-                "messages": messages,
-                "lastEventSequence": 0,
-                "lastEventCursor": null,
-            },
-            "client": { "id": "mock", "capabilities": [] },
-            "lastEventSequence": 0,
-            "lastEventCursor": null,
-        },
-    })
 }

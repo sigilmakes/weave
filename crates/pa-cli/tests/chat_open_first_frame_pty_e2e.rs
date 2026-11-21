@@ -17,13 +17,16 @@
 
 #![cfg(unix)]
 
+#[path = "support/pty_wait_text.rs"]
+mod pty_wait_text;
+
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
 use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, Read, Write};
 use std::os::fd::{AsRawFd, OwnedFd};
 use std::path::PathBuf;
 use std::process::Stdio;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use nix::fcntl::{fcntl, FcntlArg::F_SETFL, OFlag};
 use nix::pty::{openpty, Winsize};
@@ -233,25 +236,7 @@ impl PtyReader {
     /// Drain the master until the needle appears in the output collected since the given mark,
     /// bounded by a generous harness deadline.
     fn wait_from(&mut self, mark: usize, needle: &str, what: &str) {
-        let deadline = Instant::now() + Duration::from_secs(30);
-        loop {
-            if find_subsequence(&self.output[mark..], needle.as_bytes()).is_some() {
-                return;
-            }
-            let mut buffer = [0u8; 8192];
-            let result = self.file.read(&mut buffer);
-            match result {
-                Ok(0) | Err(_) => {}
-                Ok(n) => self.output.extend_from_slice(&buffer[..n]),
-            }
-            if Instant::now() > deadline {
-                let text = String::from_utf8_lossy(&self.output[mark..]);
-                panic!(
-                    "timeout waiting for {what} (needle {needle:?}); pty tail since mark:\n{text}"
-                );
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        pty_wait_text::wait_from(&mut self.file, &mut self.output, mark, needle, what);
     }
 }
 

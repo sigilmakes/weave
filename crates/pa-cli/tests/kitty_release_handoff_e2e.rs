@@ -15,6 +15,13 @@
 //! surface — none may become user-visible input; the exit pops the flags.
 #![cfg(unix)]
 
+#[path = "support/child_options.rs"]
+mod child_options;
+use child_options::child_options;
+
+#[path = "support/pty_supervisor.rs"]
+mod pty_supervisor;
+
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
 use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, Read, Write};
@@ -28,9 +35,7 @@ use nix::pty::{openpty, Winsize};
 use serde_json::{json, Value};
 
 use pa_tui::agents_view::{AgentsViewOptions, AgentsViewUiMode};
-use pa_tui::interactive::{
-    run_interactive, InteractiveOptions, ModelSelection, SessionSelection, UiMode,
-};
+use pa_tui::interactive::{run_interactive, UiMode};
 
 /// The kitty flags push the app writes when armed (flags `1|2|4`, TS `ProcessTerminal`).
 const KITTY_FLAGS_PUSH: &[u8] = b"\x1b[>7u";
@@ -422,41 +427,6 @@ fn slave_as_stdio(slave: &OwnedFd) -> Stdio {
     slave.try_clone().expect("clone pty slave").into()
 }
 
-fn child_options(socket: PathBuf) -> InteractiveOptions {
-    InteractiveOptions {
-        models: None,
-        socket_path: socket,
-        cwd: PathBuf::from("/tmp"),
-        session_dir: None,
-        script_path: None,
-        model_selection: ModelSelection::default(),
-        model_catalog: Vec::new(),
-        model_configured_providers: std::collections::HashSet::default(),
-        model_recent_models: Vec::new(),
-        default_thinking_level: None,
-        no_session: false,
-        session: SessionSelection::New,
-        initial_message: None,
-        show_images: true,
-        fullscreen_mouse: true,
-        theme: "prime".to_string(),
-        code_block_indent: "  ".to_string(),
-        tree_filter_mode: String::new(),
-        branch_summary_skip_prompt: false,
-        version: "0.0.0".to_string(),
-        onboarding: None,
-        client_auth: None,
-        provider_auth: None,
-        update_commands: None,
-        keybindings: pa_tui::keybindings::KeybindingsManager::new(),
-        session_rlm_depth: None,
-        prompt_stash: std::sync::Arc::default(),
-        session_has_children: false,
-        restore_dock_focus: false,
-        client_settings: None,
-    }
-}
-
 /// One attached session behind a mock supervisor socket (the family's frame contract).
 struct MockSupervisor {
     listener: std::os::unix::net::UnixListener,
@@ -472,12 +442,7 @@ impl MockSupervisor {
     /// One listener, every connection served in turn: the handoff opens a second
     /// connection, which a single-accept mock would refuse.
     fn serve(self) {
-        for stream in self.listener.incoming() {
-            match stream {
-                Ok(stream) => Self::serve_connection(stream),
-                Err(_) => return,
-            }
-        }
+        pty_supervisor::serve(&self.listener, Self::serve_connection);
     }
 
     fn serve_connection(stream: std::os::unix::net::UnixStream) {

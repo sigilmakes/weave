@@ -17,6 +17,16 @@
 //! holds the watchdog's fire; TS has no watchdog), and a stalled drain fires.
 #![cfg(unix)]
 
+#[path = "support/child_options.rs"]
+mod child_options;
+use child_options::child_options;
+
+#[path = "support/pty_supervisor.rs"]
+mod pty_supervisor;
+
+#[path = "support/pty_wait_bytes.rs"]
+mod pty_wait_bytes;
+
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
 use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, Read, Write};
@@ -29,9 +39,7 @@ use nix::fcntl::{fcntl, FcntlArg::F_SETFL, OFlag};
 use nix::pty::{openpty, Winsize};
 use serde_json::{json, Value};
 
-use pa_tui::interactive::{
-    run_interactive, InteractiveOptions, ModelSelection, SessionSelection, UiMode,
-};
+use pa_tui::interactive::{run_interactive, UiMode};
 
 /// Answering like a kitty terminal keeps the probe's bounded wait from adding its full budget.
 const KITTY_QUERY: &[u8] = b"\x1b[?u";
@@ -375,24 +383,7 @@ impl PtyReader {
     }
 
     fn wait_from(&mut self, mark: usize, needle: &[u8], what: &str) {
-        let deadline = Instant::now() + Duration::from_secs(30);
-        loop {
-            if find_subsequence(&self.output[mark..], needle).is_some() {
-                return;
-            }
-            let mut buffer = [0u8; 8192];
-            match self.file.read(&mut buffer) {
-                Ok(0) | Err(_) => {}
-                Ok(n) => self.output.extend_from_slice(&buffer[..n]),
-            }
-            if Instant::now() > deadline {
-                let text = String::from_utf8_lossy(&self.output[mark..]);
-                panic!(
-                    "timeout waiting for {what} (needle {needle:?}); pty tail since mark:\n{text}"
-                );
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        pty_wait_bytes::wait_from(&mut self.file, &mut self.output, mark, needle, what);
     }
 }
 
@@ -450,41 +441,6 @@ fn slave_as_stdio(slave: &OwnedFd) -> Stdio {
     slave.try_clone().expect("clone pty slave").into()
 }
 
-fn child_options(socket: PathBuf) -> InteractiveOptions {
-    InteractiveOptions {
-        models: None,
-        socket_path: socket,
-        cwd: PathBuf::from("/tmp"),
-        session_dir: None,
-        script_path: None,
-        model_selection: ModelSelection::default(),
-        model_catalog: Vec::new(),
-        model_configured_providers: std::collections::HashSet::default(),
-        model_recent_models: Vec::new(),
-        default_thinking_level: None,
-        no_session: false,
-        session: SessionSelection::New,
-        initial_message: None,
-        show_images: true,
-        fullscreen_mouse: true,
-        theme: "prime".to_string(),
-        code_block_indent: "  ".to_string(),
-        tree_filter_mode: String::new(),
-        branch_summary_skip_prompt: false,
-        version: "0.0.0".to_string(),
-        onboarding: None,
-        client_auth: None,
-        provider_auth: None,
-        update_commands: None,
-        keybindings: pa_tui::keybindings::KeybindingsManager::new(),
-        session_rlm_depth: None,
-        prompt_stash: std::sync::Arc::default(),
-        session_has_children: false,
-        restore_dock_focus: false,
-        client_settings: None,
-    }
-}
-
 /// One attached session behind a mock supervisor socket.
 struct MockSupervisor {
     listener: std::os::unix::net::UnixListener,
@@ -498,12 +454,7 @@ impl MockSupervisor {
     }
 
     fn serve(self) {
-        for stream in self.listener.incoming() {
-            match stream {
-                Ok(stream) => Self::serve_connection(stream),
-                Err(_) => return,
-            }
-        }
+        pty_supervisor::serve(&self.listener, Self::serve_connection);
     }
 
     fn serve_connection(stream: std::os::unix::net::UnixStream) {

@@ -17,6 +17,9 @@
 
 #![cfg(unix)]
 
+#[path = "support/pty_wait_bytes.rs"]
+mod pty_wait_bytes;
+
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
 use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, Read, Write};
@@ -283,24 +286,7 @@ impl PtyReader {
     }
 
     fn wait_from(&mut self, mark: usize, needle: &[u8], what: &str) {
-        let deadline = Instant::now() + Duration::from_secs(30);
-        loop {
-            if find_subsequence(&self.output[mark..], needle).is_some() {
-                return;
-            }
-            let mut buffer = [0u8; 8192];
-            match self.file.read(&mut buffer) {
-                Ok(0) | Err(_) => {}
-                Ok(n) => self.output.extend_from_slice(&buffer[..n]),
-            }
-            if Instant::now() > deadline {
-                let text = String::from_utf8_lossy(&self.output[mark..]);
-                panic!(
-                    "timeout waiting for {what} (needle {needle:?}); pty tail since mark:\n{text}"
-                );
-            }
-            std::thread::sleep(Duration::from_millis(20));
-        }
+        pty_wait_bytes::wait_from(&mut self.file, &mut self.output, mark, needle, what);
     }
 }
 

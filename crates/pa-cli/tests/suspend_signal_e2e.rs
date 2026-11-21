@@ -17,6 +17,14 @@
 
 #![cfg(unix)]
 
+#[path = "support/child_options.rs"]
+mod child_options;
+use child_options::child_options;
+
+#[path = "support/attach_terminal_state.rs"]
+mod attach_terminal_state;
+use attach_terminal_state::attach_data;
+
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
 use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, Read, Write};
@@ -32,9 +40,7 @@ use nix::sys::wait::{waitpid, WaitPidFlag, WaitStatus};
 use nix::unistd::Pid;
 use serde_json::{json, Value};
 
-use pa_tui::interactive::{
-    run_interactive, InteractiveOptions, ModelSelection, SessionSelection, UiMode,
-};
+use pa_tui::interactive::{run_interactive, UiMode};
 
 /// Enable is `?1002h`, `?1003h` (the hover affordance), then `?1006h`; disable reverses.
 const MOUSE_ENABLE: &str = "\x1b[?1002h\x1b[?1003h\x1b[?1006h";
@@ -502,41 +508,6 @@ fn slave_as_stdio(slave: &OwnedFd) -> Stdio {
     slave.try_clone().expect("clone pty slave").into()
 }
 
-fn child_options(socket: PathBuf) -> InteractiveOptions {
-    InteractiveOptions {
-        models: None,
-        socket_path: socket,
-        cwd: PathBuf::from("/tmp"),
-        session_dir: None,
-        script_path: None,
-        model_selection: ModelSelection::default(),
-        model_catalog: Vec::new(),
-        model_configured_providers: std::collections::HashSet::default(),
-        model_recent_models: Vec::new(),
-        default_thinking_level: None,
-        no_session: false,
-        session: SessionSelection::New,
-        initial_message: None,
-        show_images: true,
-        fullscreen_mouse: true,
-        theme: "prime".to_string(),
-        code_block_indent: "  ".to_string(),
-        tree_filter_mode: String::new(),
-        branch_summary_skip_prompt: false,
-        version: "0.0.0".to_string(),
-        onboarding: None,
-        client_auth: None,
-        provider_auth: None,
-        update_commands: None,
-        keybindings: pa_tui::keybindings::KeybindingsManager::new(),
-        session_rlm_depth: None,
-        prompt_stash: std::sync::Arc::default(),
-        session_has_children: false,
-        restore_dock_focus: false,
-        client_settings: None,
-    }
-}
-
 /// Poll the child until SIGTSTP's default disposition stops it.
 fn wait_for_stopped(pid: u32, what: &str) {
     let deadline = Instant::now() + Duration::from_secs(10);
@@ -644,45 +615,4 @@ fn write_json(writer: &mut std::os::unix::net::UnixStream, value: &Value) {
     line.push('\n');
     writer.write_all(line.as_bytes()).expect("write mock frame");
     writer.flush().expect("flush mock frame");
-}
-
-fn attach_data(id: &str) -> Value {
-    let messages: Vec<Value> = (0..4)
-        .map(|index| {
-            json!({
-                "role": if index % 2 == 0 { "user" } else { "assistant" },
-                "content": [{ "type": "text", "text": format!("row {index}") }],
-            })
-        })
-        .collect();
-    json!({
-        "type": "response",
-        "id": id,
-        "command": "attach",
-        "success": true,
-        "data": {
-            "protocol": { "name": "prime-agent.daemon", "version": 7 },
-            "activeSessionId": "s1",
-            "snapshot": {
-                "activeSessionId": "s1",
-                "summary": { "id": "s1", "cwd": "/tmp" },
-                "state": {
-                    "activeSessionId": "s1",
-                    "cwd": "/tmp",
-                    "sessionId": "sess-1",
-                    "sessionName": "suspend session",
-                    "model": null,
-                    "isStreaming": false,
-                    "isCompacting": false,
-                    "sessionActions": { "queuedCount": 0, "steering": [], "followUps": [] },
-                },
-                "messages": messages,
-                "lastEventSequence": 0,
-                "lastEventCursor": null,
-            },
-            "client": { "id": "mock", "capabilities": [] },
-            "lastEventSequence": 0,
-            "lastEventCursor": null,
-        },
-    })
 }
