@@ -75,6 +75,5 @@ pub mod session_log;
 pub mod settings;
 pub mod skills;
 pub mod slash_command_args;
-pub mod snapcompact;
 pub mod update;
 pub use kernel::ReplKernelManager;

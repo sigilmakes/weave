@@ -1,0 +1,4 @@
+- Removed the Snapcompact compaction strategy, its builtin plugin, renderer, and bundled assets. The builtin rolling chain now uses server-side compaction, then standard summarization.
+- Sessions that still hold a Snapcompact context archive now report the session id, the serde reason, and that the session file was left unchanged, then are skipped. No session file is rewritten, moved, or deleted.
+- A custom `plugins.default_context.config.compactors` that still names `snapcompact/snapcompact` now fails compaction with `context contribution is not active: snapcompact/snapcompact`; remove the route.
+- A `"snapcompact": {"enabled": true}` settings block now fails plugin reload with `plugin snapcompact needs an explicit path`; remove the block.

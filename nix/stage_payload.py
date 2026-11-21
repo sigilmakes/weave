@@ -19,10 +19,6 @@ def stage(source: Path, target: Path) -> None:
     )
     shutil.copytree(runtime / "src", destination / "src", ignore=excluded)
     shutil.copytree(source / "skills", target / "skills", ignore=excluded)
-    snapcompact = source / "crates" / "pa-core" / "src" / "snapcompact"
-    if snapcompact.is_dir():
-        # Embedded fonts retain their own licenses in the installed package.
-        shutil.copytree(snapcompact / "assets" / "licenses", target / "licenses" / "snapcompact")
     for package in ("crossterm", "mlua"):
         vendor = source / "vendor" / package
         if vendor.is_dir():

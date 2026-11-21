@@ -141,7 +141,6 @@ impl<'a, T> Frame<'a, T> {
         let kind = match &archive.representation {
             ContextRepresentation::Standard { .. } => "standard",
             ContextRepresentation::Responses { .. } => "responses",
-            ContextRepresentation::Snapcompact { .. } => "snapcompact",
         };
         Ok(
             json!({"version":archive.version,"strategy":archive.strategy,

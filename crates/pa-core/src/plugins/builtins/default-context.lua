@@ -2,7 +2,7 @@
 local policy = config.policy or "rolling"
 assert(policy == "rolling" or policy == "full", "context policy must be rolling or full")
 local compactors = config.compactors or {
-    "server_compaction/server", "snapcompact/snapcompact", "standard_compaction/standard"
+    "server_compaction/server", "standard_compaction/standard"
 }
 assert(type(compactors) == "table", "compactors must be an array")
 for key, route in pairs(compactors) do

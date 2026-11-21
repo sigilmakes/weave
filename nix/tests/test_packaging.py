@@ -92,10 +92,6 @@ class PackagingTests(unittest.TestCase):
                 (runtime / name).write_text(name)
             (source / "skills" / "sample").mkdir(parents=True)
             (source / "skills" / "sample" / "SKILL.md").write_text("sample")
-            assets = source / "crates" / "pa-core" / "src" / "snapcompact" / "assets"
-            (assets / "licenses").mkdir(parents=True)
-            (assets / "licenses" / "NOTICE").write_text("Poppy Works attribution")
-            (assets / "Silver.ttf").write_bytes(b"embedded font")
             vendor = source / "vendor" / "mlua"
             vendor.mkdir(parents=True)
             (vendor / "LICENSE").write_text("vendored MIT attribution")
@@ -104,11 +100,6 @@ class PackagingTests(unittest.TestCase):
             self.assertTrue((target / "prime-agent-runtime" / "src" / "rlm" / "__init__.py").is_file())
             self.assertFalse(list(target.rglob("*.pyc")))
             self.assertTrue((target / "skills" / "sample" / "SKILL.md").is_file())
-            self.assertEqual(
-                (target / "licenses" / "snapcompact" / "NOTICE").read_text(),
-                "Poppy Works attribution",
-            )
-            self.assertFalse(list(target.rglob("*.ttf")))
             self.assertEqual(
                 (target / "licenses" / "mlua" / "LICENSE").read_text(),
                 "vendored MIT attribution",

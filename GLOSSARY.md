@@ -177,24 +177,16 @@ Advancing to the next configured compaction strategy when an earlier attempt can
 _Avoid_: Retry, model switch, context-strategy switch
 
 **Server-side compaction**:
-Compaction performed by an inference provider rather than by a local archive renderer or a host-managed summarization operation. Its result can contain provider-native context rather than a portable text summary.
-_Avoid_: Standard summarization, local bitmap archive
+Compaction performed by an inference provider rather than by a host-managed summarization operation. Its result can contain provider-native context rather than a portable text summary.
+_Avoid_: Standard summarization
 
 **Provider-native context**:
 Context material whose meaning or validity depends on a provider's protocol or model lineage. It is distinct from portable conversation text and images.
 _Avoid_: Universal summary, plain text archive
 
 **Compaction archive**:
-The persisted representation of compacted history and the information needed to reconstruct its contribution to context. An archive can include summary text, context assets, or provider-native context.
+The persisted representation of compacted history and the information needed to reconstruct its contribution to context. An archive can include summary text or provider-native context.
 _Avoid_: Summary, canonical history
-
-**Context asset**:
-A non-text resource referenced by a context representation, such as an image frame. Its identity and lifetime are distinct from a temporary rendering operation.
-_Avoid_: Summary text, disposable preview
-
-**Bitmap archive**:
-A representation of selected conversation text as image frames intended for a vision-capable model. Bitmap encoding alone does not imply that every part of the original history was retained.
-_Avoid_: Lossless memory, text summary
 
 **Summary tree**:
 A hierarchical memory representation whose leaves refer to original material and whose higher nodes summarize larger spans. A bounded tree view can represent more history than fits verbatim in one context.

@@ -137,7 +137,6 @@ fn require_text_source(entry: &FileEntry) -> anyhow::Result<()> {
                 matches!(
                     archive.representation,
                     ContextRepresentation::Responses { .. }
-                        | ContextRepresentation::Snapcompact { .. }
                 )
             })
         }

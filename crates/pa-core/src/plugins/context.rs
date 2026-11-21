@@ -19,10 +19,6 @@ pub(crate) fn builtin_sources() -> Vec<PluginSource> {
             "server_compaction",
             include_str!("builtins/server-compaction.lua"),
         ),
-        (
-            "snapcompact",
-            include_str!("builtins/snapcompact-compaction.lua"),
-        ),
     ]
     .into_iter()
     .map(|(name, source)| PluginSource {

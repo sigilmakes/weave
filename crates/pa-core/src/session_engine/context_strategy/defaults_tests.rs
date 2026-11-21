@@ -18,58 +18,6 @@ async fn configure(f: &Fixture, model: &pa_types::ai::Model, plugins: Value) {
 }
 
 #[tokio::test]
-async fn unsupported_server_defaults_to_snap_for_known_vision_or_standard_for_text() {
-    for vision in [false, true] {
-        let (base, mut requests, server) =
-            json_server(r#"{"error":{"code":"unsupported_operation"}}"#, 404).await;
-        let f = Fixture::new(ORDERED, "default_context/rolling", true).await;
-        let mut model = f.model.clone();
-        model.api = "openai-responses".into();
-        model.provider = "local-gateway".into();
-        model.id = "gpt-5".into();
-        model.base_url = base;
-        if vision {
-            model.input.push(pa_types::ai::ModelInput::Image);
-        }
-        configure(&f, &model, json!({})).await;
-        let before = f.engine.session.entries().await;
-        let CompactOutcome::Ran(run) = f
-            .engine
-            .session
-            .compact(None, &model, Some("local-fake-key".into()), None)
-            .await
-            .unwrap()
-        else {
-            panic!("default chain did not accept a proposal")
-        };
-        let archive = run.entry.context_archive.unwrap();
-        assert_eq!(
-            archive.compactor,
-            if vision {
-                "snapcompact/snapcompact"
-            } else {
-                "standard_compaction/standard"
-            }
-        );
-        let after = f.engine.session.entries().await;
-        assert_eq!(&after[..before.len()], before.as_slice());
-        assert_eq!(after.len(), before.len() + 1);
-        let compact = requests.recv().await.unwrap();
-        assert!(compact.starts_with("POST /v1/responses/compact "));
-        if vision {
-            // Snap renders locally. There must not be a summary inference call.
-            assert!(requests.try_recv().is_err());
-            server.abort();
-        } else {
-            let summary = requests.recv().await.unwrap();
-            assert!(summary.starts_with("POST /v1/responses "));
-            assert!(run.result.summary.contains("local result"));
-            server.await.unwrap();
-        }
-    }
-}
-
-#[tokio::test]
 async fn server_rejections_and_uncertain_outcomes_never_replay_or_mutate_history() {
     for (status, body) in [
         (401, r#"{"error":{"code":"invalid_api_key"}}"#),
@@ -107,9 +55,8 @@ async fn server_rejections_and_uncertain_outcomes_never_replay_or_mutate_history
 #[tokio::test]
 async fn explicit_chain_and_disabled_compactors_override_builtin_defaults() {
     for plugins in [
-        json!({"default_context":{"config":{"compactors":["standard_compaction/standard"]}},
-            "snapcompact":{"config":{"profile":"explicit"}}}),
-        json!({"server_compaction":{"enabled":false}, "snapcompact":{"enabled":false}}),
+        json!({"default_context":{"config":{"compactors":["standard_compaction/standard"]}}}),
+        json!({"server_compaction":{"enabled":false}}),
     ] {
         let f = Fixture::new(ORDERED, "default_context/rolling", false).await;
         let faux = pa_ai::faux::register_faux_provider(pa_ai::faux::RegisterFauxProviderOptions {
@@ -248,18 +195,25 @@ async fn explicit_server_route_mismatch_is_terminal_and_null_disables_probe() {
         model.base_url = format!("http://{}/v1", listener.local_addr().unwrap());
         model.id = "gpt-5".into();
         model.input.push(pa_types::ai::ModelInput::Image);
-        let route = if disable {
-            Value::Null
+        let plugins = if disable {
+            // Disable the standard fallback so a null route proves the probe
+            // never reaches the transport instead of requiring a live model.
+            json!({"server_compaction":{"config":{"route":Value::Null}},
+                "standard_compaction":{"enabled":false}})
         } else {
-            json!({"provider":model.provider,"model":"wrong-model",
-                "endpoint":format!("{}/responses/compact",model.base_url)})
+            let route = json!({"provider":model.provider,"model":"wrong-model",
+                "endpoint":format!("{}/responses/compact",model.base_url)});
+            json!({"server_compaction":{"config":{"route":route}}})
         };
-        configure(
-            &f,
-            &model,
-            json!({"server_compaction":{"config":{"route":route}}}),
-        )
-        .await;
+        configure(&f, &model, plugins).await;
+        let mut other_transport = model.clone();
+        other_transport.api = "openai-codex-responses".into();
+        assert!(
+            super::super::native::server_adapter(&other_transport, &json!({}))
+                .unwrap()
+                .is_none(),
+            "a transport other than openai-responses must not probe server compaction"
+        );
         let before = f.state().await;
         let result = f
             .engine
@@ -267,13 +221,7 @@ async fn explicit_server_route_mismatch_is_terminal_and_null_disables_probe() {
             .compact(None, &model, Some("local-fake-key".into()), None)
             .await;
         if disable {
-            let CompactOutcome::Ran(run) = result.unwrap() else {
-                panic!("Snap did not run")
-            };
-            assert_eq!(
-                run.entry.context_archive.unwrap().compactor,
-                "snapcompact/snapcompact"
-            );
+            assert!(matches!(result.unwrap(), CompactOutcome::Skipped(_)));
         } else {
             assert!(matches!(
                 result
@@ -288,40 +236,6 @@ async fn explicit_server_route_mismatch_is_terminal_and_null_disables_probe() {
             std::io::ErrorKind::WouldBlock
         );
     }
-}
-
-#[tokio::test]
-async fn codex_default_uses_snap_without_probing_unsupported_native_transport() {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-    listener.set_nonblocking(true).unwrap();
-    let f = Fixture::new(ORDERED, "default_context/rolling", false).await;
-    let mut model = f.model.clone();
-    model.api = "openai-codex-responses".into();
-    model.provider = "openai-codex".into();
-    model.id = "gpt-6.1-sol".into();
-    model.base_url = format!(
-        "http://{}/backend-api/codex",
-        listener.local_addr().unwrap()
-    );
-    model.input.push(pa_types::ai::ModelInput::Image);
-    configure(&f, &model, json!({})).await;
-    let CompactOutcome::Ran(run) = f
-        .engine
-        .session
-        .compact(None, &model, None, None)
-        .await
-        .unwrap()
-    else {
-        panic!("Codex vision route did not select Snapcompact")
-    };
-    assert_eq!(
-        run.entry.context_archive.unwrap().compactor,
-        "snapcompact/snapcompact"
-    );
-    assert_eq!(
-        listener.accept().unwrap_err().kind(),
-        std::io::ErrorKind::WouldBlock
-    );
 }
 
 #[tokio::test]
@@ -350,11 +264,11 @@ async fn default_server_inherits_resolved_auth_headers_without_compaction_settin
         .await
         .unwrap()
     else {
-        panic!("unsupported server did not fall through to Snapcompact")
+        panic!("unsupported server did not fall through to standard compaction")
     };
     assert_eq!(
         run.entry.context_archive.unwrap().compactor,
-        "snapcompact/snapcompact"
+        "standard_compaction/standard"
     );
     let wire = requests.recv().await.unwrap();
     let head = wire.split_once("\r\n\r\n").unwrap().0.to_ascii_lowercase();
@@ -366,6 +280,10 @@ async fn default_server_inherits_resolved_auth_headers_without_compaction_settin
         assert!(head.contains(expected), "missing inherited {expected}");
     }
     assert!(!head.contains("local-stored-key"));
-    assert!(requests.try_recv().is_err());
-    server.abort();
+    let summary = requests.recv().await.unwrap();
+    assert!(
+        summary.starts_with("POST /v1/responses "),
+        "the fallback summary must reach the resolved model endpoint: {summary}"
+    );
+    server.await.unwrap();
 }

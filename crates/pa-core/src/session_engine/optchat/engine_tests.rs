@@ -1213,45 +1213,6 @@ async fn actual_responses_archive_fixture(
     (representation, marker)
 }
 
-fn actual_snapcompact_archive_fixture() -> (pa_types::session::ContextRepresentation, &'static str)
-{
-    let marker = "native-bitmap-archive-source-never-project";
-    let limits = crate::snapcompact::ReplayLimits {
-        vision: true,
-        profile: Some(crate::snapcompact::RenderProfile::Explicit {
-            frame_size: 128,
-            frame_tokens: 100,
-        }),
-        max_images: 80,
-        max_image_bytes: 1_000_000,
-        max_payload_bytes: 4_000_000,
-        available_tokens: 100_000,
-        text_fallback_chars: None,
-    };
-    let archive = crate::snapcompact::prepare(
-        None,
-        &[user(&format!("{marker}\n").repeat(16))],
-        &[],
-        &crate::snapcompact::Config::default(),
-        &limits,
-        &|| false,
-    )
-    .unwrap();
-    assert!(
-        archive.frame_count() > 0,
-        "fixture did not construct an actual bitmap archive"
-    );
-    let json = archive.to_json().unwrap();
-    assert_eq!(
-        crate::snapcompact::Archive::from_json(&json).unwrap(),
-        archive
-    );
-    (
-        serde_json::from_value(json!({"kind":"snapcompact","archive":json})).unwrap(),
-        marker,
-    )
-}
-
 #[tokio::test]
 async fn public_native_archives_and_typed_signatures_fail_before_projection_inference() {
     enum Source {
@@ -1260,8 +1221,6 @@ async fn public_native_archives_and_typed_signatures_fail_before_projection_infe
     }
     let mut cases = Vec::new();
     let (archive, marker) = actual_responses_archive_fixture().await;
-    cases.push((Source::Archive(archive), marker));
-    let (archive, marker) = actual_snapcompact_archive_fixture();
     cases.push((Source::Archive(archive), marker));
     cases.extend(
         super::tests::signed_source_messages()
