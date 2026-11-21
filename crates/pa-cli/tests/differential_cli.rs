@@ -459,10 +459,12 @@ fn sandbox(prefix: &str) -> PathBuf {
 }
 
 // These are declared native contracts, not stream fallbacks. Help snapshots are
-// derived from each command registry and its formatter. Native update/package
-// behavior is documented in docs/legacy-upgrade-contract.md. args.rs tests pin
-// bounded u32 and unknown-option validation; model list declares only [search],
-// not a --json option. ACP shares the native non-interactive @file rejection.
+// derived from each command registry and its formatter. `list` and `sessions`
+// declare the `--check` artifacts report, which has no TypeScript counterpart.
+// Native update/package behavior is documented in docs/legacy-upgrade-contract.md.
+// args.rs tests pin bounded u32 and unknown-option validation; model list
+// declares only [search], not a --json option. ACP shares the native
+// non-interactive @file rejection.
 // TypeScript reference: archive/typescript-2026-10-18, commit
 // 239dbe344fcaf671af9898906ff952be73995614.
 fn declared_output_matches(
@@ -506,6 +508,14 @@ fn declared_native_contract(
         ["help"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-help.txt"), "", roots))
                 && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-help.txt"), "", roots),
+        ),
+        ["help", "list"] => Some(
+            ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-list-help.txt"), "", roots))
+                && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-list-help.txt"), "", roots),
+        ),
+        ["help", "sessions"] => Some(
+            ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-sessions-help.txt"), "", roots))
+                && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-sessions-help.txt"), "", roots),
         ),
         ["help", "package"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-package-help.txt"), "", roots))
@@ -577,6 +587,8 @@ fn native_cli_contract_fixtures() {
         &["--help"][..],
         &["-h"],
         &["help"],
+        &["help", "list"],
+        &["help", "sessions"],
         &["help", "package"],
         &["help", "update"],
         &["--mode", "rpc", "@file.txt"],
