@@ -206,6 +206,14 @@ async fn explicit_server_route_mismatch_is_terminal_and_null_disables_probe() {
             json!({"server_compaction":{"config":{"route":route}}})
         };
         configure(&f, &model, plugins).await;
+        let mut other_transport = model.clone();
+        other_transport.api = "openai-codex-responses".into();
+        assert!(
+            super::super::native::server_adapter(&other_transport, &json!({}))
+                .unwrap()
+                .is_none(),
+            "a transport other than openai-responses must not probe server compaction"
+        );
         let before = f.state().await;
         let result = f
             .engine
