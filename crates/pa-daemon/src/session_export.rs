@@ -43,7 +43,13 @@ impl ExportCommands {
             .map(str::to_string);
         match self.export_html_impl(output_path.as_deref()).await {
             Ok(path) => response_success(None, "export_html", Some(json!({ "path": path }))),
-            Err(error) => response_failure(None, "export_html", &format!("{error:#}"), None),
+            Err(error) => {
+                let message = match error.source() {
+                    Some(_) => format!("{error}: {}", error.root_cause()),
+                    None => error.to_string(),
+                };
+                response_failure(None, "export_html", &message, None)
+            }
         }
     }
 

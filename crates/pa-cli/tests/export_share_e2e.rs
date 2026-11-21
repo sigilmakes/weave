@@ -362,7 +362,7 @@ end}}}
     assert!(!response.success, "locked export must fail: {response:?}");
     assert_eq!(
         response.error.as_deref(),
-        Some("export tools unavailable: session log: session log lock is held by another writer: session log lock is held by another writer")
+        Some("export tools unavailable: session log lock is held by another writer")
     );
     assert_eq!(std::fs::read(&output).expect("preserved export"), previous);
 }
