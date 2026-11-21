@@ -85,20 +85,23 @@ fn saved_row(path: &str, id: &str, name: &str) -> Value {
 
 struct MockSupervisor {
     listener: UnixListener,
+    last_observed: std::sync::Arc<std::sync::Mutex<String>>,
 }
 
 impl MockSupervisor {
     fn bind(socket: &std::path::Path) -> Self {
         MockSupervisor {
             listener: UnixListener::bind(socket).expect("bind mock socket"),
+            last_observed: std::sync::Arc::new(std::sync::Mutex::new("not connected".to_string())),
         }
     }
 
-    fn serve(self) {
+    fn serve(self, connected: std::sync::mpsc::Sender<UnixStream>) {
         let (stream, _) = self.listener.accept().expect("accept view connection");
-        stream
-            .set_read_timeout(Some(Duration::from_millis(100)))
-            .expect("read timeout");
+        *self.last_observed.lock().expect("mock observation") = "accepted connection".to_string();
+        connected
+            .send(stream.try_clone().expect("clone cancellation socket"))
+            .expect("publish cancellation socket");
         let write_stream = stream.try_clone().expect("clone socket");
         let mut writer = write_stream;
         let mut reader = BufReader::new(stream);
@@ -125,6 +128,10 @@ impl MockSupervisor {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .to_string();
+            self.last_observed
+                .lock()
+                .expect("mock observation")
+                .clone_from(&command_type);
             match command_type.as_str() {
                 "roster_subscribe" => {
                     respond(
@@ -191,32 +198,13 @@ fn respond_failure(writer: &mut UnixStream, id: &str, command: &str, error: &str
     );
 }
 
-/// One line with a bounded quiet window; `None` ends the serve loop on EOF or the quiet cap.
 fn read_line(reader: &mut BufReader<UnixStream>) -> Option<String> {
-    const QUIET_WINDOW_MS: u32 = 90;
-    let mut quiet_windows: u32 = 0;
     let mut line = String::new();
     loop {
-        match reader.read_line(&mut line) {
-            Ok(0) => return None,
-            Ok(_) if line.trim().is_empty() => {
-                line.clear();
-            }
-            Ok(_) => return Some(line),
-            Err(error)
-                if matches!(
-                    error.kind(),
-                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
-                ) =>
-            {
-                quiet_windows += 1;
-                if quiet_windows >= QUIET_WINDOW_MS {
-                    return None;
-                }
-                std::thread::sleep(Duration::from_millis(50));
-                line.clear();
-            }
-            Err(_) => return None,
+        match reader.read_line(&mut line).expect("read mock command") {
+            0 => return None,
+            _ if line.trim().is_empty() => line.clear(),
+            _ => return Some(line),
         }
     }
 }
@@ -249,22 +237,40 @@ async fn run_plan(steps: Vec<AgentsStep>) -> pa_tui::agents_view::AgentsViewOutc
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");
     let mock = MockSupervisor::bind(&socket);
-    let server = std::thread::spawn(move || mock.serve());
+    let scenario = format!("{steps:?}");
+    let last_observed = mock.last_observed.clone();
+    let (connected_tx, connected_rx) = std::sync::mpsc::channel();
+    let (closed_tx, closed_rx) = std::sync::mpsc::channel();
+    let server = std::thread::spawn(move || {
+        mock.serve(connected_tx);
+        closed_tx.send(()).expect("acknowledge mock EOF");
+    });
     let plan = AgentsHeadlessPlan {
         steps,
         width: 120,
         height: 36,
     };
-    let outcome = run_agents_view(
+    let run = run_agents_view(
         view_options(&socket),
         AgentsViewUiMode::Headless(plan),
         None,
     )
-    .await
-    .expect("the agents view run")
-    .outcome;
-    let _ = server.join();
-    outcome
+    .await;
+    connected_rx
+        .recv_timeout(Duration::from_millis(2500))
+        .expect("mock accepted the view connection")
+        .shutdown(std::net::Shutdown::Read)
+        .expect("cancel mock command reads");
+    closed_rx
+        .recv_timeout(Duration::from_millis(2500))
+        .unwrap_or_else(|error| {
+            let last = last_observed.lock().expect("mock observation");
+            panic!(
+                "mock {scenario}: waiting for command-loop EOF acknowledgement after read cancellation; last observed={last}; completion={error}"
+            );
+        });
+    server.join().expect("mock server thread");
+    run.expect("the agents view run").outcome
 }
 
 /// The settled roster's frames: the plan holds until the merged summary line and the saved
