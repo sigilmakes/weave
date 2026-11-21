@@ -208,6 +208,166 @@ fn make_executable(path: &Path) {
 }
 
 #[tokio::test]
+async fn export_refuses_unavailable_tools_while_session_log_is_locked() {
+    use std::io::Write as _;
+    use std::os::unix::ffi::OsStrExt as _;
+
+    struct StartupGate(std::fs::File);
+    impl Drop for StartupGate {
+        fn drop(&mut self) {
+            let _ = self.0.write_all(b"release\n");
+        }
+    }
+
+    let dir = tempfile::TempDir::new().expect("temp dir");
+    let agent_dir = dir.path().join("agent");
+    let session_dir = agent_dir.join("sessions");
+    std::fs::create_dir_all(&session_dir).expect("session dir");
+
+    std::fs::create_dir_all(&agent_dir).expect("agent dir");
+    let session_file = session_dir.join("locked.jsonl");
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let mut log = pa_core::session_log::SessionLog::open(&session_dir, "locked", deadline)
+        .expect("fixture session log");
+    assert!(matches!(
+        log.append(
+            &serde_json::json!({
+                "type": "session", "version": 3, "id": "locked",
+                "timestamp": "2026-01-01T00:00:00.000Z", "cwd": dir.path(),
+            }),
+            deadline
+        ),
+        pa_core::session_log::Outcome::Committed { .. }
+    ));
+    drop(log);
+
+    let gate_path = dir.path().join("startup.fifo");
+    let ready_path = dir.path().join("startup.ready");
+    let fifo = std::ffi::CString::new(gate_path.as_os_str().as_bytes()).expect("fifo path");
+    assert_eq!(
+        unsafe { libc::mkfifo(fifo.as_ptr(), 0o600) },
+        0,
+        "create startup FIFO"
+    );
+    let gate_file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&gate_path)
+        .expect("startup gate");
+    std::fs::write(
+        agent_dir.join("gate.lua"),
+        r#"
+local session=assert(io.open(config.session_file,'r'))
+local initialized=session:read('*a'):find('session_state',1,true)
+session:close()
+if initialized then
+ local ready=assert(io.open(config.ready,'w'))
+ ready:write('ready');ready:close()
+ local gate=assert(io.open(config.gate,'r'))
+ assert(gate:read('*l')=='release');gate:close()
+end
+return {context_strategies={{name='view',run=function(input)
+ if input.stage=='assemble' then return {messages=input.messages} end
+ if input.stage=='restore' then return {accepted=true} end
+ return {policy='full',compactors={}}
+end}}}
+"#,
+    )
+    .expect("startup plugin");
+    std::fs::write(
+        agent_dir.join("settings.json"),
+        serde_json::json!({
+            "enableBuiltinSkills": false, "prewarmIpythonKernel": false,
+            "contextStrategy": "gate/view",
+            "plugins": {"gate": {"enabled": true, "path": "gate.lua",
+                "config": {"ready": ready_path, "gate": gate_path, "session_file": session_file}}},
+        })
+        .to_string(),
+    )
+    .expect("startup settings");
+
+    let script = serde_json::json!({ "engine": "faux", "responses": [
+        { "text": "hello from scripted" },
+    ] });
+    let script_path = dir.path().join("script.json");
+    std::fs::write(&script_path, script.to_string()).expect("write script");
+    let supervisor = spawn_supervisor(dir.path());
+    let mut gate = StartupGate(gate_file);
+    let (client, _events) = pa_tui::daemon_client::DaemonClient::connect(&supervisor.socket)
+        .await
+        .expect("connect supervisor");
+    let create = client.request_ok(DaemonCommand::Create {
+        id: None,
+        session_path: Some(session_file.display().to_string()),
+        continue_recent: None,
+        no_session: None,
+        name: None,
+        config: Some(serde_json::json!({
+            "cwd": dir.path().display().to_string(),
+            "sessionDir": session_dir.display().to_string(),
+            "script": script_path.display().to_string(),
+        })),
+        runtime_metadata: None,
+        lifecycle: None,
+        env: None,
+        launch_env: None,
+        rest: serde_json::Map::default(),
+    });
+    let acquire_lock = async {
+        tokio::time::timeout(Duration::from_secs(5), async {
+            while !std::fs::read_to_string(&ready_path).is_ok_and(|ready| ready == "ready") {
+                tokio::time::sleep(Duration::from_millis(20)).await;
+            }
+        })
+        .await
+        .expect("startup plugin did not reach its FIFO latch");
+        assert_eq!(
+            std::fs::read_to_string(&ready_path).expect("startup marker"),
+            "ready"
+        );
+        let lock = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(session_file.with_extension("lock"))
+            .expect("session log lock file");
+        lock.try_lock().expect("hold session log lock");
+        lock.set_len(0).expect("clear stale holder diagnostic");
+        gate.0
+            .write_all(b"release\n")
+            .expect("release startup gate");
+        lock
+    };
+    let (data, _lock) = tokio::join!(create, acquire_lock);
+    let data = data.expect("create session");
+    let session_id = data
+        .get("activeSessionId")
+        .or_else(|| data.get("id"))
+        .and_then(serde_json::Value::as_str)
+        .expect("session id")
+        .to_string();
+
+    let output = dir.path().join("export.html");
+    let previous = b"previous complete export";
+    std::fs::write(&output, previous).expect("existing export");
+    let response = client
+        .request(DaemonCommand::ExportHtml {
+            id: None,
+            active_session_id: session_id,
+            output_path: Some(output.display().to_string()),
+            rest: serde_json::Map::default(),
+        })
+        .await
+        .expect("export response");
+    client.close();
+    assert!(!response.success, "locked export must fail: {response:?}");
+    assert_eq!(
+        response.error.as_deref(),
+        Some("export tools unavailable: session log: session log lock is held by another writer: session log lock is held by another writer")
+    );
+    assert_eq!(std::fs::read(&output).expect("preserved export"), previous);
+}
+
+#[tokio::test]
 async fn tui_export_and_share_surface() {
     use base64::Engine as _;
     let dir = tempfile::TempDir::new().expect("temp dir");

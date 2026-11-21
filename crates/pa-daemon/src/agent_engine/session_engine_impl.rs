@@ -489,13 +489,24 @@ impl SessionEngine for AgentSessionEngine {
     /// section (TS `state.tools`).
     fn export_tools(
         &self,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<Vec<Value>>> + Send + '_>> {
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = anyhow::Result<Option<Vec<Value>>>> + Send + '_>,
+    > {
         Box::pin(async move {
-            let model = self.resolve_model().ok()?;
-            self.ensure_core_session_async(&model).await.ok()?;
-            let session = self.session.try_lock().ok()?;
-            let state = session.as_deref()?.session.agent().state().await;
-            Some(pa_core::export_html::tools_section(&state.tools))
+            let model = self.resolve_model()?;
+            self.ensure_core_session_async(&model).await?;
+            let session = self
+                .session
+                .try_lock()
+                .map_err(|_| anyhow::anyhow!("session state lock is busy"))?;
+            let state = session
+                .as_deref()
+                .ok_or_else(|| anyhow::anyhow!("session is not built"))?
+                .session
+                .agent()
+                .state()
+                .await;
+            Ok(Some(pa_core::export_html::tools_section(&state.tools)))
         })
     }
 
@@ -503,17 +514,30 @@ impl SessionEngine for AgentSessionEngine {
     fn export_rendered_tools(
         &self,
         entries: &[Value],
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<Value>> + Send + '_>> {
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = anyhow::Result<Option<Value>>> + Send + '_>,
+    > {
         let entries = entries.to_vec();
         Box::pin(async move {
-            let model = self.resolve_model().ok()?;
-            self.ensure_core_session_async(&model).await.ok()?;
-            let session = self.session.try_lock().ok()?;
-            let state = session.as_deref()?.session.agent().state().await;
+            let model = self.resolve_model()?;
+            self.ensure_core_session_async(&model).await?;
+            let session = self
+                .session
+                .try_lock()
+                .map_err(|_| anyhow::anyhow!("session state lock is busy"))?;
+            let state = session
+                .as_deref()
+                .ok_or_else(|| anyhow::anyhow!("session is not built"))?
+                .session
+                .agent()
+                .state()
+                .await;
             let renderer = crate::session_export::ExportToolRenderer {
                 tools: &state.tools,
             };
-            pa_core::export_html::pre_render_custom_tools(&entries, &renderer)
+            Ok(pa_core::export_html::pre_render_custom_tools(
+                &entries, &renderer,
+            ))
         })
     }
 
