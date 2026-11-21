@@ -207,12 +207,32 @@ These are proposed JSON records, not executable plugin manifests.
 A model has no independent provider, dialect, base URL or auth selector inside
 this record. Its enclosing map supplies provider identity and its `route` names
 a route under that same provider. A single-route authored provider may put that
-route in `route`, omit its name, and omit model `route` fields. Generation names
-it `default`, emits `routes: [{name: "default", ...}]`, binds each model to
-`default`, and emits `fallbackOrder: ["default"]`. That name is a schema
-convention, not another inferred provider identity. Multiple routes never infer
-a model's binding. Route arrays merge across layers by name, not array index;
-`fallbackOrder` replaces as a whole and must cover the effective route set.
+route in `route`, omit its name, and omit model `route` fields.
+
+Normalize every authored layer independently before cross-layer composition.
+This includes distribution source and generated distribution records, user and
+project files, and user/project extension records at runtime. Normalization is
+not just a generation step. Reject a layer declaring both `route` and `routes`.
+Expand its shorthand into a named route list, then remove the `route` member;
+composition only ever sees canonical `routes`.
+
+Use the shorthand's explicit route name when supplied, otherwise `default`.
+Bind only models declared in that same layer with an omitted `route` to that
+name. Do not rewrite inherited model bindings. When the layer omits
+`fallbackOrder`, emit a singleton list for its shorthand route; an explicit
+`fallbackOrder` is retained. `default` is a schema convention, not another
+provider identity. Multiple declared routes never infer a model's binding.
+
+Canonical route lists merge across layers by name, not array index. Thus shipped
+`routes: [{name: "default", ...}]` plus user `route: {...}` replaces the same
+named route and leaves neither an inline member nor a duplicate route. Normal
+route-identity and credential-replacement rules still apply. Shorthand without
+a name never guesses a differently named inherited route: it declares `default`.
+To override an inherited route with another name, name it explicitly. If other
+inherited routes remain, the replacing `fallbackOrder` must list the complete
+effective set; otherwise reject composition with a diagnostic naming the missing
+route names and asking for an explicit order. Check model references and order
+coverage after composition, not against an isolated sparse layer.
 
 | Route member | Version 1 contract |
 | --- | --- |
@@ -686,8 +706,13 @@ Extraction must round-trip these examples to the same six original
 `(provider, model ID, api, baseUrl)` tuples, with unchanged metadata and
 `max_tokens_explicit: false`. The test also covers another current multi-dialect
 provider, `github-copilot`, rather than assuming only Cloudflare needs routes.
-A separate test expands the single-route shorthand and compares its complete
-canonical provider object to the equivalent explicit route list.
+A separate whole-object precedence fixture, `single-route-shorthand-overlay`,
+loads a canonical shipped provider with one `default` route and a user overlay
+using inline `route`. Compare the complete composed provider and provenance
+against the explicit canonical expected object: exactly one replaced `default`
+route, no retained `route` member, no duplicate route members, unchanged inherited
+model bindings, and the expected singleton fallback order. Also test an explicitly
+named shorthand and reject incomplete fallback coverage of inherited routes.
 
 ### Skills and trust
 
@@ -899,8 +924,10 @@ The check must:
    auth/secret headers, resolved routes and approval are invalidated.
 4. Round-trip Cloudflare's two routes and Bedrock's four regional models to their
    exact original provider/model/API/base-URL tuples and complete metadata.
-   Verify canonical single-route shorthand expansion and explicit fallback
-   order, including unavailable routes. Never split provider identities.
+   Run `single-route-shorthand-overlay` from the representation section with
+   whole-object equality, not only standalone shorthand expansion. Verify
+   independent normalization of each layer and explicit fallback order, including
+   unavailable routes. Never split provider identities.
 5. For each source of `maxTokens` (generated distribution, embedded copy,
    bundled snapshot, cache, fresh discovery, user model definition/override and
    project model definition/override), compare the whole resolved model and
@@ -931,10 +958,23 @@ The check must:
    captured request objects, not only status codes. Also reject literal sensitive
    MCP headers, secret env values without references and URL userinfo. Capture
    logs/config/cache and verify fixture secrets never appear.
-10. Delete only the isolated cache and show explicit models, credentials, trust,
-   preferences, and sessions remain usable. Verify stale discovery publications
-   are rejected after route/auth changes. Test a hanging discovery server so
-   startup and first paint remain responsive.
+10. Run the offline discovery fixtures below against local fake servers, not
+    live providers. They assert refresh outcomes and model snapshots, not merely
+    structural validation of the input config.
+11. Delete only the isolated cache and show explicit models, credentials, trust,
+    preferences, and sessions remain usable. Verify stale discovery publications
+    are rejected after route/auth changes. Test a hanging discovery server so
+    startup and first paint remain responsive.
+
+| Proposed fixture | Required assertion |
+| --- | --- |
+| `unknown-openai-without-defaults` | A fake OpenAI discovery response contains a known local ID and an unknown ID, with no complete local defaults. Refresh succeeds; the unknown ID is absent; the complete known local model survives unchanged; a credential-free warning names provider, route and unknown model. |
+| `unknown-openai-with-defaults` | Use the same response and unknown ID, now with complete explicit local defaults for context/output, reasoning, input and all four cost fields. Refresh succeeds and admits the unknown ID with the expected whole model and route binding; known local models survive. Defaults copied into discovered metadata do not mark `maxTokens` explicit. |
+| `unknown-openrouter-incomplete-metadata` | A fake metadata-rich OpenRouter response omits one required cost rate for an unknown ID and has no complete local defaults. Refresh succeeds; the unknown ID is absent; the known local model survives unchanged; a credential-free provider/route/model warning explains incomplete metadata. Do not synthesize a zero rate. |
+
+These fixture names describe tests to add during implementation, not tests that
+already exist. Capture complete refresh reports, model objects and warnings.
+Include fixture secrets in fake request headers and assert none appear in warnings.
 
 Do not replace the repository's full merge gates with this focused check. The
 implementation also needs existing CLI/TUI persistence, daemon/worker routing,
