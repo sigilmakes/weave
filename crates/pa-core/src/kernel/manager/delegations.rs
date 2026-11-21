@@ -29,12 +29,8 @@ impl ReplKernelManager {
         }
     }
 
-    pub(crate) async fn capture_snapshot(
-        &self,
-        timeout: Option<u64>,
-        prune: bool,
-    ) -> Option<SnapshotResult> {
-        self.inner.capture_snapshot(timeout, prune).await
+    pub(crate) async fn capture_snapshot(&self, timeout: Option<u64>) -> Option<SnapshotResult> {
+        self.inner.capture_snapshot(timeout).await
     }
 
     pub(crate) async fn perform_restore(&self, protocol_repair: bool) -> Option<RestoreResult> {

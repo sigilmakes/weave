@@ -1,5 +1,6 @@
-//! A session's on-disk storage: the conversation log, the artifact partition beside it,
-//! the kernel snapshot inside that partition, and the info-cache sidecar.
+//! A session's on-disk storage: the conversation log, the artifact partition in the
+//! agent's artifacts tree, the kernel snapshot inside that partition, and the info-cache
+//! sidecar.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -36,9 +37,9 @@ impl SessionStorageSizes {
     }
 }
 
-/// The files a saved session owns: `<id>.jsonl`, `<id>.info-cache.json`, the
-/// `<root>/session-artifacts/<id>` partition, and the kernel snapshot files in
-/// that partition.
+/// The files a saved session owns: `<id>.jsonl`, `<id>.info-cache.json`, the agent's
+/// `<root>/session-artifacts/<id>` partition, and the kernel snapshot files in that
+/// partition.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SessionStorage {
     log: PathBuf,
@@ -48,8 +49,8 @@ pub struct SessionStorage {
 }
 
 impl SessionStorage {
-    /// Resolve the storage beside a conversation log, or `None` when the log
-    /// has no id or no directory pair to hold the artifact partition.
+    /// Resolve the storage for a conversation log, or `None` when the log has no
+    /// id or no session directory to resolve the artifacts tree from.
     #[must_use]
     pub fn for_log(log: impl AsRef<Path>) -> Option<Self> {
         let log = log.as_ref();
@@ -57,7 +58,7 @@ impl SessionStorage {
             .file_stem()
             .and_then(|stem| stem.to_str())
             .filter(|id| !id.is_empty())?;
-        let artifacts = log.parent()?.parent()?.join("session-artifacts").join(id);
+        let artifacts = crate::session::artifacts::session_artifact_dir(log.parent()?, id)?;
         let cache = log.with_file_name(format!("{id}.info-cache.json"));
         let kernel_state = vec![snapshot_path_in(&artifacts), manifest_path_in(&artifacts)];
         Some(Self {
@@ -169,6 +170,24 @@ mod tests {
         let sizes = storage.sizes();
         assert_eq!(sizes.artifacts_excluding_kernel(), 150);
         assert_eq!(sizes.total(), 195);
+    }
+
+    #[test]
+    fn a_child_log_resolves_to_the_agents_artifacts_tree() {
+        let root = tempfile::tempdir().unwrap();
+        let child_dir = root
+            .path()
+            .join("session-artifacts")
+            .join("parent")
+            .join("child");
+        fs::create_dir_all(&child_dir).unwrap();
+        let log = child_dir.join(format!("{ID}.jsonl"));
+
+        let storage = SessionStorage::for_log(&log).expect("storage");
+        assert_eq!(
+            storage.artifacts_dir(),
+            root.path().join("session-artifacts").join(ID)
+        );
     }
 
     #[test]

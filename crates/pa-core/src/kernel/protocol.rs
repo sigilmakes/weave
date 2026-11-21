@@ -28,10 +28,12 @@ pub enum Request {
         manifest_path: String,
         max_bytes: u64,
         max_variable_bytes: u64,
-        prune_oversized: bool,
     },
     Restore {
         path: String,
+        /// The manifest beside the payload: the runtime keeps it so `vars()` can report the
+        /// names the snapshot skipped and the restart therefore did not restore.
+        manifest_path: String,
         /// The snapshot's own byte caps bound the restore's record reads: a corrupt or sparse
         /// snapshot file cannot force a huge allocation.
         max_bytes: u64,
@@ -71,22 +73,22 @@ impl Request {
                 manifest_path,
                 max_bytes,
                 max_variable_bytes,
-                prune_oversized,
             } => json!({
                 "type": "snapshot",
                 "path": path,
                 "manifest_path": manifest_path,
                 "max_bytes": max_bytes,
                 "max_variable_bytes": max_variable_bytes,
-                "prune_oversized": prune_oversized,
             }),
             Request::Restore {
                 path,
+                manifest_path,
                 max_bytes,
                 max_variable_bytes,
             } => json!({
                 "type": "restore",
                 "path": path,
+                "manifest_path": manifest_path,
                 "max_bytes": max_bytes,
                 "max_variable_bytes": max_variable_bytes,
             }),
@@ -364,11 +366,10 @@ mod tests {
             manifest_path: "/tmp/s.json".into(),
             max_bytes: 1,
             max_variable_bytes: 2,
-            prune_oversized: true,
         };
         let v = req.to_json();
         assert_eq!(v["type"], "snapshot");
-        assert_eq!(v["prune_oversized"], true);
+        assert_eq!(v["max_variable_bytes"], 2);
     }
 
     #[test]

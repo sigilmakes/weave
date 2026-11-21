@@ -814,8 +814,8 @@ pub(crate) fn session_message_to_loop(message: &SessionAgentMessage) -> Option<A
     serde_json::from_value(serde_json::to_value(message).ok()?).ok()
 }
 
-/// Session artifact directory implied by a conversation-log path
-/// (`dirname(dirname(file))/session-artifacts/<id>`).
+/// Session artifact directory implied by a conversation-log path: the agent's artifacts tree,
+/// keyed by the log's session id.
 #[must_use]
 pub fn session_artifact_dir_for_log(log: &std::path::Path) -> Option<std::path::PathBuf> {
     crate::session::storage::SessionStorage::for_log(log)

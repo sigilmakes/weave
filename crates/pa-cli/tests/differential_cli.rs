@@ -462,7 +462,8 @@ fn sandbox(prefix: &str) -> PathBuf {
 // These are declared native contracts, not stream fallbacks. Help snapshots are
 // derived from each command registry and its formatter. The `sessions` table
 // appends native id/size/artifacts cells; its daemon e2e compares shared cells.
-// Native update/package behavior is documented in
+// `list` and `sessions` declare the `--check` artifacts report, which has no
+// TypeScript counterpart. Native update/package behavior is documented in
 // docs/legacy-upgrade-contract.md. args.rs tests pin bounded u32 and
 // unknown-option validation; model list declares only [search],
 // not a --json option. ACP shares the native non-interactive @file rejection.
@@ -510,6 +511,10 @@ fn declared_native_contract(
             ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-help.txt"), "", roots))
                 && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-help.txt"), "", roots),
         ),
+        ["help", "list"] => Some(
+            ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-list-help.txt"), "", roots))
+                && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-list-help.txt"), "", roots),
+        ),
         ["help", "package"] => Some(
             ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-package-help.txt"), "", roots))
                 && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-package-help.txt"), "", roots),
@@ -518,15 +523,13 @@ fn declared_native_contract(
             ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-update-help.txt"), "", roots))
                 && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-update-help.txt"), "", roots),
         ),
-        // A fork-only child: the TS sessions help has no `delete` command, so
-        // only the native side has a declared shape to pin.
-        ["help", "sessions"] => Some(declared_output_matches(
-            native,
-            0,
-            include_str!("fixtures/native-cli-contract/native-sessions-help.txt"),
-            "",
-            roots,
-        )),
+        // A fork-only child and a fork-only flag: the TS sessions help has
+        // neither the `delete` command nor `--check`, so the TS reference is
+        // pinned by ts-sessions-help.txt and the native page by its fixture.
+        ["help", "sessions"] => Some(
+            ts.is_none_or(|ts| declared_output_matches(ts, 0, include_str!("fixtures/native-cli-contract/ts-sessions-help.txt"), "", roots))
+                && declared_output_matches(native, 0, include_str!("fixtures/native-cli-contract/native-sessions-help.txt"), "", roots),
+        ),
         ["help", "sessions", "delete"] => Some(declared_output_matches(
             native,
             0,
@@ -596,10 +599,11 @@ fn native_cli_contract_fixtures() {
         &["--help"][..],
         &["-h"],
         &["help"],
-        &["help", "package"],
-        &["help", "update"],
+        &["help", "list"],
         &["help", "sessions"],
         &["help", "sessions", "delete"],
+        &["help", "package"],
+        &["help", "update"],
         &["--mode", "rpc", "@file.txt"],
         &["--mode", "daemon", "@file.txt"],
         &["model", "list", "--json"],

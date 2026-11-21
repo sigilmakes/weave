@@ -4,14 +4,10 @@
 use super::{
     describe_failure, lock, Arc, CaptureFreshness, Duration, ExecuteOptions, ExecuteStatus, Inner,
     Instant, KernelState, ManifestStat, MemoSlot, Request, RestoreResult, RestoredNamespaceSkip,
-    SnapshotResult, SnapshotSkip, Value, DEFAULT_SNAPSHOT_DEBOUNCE_MS, DEFAULT_SNAPSHOT_MAX_BYTES,
-    DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES, REPAIR_STEP_TIMEOUT_MS, RESTORE_EXECUTION_TIMEOUT_MS,
-    SNAPSHOT_EXECUTION_TIMEOUT_MS,
+    SnapshotResult, SnapshotSkip, Value, DEFAULT_SNAPSHOT_DEBOUNCE_MS, REPAIR_STEP_TIMEOUT_MS,
+    RESTORE_EXECUTION_TIMEOUT_MS, SNAPSHOT_EXECUTION_TIMEOUT_MS, SNAPSHOT_MAX_BYTES,
+    SNAPSHOT_MAX_VARIABLE_BYTES,
 };
-
-/// The runtime snapshot writer's reason for a name above the per-variable cap: such a skipped name
-/// is a live over-cap survivor unless the same capture also pruned it.
-const OVER_CAP_SKIP_REASON: &str = "exceeds per-variable snapshot size cap";
 
 /// Bound on the witness stat pair's await: a stalled artifacts filesystem must not wedge a capture;
 /// a timed-out stat reads as "not fresh".
@@ -23,7 +19,6 @@ impl Inner {
     pub(crate) async fn capture_snapshot(
         self: &Arc<Self>,
         execution_timeout_ms: Option<u64>,
-        prune_oversized: bool,
     ) -> Option<SnapshotResult> {
         let cfg = self.options.snapshot.clone()?;
         if !self.is_running_state() {
@@ -31,7 +26,7 @@ impl Inner {
         }
         // While the namespace provably cannot have changed, a fresh capture would reproduce the
         // committed payload: skip the kernel request.
-        if let Some(fresh) = self.fresh_capture(prune_oversized).await {
+        if let Some(fresh) = self.fresh_capture().await {
             return Some(fresh);
         }
         // The user-settled count and the invalidation epoch the memo may claim, read before the
@@ -43,11 +38,10 @@ impl Inner {
         let request = Request::Snapshot {
             path: cfg.path.to_string_lossy().to_string(),
             manifest_path: cfg.manifest_path.to_string_lossy().to_string(),
-            max_bytes: cfg.max_bytes.unwrap_or(DEFAULT_SNAPSHOT_MAX_BYTES),
+            max_bytes: cfg.max_bytes.unwrap_or(SNAPSHOT_MAX_BYTES),
             max_variable_bytes: cfg
                 .max_variable_bytes
-                .unwrap_or(DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES),
-            prune_oversized,
+                .unwrap_or(SNAPSHOT_MAX_VARIABLE_BYTES),
         };
         let result = self
             .enqueue_request(
@@ -68,10 +62,6 @@ impl Inner {
                 let committed = SnapshotResult {
                     saved: as_string_array(fields, "saved"),
                     skipped: as_reason_array(fields, "skipped"),
-                    pruned: {
-                        let pruned = as_string_array(fields, "pruned");
-                        (!pruned.is_empty()).then_some(pruned)
-                    },
                     bytes: fields.get("bytes").and_then(Value::as_u64).unwrap_or(0),
                     path: cfg.path.clone(),
                 };
@@ -118,18 +108,13 @@ impl Inner {
 
     /// The recurring capture-freshness skip (see `CaptureFreshness`):
     /// `Some(result)` replays the last committed capture.
-    async fn fresh_capture(self: &Arc<Self>, prune_oversized: bool) -> Option<SnapshotResult> {
+    async fn fresh_capture(self: &Arc<Self>) -> Option<SnapshotResult> {
         let (user_executions, memo) = {
             let g = lock(&self.guarded);
             (g.user_executions, g.capture_freshness.clone())
         };
         let memo = memo?;
         if user_executions != memo.user_executions {
-            return None;
-        }
-        // A pruning capture still must run while live over-cap names
-        // survive: it removes and discloses them (#227 semantics).
-        if prune_oversized && memo.live_over_cap {
             return None;
         }
         let cfg = self.options.snapshot.clone()?;
@@ -152,11 +137,7 @@ impl Inner {
                 return None;
             }
         }
-        let mut result = memo.result;
-        // The pruned names left the live namespace with the commit that
-        // pruned them; a fresh prune finds nothing to disclose.
-        result.pruned = None;
-        Some(result)
+        Some(memo.result)
     }
 
     /// Arm the freshness memo with a committed capture: the namespace stays provably unchanged
@@ -173,13 +154,6 @@ impl Inner {
         // epoch unmoved — a stalled, contended, or missing read never memoizes.
         let (payload_stat, manifest_stat) =
             stats_after_commit(&self.freshness_stat_probe, cfg).await;
-        let live_over_cap = result.skipped.iter().any(|skip| {
-            skip.reason == OVER_CAP_SKIP_REASON
-                && !result
-                    .pruned
-                    .as_ref()
-                    .is_some_and(|pruned| pruned.contains(&skip.name))
-        });
         let mut g = lock(&self.guarded);
         if payload_stat.is_some()
             && manifest_stat.is_some()
@@ -192,7 +166,6 @@ impl Inner {
                 payload_stat,
                 manifest_stat,
                 result: result.clone(),
-                live_over_cap,
             });
         }
         // A missing stat pair or an epoch move never arms and leaves any
@@ -219,10 +192,11 @@ impl Inner {
         }
         let request = Request::Restore {
             path: cfg.path.to_string_lossy().to_string(),
-            max_bytes: cfg.max_bytes.unwrap_or(DEFAULT_SNAPSHOT_MAX_BYTES),
+            manifest_path: cfg.manifest_path.to_string_lossy().to_string(),
+            max_bytes: cfg.max_bytes.unwrap_or(SNAPSHOT_MAX_BYTES),
             max_variable_bytes: cfg
                 .max_variable_bytes
-                .unwrap_or(DEFAULT_SNAPSHOT_MAX_VARIABLE_BYTES),
+                .unwrap_or(SNAPSHOT_MAX_VARIABLE_BYTES),
         };
         let result = self
             .enqueue_request(
@@ -379,7 +353,7 @@ impl Inner {
                     return;
                 }
                 inner
-                    .capture_snapshot(Some(SNAPSHOT_EXECUTION_TIMEOUT_MS), false)
+                    .capture_snapshot(Some(SNAPSHOT_EXECUTION_TIMEOUT_MS))
                     .await;
             }
         }));
@@ -447,7 +421,7 @@ impl Inner {
             if !drained {
                 return;
             }
-            self.capture_snapshot(Some(SNAPSHOT_EXECUTION_TIMEOUT_MS), false)
+            self.capture_snapshot(Some(SNAPSHOT_EXECUTION_TIMEOUT_MS))
                 .await;
         }
         .await;

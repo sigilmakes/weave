@@ -1,9 +1,9 @@
 //! The input handlers behind dispatch: prompt delivery, queue
 //! operations, and agent-message delivery.
 use super::{
-    enqueue_priority, json, oneshot, parse_custom_message, parse_prompt_images, response_success,
-    sender_is_child_of, AgentFamilyRelationship, AgentMessagePromptPayload, Lane, QueueCheckpoint,
-    QueuePriority, QueuedItem, TurnPolicy, Worker, AGENT_MESSAGE_SOURCE,
+    enqueue_priority, hold_is_protected, json, oneshot, parse_custom_message, parse_prompt_images,
+    response_success, sender_is_child_of, AgentFamilyRelationship, AgentMessagePromptPayload, Lane,
+    QueueCheckpoint, QueuePriority, QueuedItem, TurnPolicy, Worker, AGENT_MESSAGE_SOURCE,
     DEFAULT_AGENT_MESSAGE_MAX_PENDING_PER_SESSION, QUEUED_INPUT_SUSPENDED,
 };
 
@@ -339,8 +339,11 @@ impl Worker {
             let id = pa_core::session_engine::agent_messaging::create_agent_session_message_id();
             // `queued` is the receipt truth: the delivery cannot run now while
             // the target is busy, a compaction window is open, or a hold with
-            // parked work stands.
-            let suspended_hold = core.queued_input_suspended && !core.busy && !core.compacting;
+            // parked work stands. The hold is the same verdict the turn boundary
+            // reads, so a busy target reports it too: that row stays parked after
+            // the turn settles, and a bare `queued` would promise otherwise.
+            let suspended_hold =
+                core.queued_input_suspended && hold_is_protected(&core) && !core.compacting;
             let compacting_hold = core.compacting;
             let queued = core.busy || compacting_hold || suspended_hold;
             let summary = self.summary_locked(&core, inputs);

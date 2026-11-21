@@ -344,17 +344,17 @@ fn print_inline_subagents_wait_for_replies_and_combine_them() {
             "the child finished its task: {text}"
         );
         // The exit disposal proof: the child's kernel was disposed with
-        // its final namespace snapshot BEFORE the process exited. The
-        // child's artifact dir follows the shared
-        // `dirname(sessionDir)/session-artifacts/<session id>` layout, so
-        // it lands beside the child's session dir (under the parent's
-        // artifacts tree), not inside it.
+        // its final namespace snapshot BEFORE the process exited. A child
+        // partition is keyed by session id in the agent's artifacts tree,
+        // never in a second `session-artifacts` tree nested under the
+        // parent's partition.
         let child_id = child_files[0]
             .file_stem()
             .and_then(|stem| stem.to_str())
             .expect("the child session id")
             .to_string();
-        let snapshot = artifacts
+        let snapshot = lane
+            .agent_dir
             .join("session-artifacts")
             .join(&child_id)
             .join("kernel-state.dill");
@@ -362,6 +362,13 @@ fn print_inline_subagents_wait_for_replies_and_combine_them() {
             snapshot.exists(),
             "the disposed kernel's final snapshot landed at {}",
             snapshot.display()
+        );
+        // The other half of the fix: the child wrote nothing into a second
+        // tree under its parent's partition.
+        assert!(
+            !artifacts.join("session-artifacts").exists(),
+            "no nested artifacts tree under the parent's partition: {}",
+            artifacts.display()
         );
     }
 }

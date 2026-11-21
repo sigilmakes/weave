@@ -1,0 +1,8 @@
+Usage:
+  prime-agent list [--all] [--json]
+
+List agents.
+
+Options:
+  -a, --all  Include saved agents
+  --json      Print JSON
