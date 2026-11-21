@@ -191,6 +191,29 @@ fn channel_step_run(workflow: &Workflow) -> &str {
 
 #[pa_test_scratch::pa_test]
 #[test]
+fn production_r2_legacy_manifest_is_readable_during_the_rename_window() {
+    let bytes = include_bytes!("fixtures/release-channel/r2-latest-2026-11-21.json");
+    let manifest: serde_json::Value = serde_json::from_slice(bytes).expect("captured R2 manifest");
+    let artifacts = manifest["binaries_v2"]
+        .as_array()
+        .expect("captured compiled artifacts")
+        .iter()
+        .map(|row| ReleaseArtifact {
+            platform: row["platform"].as_str().expect("platform").to_string(),
+            file: row["file"].as_str().expect("file").to_string(),
+            sha256: row["sha256"].as_str().expect("sha256").to_string(),
+        })
+        .collect();
+    assert_eq!(
+        parse_channel_manifest(bytes),
+        Some(LatestRelease {
+            version: "0.10.5".to_string(),
+            artifacts,
+        })
+    );
+}
+
+#[test]
 fn the_workflow_wires_the_channel_manifest_producer() {
     let (text, workflow) = load_workflow();
     // The tag trigger accepts the stable pattern and the -beta* (nightly)
@@ -550,9 +573,7 @@ fn assert_reader_artifacts_are_truthful(release: &LatestRelease, out: &Path) {
 
 #[pa_test_scratch::pa_test]
 #[test]
-fn assembled_archives_carry_the_platform_alias_the_reader_demands() {
-    let (_, workflow) = load_workflow();
-    let emit_run = channel_step_run(&workflow);
+fn current_producer_emits_wv_archives_and_decoder_the_reader_accepts() {
     let fixture = tempfile::tempdir().expect("fixture dir");
 
     // Use the complete trusted workspace runtime; the remaining payload
@@ -608,7 +629,7 @@ fn assembled_archives_carry_the_platform_alias_the_reader_demands() {
         "fixture split failed: {}",
         String::from_utf8_lossy(&split_run.stderr)
     );
-    let decoder = split.path().join("prime-agent-1.2.3-linux-x64.debug.gz");
+    let decoder = split.path().join("wv-1.2.3-linux-x64.debug.gz");
     assert!(binary.is_file(), "shipped fixture missing");
     assert!(decoder.is_file(), "decoder fixture missing");
 
@@ -659,11 +680,11 @@ fn assembled_archives_carry_the_platform_alias_the_reader_demands() {
 
     // The archive name is the platform alias the channel contract demands;
     // the target triple would be unreadable to the update flow.
-    let archive = dist.join("prime-agent-1.2.3-linux-x64.tar.gz");
+    let archive = dist.join("wv-1.2.3-linux-x64.tar.gz");
     assert!(archive.is_file(), "the alias-named archive exists");
     assert!(
         !dist
-            .join("prime-agent-1.2.3-x86_64-unknown-linux-gnu.tar.gz")
+            .join("wv-1.2.3-x86_64-unknown-linux-gnu.tar.gz")
             .exists(),
         "the triple-named archive must not be published"
     );
@@ -674,53 +695,22 @@ fn assembled_archives_carry_the_platform_alias_the_reader_demands() {
     let row = &manifest["binaries"][0];
     assert_eq!(row["platform"], "linux-x64");
     assert_eq!(row["target"], "x86_64-unknown-linux-gnu");
-    assert_eq!(row["file"], "prime-agent-1.2.3-linux-x64.tar.gz");
+    assert_eq!(row["file"], "wv-1.2.3-linux-x64.tar.gz");
     let archive_bytes = std::fs::read(&archive).expect("read the archive");
     assert_eq!(row["sha256"], sha256_hex(&archive_bytes));
 
-    // The full chain: the promote emission over the assembled row (staged
-    // into a complete five-platform merged manifest — the completeness
-    // gate refuses a manifest missing a known platform's row), then the
-    // reader over the emitted manifest.
-    let out = stage_merged_manifest(fixture.path(), "1.2.3", false);
-    std::fs::copy(&archive, out.join("prime-agent-1.2.3-linux-x64.tar.gz"))
-        .expect("stage the real archive over its fixture");
-    let merged_path = out.join("manifest.json");
-    let mut merged: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(&merged_path).expect("read the staged merged manifest"),
-    )
-    .expect("parse the staged merged manifest");
-    merged["binaries"]
-        .as_array_mut()
-        .expect("the staged manifest's binaries")
-        .retain(|candidate| candidate["platform"] != "linux-x64");
-    merged["binaries"]
-        .as_array_mut()
-        .expect("the staged manifest's binaries")
-        .push(row.clone());
-    std::fs::write(
-        &merged_path,
-        serde_json::to_string_pretty(&merged).expect("serialize"),
-    )
-    .expect("write the merged manifest with the assembled row");
-    let result = run_step(emit_run, fixture.path(), "v1.2.3");
-    assert!(
-        result.status.success(),
-        "the emission step failed: {}",
-        String::from_utf8_lossy(&result.stderr)
+    let bytes = std::fs::read(dist.join("manifest.json")).expect("current emitted manifest");
+    let release =
+        parse_channel_manifest(&bytes).expect("the reader accepts current producer output");
+    assert_eq!(
+        release,
+        LatestRelease {
+            version: "1.2.3".to_string(),
+            artifacts: vec![ReleaseArtifact {
+                platform: "linux-x64".to_string(),
+                file: "wv-1.2.3-linux-x64.tar.gz".to_string(),
+                sha256: sha256_hex(&archive_bytes),
+            }],
+        }
     );
-    let (bytes, json) = read_channel_manifest(&out, "latest.json");
-    assert_eq!(json["version"], "v1.2.3");
-    let release = parse_channel_manifest(&bytes).expect("the reader accepts the manifest");
-    assert_eq!(release.version, "1.2.3");
-    // The reader keeps every known platform's row; the assembled linux-x64
-    // row is one of the five.
-    assert_eq!(release.artifacts.len(), 5);
-    let artifact: &ReleaseArtifact = release
-        .artifacts
-        .iter()
-        .find(|artifact| artifact.platform == "linux-x64")
-        .expect("the assembled row survived the emission");
-    assert_eq!(artifact.file, "prime-agent-1.2.3-linux-x64.tar.gz");
-    assert_eq!(artifact.sha256, sha256_hex(&archive_bytes));
 }

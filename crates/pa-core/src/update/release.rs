@@ -129,9 +129,13 @@ pub fn parse_channel_manifest(body: &[u8]) -> Option<LatestRelease> {
             continue;
         }
         let file = format!("wv-{version}-{}.tar.gz", artifact.platform);
+        let legacy_file = format!("prime-agent-{version}-{}.tar.gz", artifact.platform);
         let sha_valid =
             artifact.sha256.len() == 64 && artifact.sha256.bytes().all(|b| b.is_ascii_hexdigit());
-        if artifact.file != file || !sha_valid || !seen.insert(artifact.platform.clone()) {
+        if (artifact.file != file && artifact.file != legacy_file)
+            || !sha_valid
+            || !seen.insert(artifact.platform.clone())
+        {
             return Some(LatestRelease {
                 version,
                 artifacts: Vec::new(),
@@ -198,7 +202,7 @@ mod tests {
 
     #[pa_test_scratch::pa_test]
     #[test]
-    fn parse_channel_manifest_accepts_the_producer_shape() {
+    fn parse_channel_manifest_accepts_the_current_wv_producer_shape() {
         // The shape release.yml's promote job emits: a v1 `binaries` list plus the
         // full `binaries_v2` list whose rows are exactly the read-side contract.
         let sha = "a".repeat(64);
