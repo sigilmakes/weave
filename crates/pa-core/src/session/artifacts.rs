@@ -4,17 +4,19 @@ use std::path::{Path, PathBuf};
 
 const ARTIFACTS_DIR_NAME: &str = "session-artifacts";
 
-/// The artifacts tree that owns a session dir: the nearest ancestor named `session-artifacts`,
-/// probed at distances one and two, else the dir's sibling `session-artifacts` directory.
+/// The artifacts tree that owns a session dir: the nearest ancestor named `session-artifacts`
+/// at distance one or two, else the dir's sibling `session-artifacts` directory.
 ///
-/// The bound matches the two layouts a live session dir can have. A top-level dir is
-/// `<agent>/<sessions>` (distance one is the agent dir, which is not the tree). A current child
-/// dir is exactly `<agent>/session-artifacts/<parent>/<child>` (distance two is the tree). A dir
-/// written by the pre-fix formula, `<agent>/session-artifacts/<parent>/session-artifacts/<child>`,
-/// resolves to the inner tree at distance two, so those children keep their existing partition
-/// instead of moving. Probing further would not help: an unrelated ancestor named
-/// `session-artifacts` at distance one or two still matches, which is why this stays a probe of
-/// the session dir's own surroundings rather than a search up the whole path.
+/// Every live shape is covered. A top-level dir is `<agent>/<sessions>`, whose sibling is the
+/// tree. A current child dir is `<agent>/session-artifacts/<parent>/<child>`, whose distance-two
+/// ancestor is the tree. A dir inside a tree the old formula left behind,
+/// `<agent>/session-artifacts/<parent>/session-artifacts/<child>`, matches that inner tree at
+/// distance one. A deeper legacy dir, such as `<agent>/session-artifacts/<parent>/<child>/<sub>`,
+/// matches neither and falls back to `<agent>/session-artifacts/<parent>/<child>/session-artifacts`
+/// — which is where the pre-fix formula already put that session's artifacts, so it stays on its
+/// existing partition without moving. The probe reads the session dir's own surroundings rather
+/// than searching the path: an unrelated ancestor named `session-artifacts` at distance one or
+/// two still matches, and a deeper one never does.
 #[must_use]
 pub fn session_artifacts_root(session_dir: &Path) -> Option<PathBuf> {
     for ancestor in session_dir.ancestors().skip(1).take(2) {

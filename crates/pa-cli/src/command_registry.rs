@@ -50,22 +50,30 @@ pub const COMMAND_SPECS: &[CommandSpec] = &[
     CommandSpec::new(&["agents"], "agents", "Search and open sessions"),
     CommandSpec::new(
         &["list"],
-        "list [--all] [--check] [--json]",
+        "list [--all] [--json] | list --check",
         "List agents",
+    )
+    .description(
+        "--check follows only the session dir an unqualified listing scans. It does not consult \
+         --session-dir, PRIME_AGENT_CODING_AGENT_SESSION_DIR, or the settings sessionDir.",
     )
     .options(&[
         "-a, --all  Include saved agents",
-        "--check     Report nested session-artifacts roots",
+        "--check     Report nested session-artifacts roots (text report only; no other options)",
         "--json      Print JSON",
     ]),
     CommandSpec::new(
         &["sessions"],
-        "sessions [--all] [--check] [--json]",
+        "sessions [--all] [--json] | sessions --check",
         "Show agent status, activity, and usage",
+    )
+    .description(
+        "--check follows only the session dir an unqualified listing scans. It does not consult \
+         --session-dir, PRIME_AGENT_CODING_AGENT_SESSION_DIR, or the settings sessionDir.",
     )
     .options(&[
         "-a, --all  Include saved agents",
-        "--check     Report nested session-artifacts roots",
+        "--check     Report nested session-artifacts roots (text report only; no other options)",
         "--json      Print JSON",
     ]),
     CommandSpec::new(
