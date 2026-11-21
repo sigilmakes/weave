@@ -246,6 +246,11 @@ impl TurnBoundaryRequests {
         );
     }
 
+    /// Register the model-facing history read and context-edit handlers.
+    pub fn register_history_handlers(self: &Arc<Self>, handlers: &mut HostRequestHandlers) {
+        super::history_host::register_history_handlers(self, handlers);
+    }
+
     /// Register `compact.status`/`compact.run`, gated by the compaction `agentCallable`
     /// setting; `create_session` passes the resolved keep-recent budget.
     pub fn register_compact_handlers(

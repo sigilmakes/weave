@@ -209,6 +209,34 @@ impl SessionEngine for AgentSessionEngine {
         self.session_model().ok().map(|model| model.context_window)
     }
 
+    fn live_context_usage(
+        &self,
+    ) -> std::pin::Pin<
+        Box<
+            dyn std::future::Future<
+                    Output = anyhow::Result<
+                        Option<pa_core::session_engine::turn_boundary::ContextUsage>,
+                    >,
+                > + Send
+                + '_,
+        >,
+    > {
+        Box::pin(async move {
+            let engine = self
+                .session
+                .lock()
+                .await
+                .clone()
+                .ok_or_else(|| anyhow::anyhow!("the session has no live engine context"))?;
+            let live = engine.turn_boundary.assemble_live_view().await?;
+            Ok(pa_core::session_engine::turn_boundary::context_usage(
+                &live.messages,
+                live.drift,
+                self.model_context_window(),
+            ))
+        })
+    }
+
     fn creation_model(&self) -> Option<(String, String)> {
         let model = self.resolve_registry_model().ok()?;
         Some((model.provider.clone(), model.id))

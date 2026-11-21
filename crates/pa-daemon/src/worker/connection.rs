@@ -779,11 +779,12 @@ pub(super) fn wants_display_transcript(payload: &Value) -> bool {
 }
 
 impl Worker {
-    pub(crate) fn handle_attach(&self, payload: &Value) -> DaemonResponse {
+    pub(crate) async fn handle_attach(&self, payload: &Value) -> DaemonResponse {
         self.handle_attach_projection(payload, /*display_error*/ None)
+            .await
     }
 
-    pub(super) fn handle_attach_projection(
+    pub(super) async fn handle_attach_projection(
         &self,
         payload: &Value,
         mut display_error: Option<String>,
@@ -829,7 +830,7 @@ impl Worker {
             .filter(|value| !value.is_null())
             .and_then(|value| serde_json::from_value::<DaemonResumeCursor>(value).ok());
 
-        let (mut core, summary_inputs, connection_inputs) = self.attach_inputs();
+        let (mut core, summary_inputs, connection_inputs) = self.attach_inputs().await;
         // The connection-scoped registry (the fresh bots' release
         // findings): the attach's retention is keyed by the connection
         // token so the release on ANY return path (the guard's Drop)

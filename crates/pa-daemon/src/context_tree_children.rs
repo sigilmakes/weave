@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 
 use pa_core::models::ModelRegistry;
 
-use crate::session_stats::store_context_usage;
+use crate::session_stats::unavailable_context_usage;
 use crate::session_store::SessionFile;
 
 /// Label cap (TS `compactLabel`'s default).
@@ -73,13 +73,14 @@ pub fn load_context_tree_child(
         "totalUsage": total_usage,
         "children": Value::Array(Vec::new()),
     });
+    node["contextUsage"] = unavailable_context_usage(
+        model
+            .as_ref()
+            .and_then(|(provider, model_id)| context_window_of(registry, provider, model_id)),
+        "the persisted child has no live engine context",
+    );
     if let Some((provider, model_id)) = &model {
         node["model"] = json!({ "provider": provider, "id": model_id });
-        if let Some(usage) =
-            store_context_usage(&store, context_window_of(registry, provider, model_id))
-        {
-            node["contextUsage"] = usage;
-        }
     }
     if let Some(by_model) = own_usage_by_model {
         node["ownUsageByModel"] = json!(by_model);
@@ -344,6 +345,13 @@ mod tests {
         assert_eq!(node["status"], json!("done"));
         assert_eq!(node["ownUsage"]["input"], json!(10));
         assert_eq!(node["ownUsage"]["totalTokens"], json!(15));
+        assert_eq!(
+            node["contextUsage"],
+            unavailable_context_usage(
+                context_window_of(&registry(), "prime-inference", "internal/glm-5.3-fast"),
+                "the persisted child has no live engine context",
+            )
+        );
         assert_eq!(
             node["model"],
             json!({ "provider": "prime-inference", "id": "internal/glm-5.3-fast" })

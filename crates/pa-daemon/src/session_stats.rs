@@ -1,27 +1,10 @@
-//! `get_session_stats` over the worker session store, serving scripted and
-//! real engine sessions. The token-estimate helpers live in
-//! `pa_types::usage` (shared with pa-core's `compact.status` host request).
+//! Recorded session totals and the engine's model-facing context usage.
 
 use serde_json::{json, Value};
 
-use pa_types::usage::{calculate_context_tokens, estimate_tokens, valid_assistant_usage};
+use crate::session_store::SessionFile;
 
-use crate::session_store::{SessionEntry, SessionFile};
-
-/// Compute the `get_session_stats` response data for one session file.
-/// `context_window` is the engine model's context window; `None` (or zero)
-/// omits `contextUsage`.
-///
-/// The token/cost totals walk the ACTIVE BRANCH (gap-bridged) from the
-/// latest compaction's `firstKeptEntryId` onward; the summarizer's own
-/// usage rides the `compaction` entry. `contextUsage` keeps the strict branch.
-pub fn session_stats(store: &SessionFile, context_window: Option<u64>) -> Value {
-    let branch = store.branch();
-    let messages: Vec<&Value> = branch
-        .iter()
-        .filter(|entry| entry.type_ == "message")
-        .filter_map(|entry| entry.fields.get("message"))
-        .collect();
+pub fn session_stats(store: &SessionFile, live_context_usage: Option<Value>) -> Value {
     let (durable_messages, boundary) = kept_region_messages(store);
     let mut user_messages = 0u64;
     let mut assistant_messages = 0u64;
@@ -103,7 +86,7 @@ pub fn session_stats(store: &SessionFile, context_window: Option<u64>) -> Value 
         },
         "cost": cost,
     });
-    if let Some(usage) = context_usage(&branch, &messages, context_window) {
+    if let Some(usage) = live_context_usage {
         stats["contextUsage"] = usage;
     }
     stats
@@ -142,19 +125,27 @@ fn kept_region_messages(store: &SessionFile) -> (Vec<&Value>, Option<usize>) {
     (messages, boundary.copied())
 }
 
-/// `contextUsage` for one whole store (the `get_context_tree` root node):
-/// `None` when the context window is unknown, matching `session_stats`.
-pub(crate) fn store_context_usage(
-    store: &SessionFile,
-    context_window: Option<u64>,
-) -> Option<Value> {
-    let branch = store.branch();
-    let messages: Vec<&Value> = branch
-        .iter()
-        .filter(|entry| entry.type_ == "message")
-        .filter_map(|entry| entry.fields.get("message"))
-        .collect();
-    context_usage(&branch, &messages, context_window)
+pub(crate) fn unavailable_context_usage(context_window: Option<u64>, reason: &str) -> Value {
+    json!({
+        "tokens": Value::Null,
+        "contextWindow": context_window.filter(|window| *window > 0),
+        "percent": Value::Null,
+        "unavailable": reason,
+    })
+}
+
+pub(crate) async fn engine_context_usage(engine: &dyn crate::engine::SessionEngine) -> Value {
+    match engine.live_context_usage().await {
+        Ok(Some(usage)) => json!({
+            "tokens": usage.tokens,
+            "contextWindow": usage.context_window,
+            "percent": usage.percent,
+        }),
+        Ok(None) => unavailable_context_usage(None, "model context window is unknown"),
+        Err(error) => {
+            unavailable_context_usage(engine.model_context_window(), &format!("{error:#}"))
+        }
+    }
 }
 
 /// `toolCall` content blocks on one assistant message.
@@ -171,68 +162,5 @@ fn tool_call_count(message: &Value) -> u64 {
         .unwrap_or_default()
 }
 
-/// Estimated context usage: the last valid assistant usage plus trailing
-/// message estimates; `null` tokens right after a compaction without a usable
-/// post-compaction usage; `None` when the context window is unknown.
-fn context_usage(
-    branch: &[&SessionEntry],
-    messages: &[&Value],
-    context_window: Option<u64>,
-) -> Option<Value> {
-    let context_window = context_window.filter(|window| *window > 0)?;
-
-    // The latest compaction entry on the branch, if any (TS `getLatestCompactionEntry`).
-    let compaction_index = branch.iter().rposition(|entry| entry.type_ == "compaction");
-    if let Some(compaction_index) = compaction_index {
-        // Only usage from an assistant that responded after the compaction
-        // boundary is trustworthy (earlier usage reflects the old context size).
-        let post_compaction_usage = branch
-            .iter()
-            .rev()
-            .take(branch.len() - compaction_index - 1)
-            .filter_map(|entry| entry.fields.get("message"))
-            .find_map(valid_assistant_usage);
-        let usable =
-            post_compaction_usage.is_some_and(|usage| calculate_context_tokens(&usage) > 0);
-        if !usable {
-            return Some(json!({
-                "tokens": Value::Null,
-                "contextWindow": context_window,
-                "percent": Value::Null,
-            }));
-        }
-    }
-
-    // TS `estimateContextTokens`: the last valid assistant usage anchors the
-    // estimate; messages after it are added with the chars/4 heuristic.
-    let mut tokens = 0u64;
-    match messages
-        .iter()
-        .rposition(|message| valid_assistant_usage(message).is_some())
-    {
-        Some(last_usage_index) => {
-            let usage = valid_assistant_usage(messages[last_usage_index]).expect("checked");
-            tokens += calculate_context_tokens(&usage);
-            tokens += messages[last_usage_index + 1..]
-                .iter()
-                .map(|message| estimate_tokens(message))
-                .sum::<u64>();
-        }
-        None => {
-            tokens += messages
-                .iter()
-                .map(|message| estimate_tokens(message))
-                .sum::<u64>();
-        }
-    }
-    let percent = tokens as f64 / context_window as f64 * 100.0;
-    Some(json!({
-        "tokens": tokens,
-        "contextWindow": context_window,
-        "percent": percent,
-    }))
-}
-
-/// `totalTokens` when present, else the four-field sum.
 #[cfg(test)]
 mod tests;

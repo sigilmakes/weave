@@ -89,12 +89,13 @@ impl Worker {
                 Err(error) if display_read && command_type == "attach" => {
                     // Failure is local to display hydration, not an epoch change.
                     // Recheck before degrading to model context on reconnect.
-                    let core = self.core.lock().unwrap();
-                    let same_session = core.generation == generation
-                        && core.store.as_ref().is_some_and(|store| {
-                            store.path == path && store.session_id() == session_id
-                        });
-                    drop(core);
+                    let same_session = {
+                        let core = self.core.lock().unwrap();
+                        core.generation == generation
+                            && core.store.as_ref().is_some_and(|store| {
+                                store.path == path && store.session_id() == session_id
+                            })
+                    };
                     if !same_session {
                         return response_failure(
                             None,
@@ -103,7 +104,9 @@ impl Worker {
                             None,
                         );
                     }
-                    return self.handle_attach_projection(payload, Some(error.to_string()));
+                    return self
+                        .handle_attach_projection(payload, Some(error.to_string()))
+                        .await;
                 }
                 Err(error) => {
                     return response_failure(None, command_type, &error.to_string(), None);
@@ -113,7 +116,7 @@ impl Worker {
         }
         match command_type {
             "create" => self.handle_create(payload).await,
-            "attach" => self.handle_attach(payload),
+            "attach" => self.handle_attach(payload).await,
             "detach" => self.handle_detach(payload),
             "prompt" => self.handle_prompt(payload, false).await,
             "prompt_and_wait" => self.handle_prompt(payload, true).await,
@@ -143,7 +146,7 @@ impl Worker {
             "get_state" => self.handle_get_state().await,
             "get_messages" => self.handle_get_messages(payload),
             "get_session_header" => self.handle_get_session_header(),
-            "get_session_stats" => self.handle_get_session_stats(),
+            "get_session_stats" => self.handle_get_session_stats().await,
             "get_model_catalog" => self.handle_get_model_catalog(),
             "refresh_models" => self.handle_refresh_models(payload).await,
             "apply_model_snapshots" => self.handle_apply_model_snapshots(payload).await,
@@ -151,7 +154,7 @@ impl Worker {
             "clear_queue" => self.handle_clear_queue(),
             "abort_and_clear_queue" => self.handle_abort_and_clear_queue(),
             "get_last_assistant_text" => self.handle_get_last_assistant_text(),
-            "get_connection_state" => self.handle_get_connection_state(),
+            "get_connection_state" => self.handle_get_connection_state().await,
             "get_mcp_connections" => self.handle_get_mcp_connections().await,
             "get_rlm_children" => self.handle_get_rlm_children().await,
             "get_context_tree" => self.handle_get_context_tree().await,
@@ -508,12 +511,12 @@ impl Worker {
         )
     }
 
-    /// `get_session_stats`: counts, token totals, and the context-usage
-    /// estimate over the persisted branch (TS `getSessionStats`).
-    fn handle_get_session_stats(&self) -> DaemonResponse {
+    /// Recorded counts and totals with the engine's live context figure.
+    async fn handle_get_session_stats(&self) -> DaemonResponse {
         if let Err(response) = self.require_created("get_session_stats") {
             return response;
         }
+        let context_usage = crate::session_stats::engine_context_usage(self.engine.as_ref()).await;
         let core = self.core.lock().unwrap();
 
         let Some(store) = core.store.as_ref() else {
@@ -524,7 +527,7 @@ impl Worker {
                 None,
             );
         };
-        let stats = crate::session_stats::session_stats(store, self.engine.model_context_window());
+        let stats = crate::session_stats::session_stats(store, Some(context_usage));
         response_success(None, "get_session_stats", Some(stats))
     }
 

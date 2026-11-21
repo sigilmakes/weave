@@ -745,10 +745,12 @@ async fn the_close_beats_the_late_attach_registration() {
     );
     // THE LATE REGISTRATION: the detached attach handler runs now, on the
     // dead connection's token.
-    let response = worker.handle_attach(&json!({
-        "clientId": "late-client",
-        "connectionToken": "late-conn",
-    }));
+    let response = worker
+        .handle_attach(&json!({
+            "clientId": "late-client",
+            "connectionToken": "late-conn",
+        }))
+        .await;
     assert!(
         response.success,
         "the attach itself still answers: {response:?}"
@@ -780,7 +782,9 @@ async fn the_close_beats_the_late_attach_registration() {
 #[tokio::test]
 async fn a_routed_attach_without_a_token_keeps_the_core_retain() {
     let (worker, _dir) = interleave_worker().await;
-    let response = worker.handle_attach(&json!({ "clientId": "supervisor-routed" }));
+    let response = worker
+        .handle_attach(&json!({ "clientId": "supervisor-routed" }))
+        .await;
     assert!(response.success, "the routed attach answers: {response:?}");
     assert!(
         worker
@@ -800,10 +804,12 @@ async fn a_routed_attach_without_a_token_keeps_the_core_retain() {
 #[tokio::test]
 async fn the_registration_beats_the_close_and_the_release_frees_the_hold() {
     let (worker, _dir) = interleave_worker().await;
-    let response = worker.handle_attach(&json!({
-        "clientId": "client-1",
-        "connectionToken": "conn-1",
-    }));
+    let response = worker
+        .handle_attach(&json!({
+            "clientId": "client-1",
+            "connectionToken": "conn-1",
+        }))
+        .await;
     assert!(response.success, "the live attach answers: {response:?}");
     assert!(
         worker
@@ -846,10 +852,12 @@ async fn the_registration_beats_the_close_and_the_release_frees_the_hold() {
 #[tokio::test]
 async fn the_detach_is_not_final_the_reattach_registers_and_the_close_releases() {
     let (worker, _dir) = interleave_worker().await;
-    let attach = worker.handle_attach(&json!({
-        "clientId": "client-1",
-        "connectionToken": "conn-1",
-    }));
+    let attach = worker
+        .handle_attach(&json!({
+            "clientId": "client-1",
+            "connectionToken": "conn-1",
+        }))
+        .await;
     assert!(attach.success, "the first attach answers: {attach:?}");
     // The explicit detach (NOT final — the connection lives on).
     worker.release_session_attachments("conn-1", false);
@@ -862,10 +870,12 @@ async fn the_detach_is_not_final_the_reattach_registers_and_the_close_releases()
         "the probe: the detach leaves the token live"
     );
     // The re-attach on the same connection re-registers.
-    let again = worker.handle_attach(&json!({
-        "clientId": "client-1",
-        "connectionToken": "conn-1",
-    }));
+    let again = worker
+        .handle_attach(&json!({
+            "clientId": "client-1",
+            "connectionToken": "conn-1",
+        }))
+        .await;
     assert!(again.success, "the re-attach answers: {again:?}");
     assert!(
         worker
@@ -889,14 +899,18 @@ async fn the_detach_is_not_final_the_reattach_registers_and_the_close_releases()
 #[tokio::test]
 async fn a_shared_client_id_survives_one_connection_close_while_the_other_holds() {
     let (worker, _dir) = interleave_worker().await;
-    let first = worker.handle_attach(&json!({
-        "clientId": "shared-client",
-        "connectionToken": "conn-a",
-    }));
-    let second = worker.handle_attach(&json!({
-        "clientId": "shared-client",
-        "connectionToken": "conn-b",
-    }));
+    let first = worker
+        .handle_attach(&json!({
+            "clientId": "shared-client",
+            "connectionToken": "conn-a",
+        }))
+        .await;
+    let second = worker
+        .handle_attach(&json!({
+            "clientId": "shared-client",
+            "connectionToken": "conn-b",
+        }))
+        .await;
     assert!(first.success && second.success, "both attaches answer");
     worker.release_session_attachments("conn-a", true);
     assert!(

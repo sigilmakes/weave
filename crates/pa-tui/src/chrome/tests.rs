@@ -578,11 +578,30 @@ fn top_bar_centers_name_with_cost() {
 }
 
 #[test]
+fn tray_explicit_unavailable_usage_has_no_numeric_meter() {
+    for context_window in [serde_json::json!(128_000), serde_json::Value::Null] {
+        let context = ContextUsage::from_wire(&serde_json::json!({
+            "tokens": null, "percent": null, "contextWindow": context_window,
+            "unavailable": "context strategy has no meter"
+        }));
+        assert_eq!(context, Some(ContextUsage::Unavailable));
+        let state = ChromeState {
+            model_id: Some("faux-1".to_string()),
+            context,
+            ..Default::default()
+        };
+        let line = render_tray(&state, &theme(), 120);
+        let text = line.iter().map(|s| s.content.as_str()).collect::<String>();
+        assert!(text.ends_with("faux-1 · context unavailable"), "{text}");
+    }
+}
+
+#[test]
 fn tray_left_and_right_labels() {
     let state = ChromeState {
         show_manage: true,
         model_id: Some("faux-1".to_string()),
-        context: Some(ContextUsage {
+        context: Some(ContextUsage::Available {
             tokens: 6_123,
             context_window: 128_000,
         }),
@@ -696,7 +715,7 @@ fn tray_never_repeats_the_heartbeat_counts() {
     let state = ChromeState {
         show_manage: true,
         model_id: Some("mock-1".to_string()),
-        context: Some(ContextUsage {
+        context: Some(ContextUsage::Available {
             tokens: 190,
             context_window: 128_000,
         }),

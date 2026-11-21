@@ -683,14 +683,16 @@ async fn display_transcript_restores_precompaction_history_without_sibling_leaka
     capabilities.push("display_transcript");
     // The daemon already holds full history, so a missing source no longer
     // triggers hydration. Exercise the existing display-error projection directly.
-    let fallback = worker.handle_attach_projection(
-        &json!({
-            "activeSessionId": "windowed-session",
-            "clientId": "windowed-client",
-            "capabilities": capabilities,
-        }),
-        Some("display history unavailable".to_string()),
-    );
+    let fallback = worker
+        .handle_attach_projection(
+            &json!({
+                "activeSessionId": "windowed-session",
+                "clientId": "windowed-client",
+                "capabilities": capabilities,
+            }),
+            Some("display history unavailable".to_string()),
+        )
+        .await;
     assert!(fallback.success, "fallback attach failed: {fallback:?}");
     let fallback = fallback.data.expect("fallback attach data");
     assert_eq!(fallback["snapshot"]["messages"], json!(legacy));

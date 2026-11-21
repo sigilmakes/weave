@@ -78,6 +78,7 @@ struct ContextUsageSnapshot {
     tokens: Option<u64>,
     context_window: u64,
     percent: Option<f64>,
+    unavailable: bool,
 }
 
 impl ContextUsageSnapshot {
@@ -128,6 +129,7 @@ fn parse_context_node(value: &Value) -> ContextNode {
             .and_then(Value::as_u64)
             .unwrap_or_default(),
         percent: ContextUsageSnapshot::parse_field(usage, "percent", Value::as_f64),
+        unavailable: usage.get("unavailable").and_then(Value::as_str).is_some(),
     });
     ContextNode {
         id: value
@@ -275,6 +277,9 @@ fn context_column(usage: Option<&ContextUsageSnapshot>, with_bar: bool) -> Vec<C
     let Some(usage) = usage else {
         return vec![dim("-")];
     };
+    if usage.unavailable {
+        return vec![dim("unavailable")];
+    }
     let (Some(tokens), Some(percent)) = (usage.tokens, usage.percent) else {
         return vec![dim("unknown after compaction")];
     };
@@ -631,8 +636,13 @@ pub fn context_tree_rows(tree: &Value, width: usize, scope: ContextTreeScope) ->
     if let Some(root_context) = &root.context_usage {
         lines.push(vec![]);
         lines.push(vec![raw_span("Context")]);
-        match (root_context.tokens, root_context.percent) {
-            (Some(tokens), Some(percent)) => lines.push(vec![
+        match (
+            root_context.unavailable,
+            root_context.tokens,
+            root_context.percent,
+        ) {
+            (true, _, _) => lines.push(vec![dim("Current:"), raw_span(" unavailable")]),
+            (false, Some(tokens), Some(percent)) => lines.push(vec![
                 dim("Current:"),
                 raw_span(format!(
                     " {} / {} ({}%)",
