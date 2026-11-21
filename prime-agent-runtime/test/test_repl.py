@@ -1086,6 +1086,7 @@ class ReplTest(unittest.TestCase):
         row = next(line for line in out.splitlines() if " _scratch " in line)
         self.assertTrue(row.startswith("unsaved"))
         self.assertIn('not saved: name starts with "_"', row)
+        self.assertNotIn("__builtins__", out)
 
     def test_emit_display(self):
         payloads = {

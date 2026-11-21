@@ -1436,9 +1436,16 @@ def _namespace_listing(ns: dict[str, Any]) -> str:
             skipped[entry["name"]] = str(entry.get("reason") or "")
 
     rows: list[tuple[str, str, str, int | None, str]] = []
-    # The listing covers the whole live namespace, not only the names the
-    # snapshot writes: an underscore name is real state the harness will not save.
-    live = sorted(name for name in ns if isinstance(name, str) and name not in _ALWAYS_SKIP)
+    # The listing covers the live namespace, not only the names the snapshot
+    # writes: an underscore name is real state the harness will not save. Module
+    # dunders are interpreter bookkeeping, recreated on every start.
+    live = sorted(
+        name
+        for name in ns
+        if isinstance(name, str)
+        and name not in _ALWAYS_SKIP
+        and not (name.startswith("__") and name.endswith("__"))
+    )
     for name in live:
         try:
             value = ns[name]

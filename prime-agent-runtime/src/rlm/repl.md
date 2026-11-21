@@ -185,14 +185,16 @@ fail with `status:"error"` and a `reason`.
 ## Namespace listing
 
 The runtime binds `vars` in `__main__` beside `plugin`. `vars()` prints one row
-per name in the live namespace except the harness bindings: whether the last
-committed manifest wrote it, its type and shape, a shallow size
+per name in the live namespace except the harness bindings and the module's
+dunder attributes (`__name__`, `__builtins__`, and the rest), with whether the
+last committed manifest wrote it, its type and shape, a shallow size
 (`sys.getsizeof`, plus array `nbytes` and frame `memory_usage(deep=False)`),
 and the manifest's reason when it was skipped. A name that starts with `_` is
 never written and is reported with that reason. A name the manifest skipped
-stays listed after a restart even though the namespace no longer holds it. The final line is resident memory from
-`/proc/self/statm`, not the sum of the estimates. `vars(x)` is the builtin
-`vars(x)`; `vars` itself is never snapshotted or restored.
+stays listed after a restart even though the namespace no longer holds it.
+The final line is resident memory from `/proc/self/statm`, not the sum of the
+estimates. `vars(x)` is the builtin `vars(x)`; `vars` itself is never
+snapshotted or restored.
 
 `list_names` replies with `done` carrying `names`: the sorted user-defined
 top-level names under the same filter the snapshot applies.
