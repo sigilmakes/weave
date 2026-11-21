@@ -23,6 +23,13 @@ The 100/1,000/10,000-turn matrix cannot run until its driver exists. No number
 in this document is a measured result; numbers describe proposed workloads or
 existing test configurations and assertion limits.
 
+## Current delivery policy
+
+Under the current policy, the measurement campaign is deferred to the end.
+Candidate fixes may land on correctness evidence, with performance numbers
+recorded during that later campaign. This does not supply the missing evidence
+or change the conclusion that no optimisation is justified yet.
+
 ## Current path and ownership
 
 `pa-tui` consumes wire snapshots/events, not the session engine. Keep transcript
