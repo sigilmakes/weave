@@ -16,10 +16,10 @@
 #![cfg(unix)]
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::{Command, OwnedChild as Child};
 use std::fmt::Write as _;
-use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 use pa_types::daemon::DaemonCommand;
@@ -332,6 +332,9 @@ fn spawn_supervisor(dir: &Path) -> Supervisor {
     // reparented to init; the guard's protocol teardown stays the exit path.
     unsafe {
         command.pre_exec(move || {
+            if libc::setpgid(0, 0) != 0 {
+                return Err(std::io::Error::last_os_error());
+            }
             libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL);
             Ok(())
         });

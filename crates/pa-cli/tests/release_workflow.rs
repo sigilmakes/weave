@@ -34,10 +34,11 @@
 //! `extractall(filter=)`; the promote runner's ubuntu-24.04 provides it).
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::Command;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Output};
+use std::process::Output;
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};

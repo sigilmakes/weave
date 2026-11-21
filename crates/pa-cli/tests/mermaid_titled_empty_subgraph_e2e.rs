@@ -20,11 +20,11 @@
 //! taking turns.
 #![cfg(unix)]
 
-use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::{Command, OwnedChild as Child}; // a private TMPDIR for this test binary, deleted on exit
 use std::{
     io::Write as _,
     path::{Path, PathBuf},
-    process::{Child, Command, Stdio},
+    process::Stdio,
     time::{Duration, Instant},
 };
 

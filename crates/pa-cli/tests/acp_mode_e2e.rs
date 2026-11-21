@@ -17,12 +17,17 @@
 //! (`crates/pa-daemon/testdata/acp`).
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead, BufReader, Write};
-use std::process::{Child, Command, Stdio};
+use std::process::Stdio;
 use std::sync::mpsc::{channel, Receiver};
 use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
+
+#[cfg(target_os = "linux")]
+#[path = "acp_mode_e2e/shutdown_tests.rs"]
+mod shutdown_tests;
 
 /// The child plus the tempdir it runs in.
 struct AcpChild {
@@ -48,7 +53,7 @@ impl AcpChild {
     /// outlives the process, and the supervisor socket is the one the
     /// drop shuts down.
     fn wrap(
-        mut child: std::process::Child,
+        mut child: Child,
         home: Option<tempfile::TempDir>,
         socket: std::path::PathBuf,
     ) -> AcpChild {
@@ -276,6 +281,7 @@ impl Drop for AcpChild {
         }
         let _ = self.child.kill();
         let _ = self.child.wait();
+        shutdown_sandboxed_daemon(&self.socket, &mut self.child);
         if let Some(mut stderr) = self.spawn_stderr.take() {
             use std::io::Read;
             let mut text = String::new();
@@ -284,7 +290,6 @@ impl Drop for AcpChild {
                 eprintln!("ACP child stderr: {text}");
             }
         }
-        shutdown_sandboxed_daemon(&self.socket);
     }
 }
 
@@ -1463,7 +1468,7 @@ fn acp_daemon_attached_supervisor_loss_fails_the_prompt() {
         .expect("the daemon closed without a hello");
     let pid = hello["supervisorPid"].as_u64().expect("supervisor pid");
     drop(probe);
-    let killed = std::process::Command::new("kill")
+    let killed = pa_test_scratch::Command::new("kill")
         .args(["-9", &pid.to_string()])
         .status()
         .expect("kill the supervisor");
@@ -1537,19 +1542,89 @@ fn acp_daemon_attached_image_only_prompt_reaches_the_session() {
 
 /// Stop the sandboxed supervisor a test spawned (the shared-daemon
 /// product behavior leaves it running; a test owns its sandbox).
-fn shutdown_sandboxed_daemon(socket: &std::path::Path) {
-    use std::io::Write as _;
+fn shutdown_sandboxed_daemon(socket: &std::path::Path, child: &mut Child) {
+    request_sandboxed_daemon_shutdown(socket);
+    child.terminate();
+}
+
+fn request_sandboxed_daemon_shutdown(socket: &std::path::Path) {
     let Ok(mut stream) = pa_types::platform::transport::connect_blocking(socket) else {
         return;
     };
-    let frame = format!(
-            "{{\"type\":\"command\",\"id\":\"shutdown-test\",\"protocol\":{{\"name\":\"prime-agent.daemon\",\"version\":{}}},\"command\":{{\"type\":\"shutdown\"}}}}\n",
-            pa_types::daemon::DAEMON_PROTOCOL_VERSION
+    let deadline = Instant::now() + Duration::from_millis(300);
+    stream
+        .set_read_timeout(deadline.saturating_duration_since(Instant::now()))
+        .expect("bound supervisor shutdown handshake");
+    let mut reader = BufReader::new(stream.try_clone_box().expect("clone supervisor stream"));
+    let mut line = String::new();
+    let hello_bytes = match reader.read_line(&mut line) {
+        Ok(bytes) => bytes,
+        Err(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+            ) =>
+        {
+            eprintln!("supervisor at {} did not send a shutdown hello within 300 ms; terminating owned process tree", socket.display());
+            return;
+        }
+        Err(error) => panic!("supervisor shutdown hello at {}: {error}", socket.display()),
+    };
+    if hello_bytes == 0 {
+        eprintln!(
+            "supervisor at {} closed before its shutdown hello; terminating owned process tree",
+            socket.display()
         );
-    let _ = stream.write_all(frame.as_bytes());
-    let _ = stream.flush();
-    // The supervisor exits after the shutdown response.
-    std::thread::sleep(Duration::from_millis(300));
+        return;
+    }
+    let hello: Value = serde_json::from_str(&line).expect("supervisor hello JSON");
+    let pid = hello["supervisorPid"].as_u64().expect("supervisor pid");
+    let _group =
+        pa_test_scratch::ProcessGroup::new(u32::try_from(pid).expect("supervisor pid fits"));
+    let command = json!({
+        "type": "command",
+        "id": "shutdown-test",
+        "protocol": {
+            "name": "prime-agent.daemon",
+            "version": pa_types::daemon::DAEMON_PROTOCOL_VERSION
+        },
+        "command": { "type": "shutdown", "force": true }
+    });
+    writeln!(stream, "{command}").expect("send supervisor shutdown");
+    stream.flush().expect("flush supervisor shutdown");
+    loop {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            eprintln!("supervisor {pid} did not acknowledge shutdown at {}; terminating owned process tree", socket.display());
+            break;
+        }
+        reader
+            .get_ref()
+            .set_read_timeout(remaining)
+            .expect("bound shutdown response");
+        line.clear();
+        let bytes = match reader.read_line(&mut line) {
+            Ok(bytes) => bytes,
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                ) =>
+            {
+                eprintln!("supervisor {pid} did not acknowledge shutdown at {}; terminating owned process tree", socket.display());
+                break;
+            }
+            Err(error) => panic!("supervisor {pid} shutdown at {}: {error}", socket.display()),
+        };
+        if bytes == 0 {
+            break;
+        }
+        let frame: Value = serde_json::from_str(&line).expect("shutdown response JSON");
+        if frame["id"] == "shutdown-test" {
+            assert_ne!(frame["type"], "error", "supervisor {pid}: {frame}");
+            break;
+        }
+    }
 }
 
 #[test]
@@ -2322,7 +2397,7 @@ fn acp_daemon_attached_close_stop_failure_fences_the_session() {
         .expect("the daemon closed without a hello");
     let pid = hello["supervisorPid"].as_u64().expect("supervisor pid");
     drop(probe);
-    let killed = std::process::Command::new("kill")
+    let killed = pa_test_scratch::Command::new("kill")
         .args(["-9", &pid.to_string()])
         .status()
         .expect("kill the supervisor");

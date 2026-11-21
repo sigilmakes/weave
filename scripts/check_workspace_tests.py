@@ -11,23 +11,22 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import json
 import os
 from pathlib import Path
-import shutil
+import shlex
 import signal
 import subprocess
+import sys
 import tempfile
 from threading import current_thread, main_thread
 import time
 import tomllib
 
 from check_workspace import isolated_environment
+from workspace_processes import ProcessLeaks, finish_roots, interrupted
 
 
 # Leave headroom inside the outer runner's five-second TERM-to-KILL grace.
 CLEANUP_SECONDS = 2
-
-
-def interrupted(signum, frame):
-    raise KeyboardInterrupt(f"workspace tests interrupted by signal {signum}")
+KILL_WAIT_SECONDS = 0.5
 
 
 def cleanup(children):
@@ -55,8 +54,9 @@ def cleanup(children):
                 os.killpg(child.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
+        until = time.monotonic() + KILL_WAIT_SECONDS
         for child in children:
-            child.wait()
+            child.wait(timeout=max(0, until - time.monotonic()))
     finally:
         for sig, handler in previous.items():
             signal.signal(sig, handler)
@@ -221,11 +221,22 @@ def run_groups(groups, *, repo, state, env, deadline, jobs):
                     if child.returncode:
                         failures.append((name, child.returncode, command))
         finally:
-            cleanup([entry[0] for entry in active.values()])
-            for _, output, _, _, _ in active.values():
-                output.close()
-            for private in private_dirs:
-                shutil.rmtree(private, ignore_errors=True)
+            interrupted_run = sys.exception() is not None
+            cleanup_error = None
+            try:
+                cleanup([entry[0] for entry in active.values()])
+            except (OSError, subprocess.SubprocessError) as error:
+                cleanup_error = error
+            finally:
+                for _, output, _, _, _ in active.values():
+                    output.close()
+                try:
+                    finish_roots(private_dirs, remove=True)
+                except ProcessLeaks:
+                    failures.append(("process-leaks", 1,
+                                     ["audit-test-processes", *map(str, private_dirs)]))
+            if cleanup_error is not None and not interrupted_run:
+                raise cleanup_error
     return timings, failures
 
 
@@ -257,8 +268,16 @@ def main():
     timings += exclusive_timings
     failures += exclusive_failures
     doc_env = target_environment(repo, args.state_root / "doctests", env)
-    run(["cargo", "test", "--locked", "--offline", "--workspace", "--doc"],
-        repo=repo, env=doc_env, deadline=deadline)
+    doc_command = ["cargo", "test", "--locked", "--offline", "--workspace", "--doc"]
+    try:
+        run(doc_command, repo=repo, env=doc_env, deadline=deadline)
+    except subprocess.CalledProcessError as error:
+        failures.append(("doctests", error.returncode, doc_command))
+    finally:
+        try:
+            finish_roots([args.state_root / "doctests"])
+        except ProcessLeaks:
+            failures.append(("doctest-process-leaks", 1, ["audit-doctest-processes"]))
     # Slowest first: a group creeping up this list is the next scheduling lever.
     if timings:
         print("Slowest test targets:", flush=True)
@@ -278,6 +297,6 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, interrupted)
     try:
         raise SystemExit(main())
-    except (OSError, ValueError, subprocess.SubprocessError, KeyboardInterrupt) as error:
+    except (OSError, ValueError, subprocess.SubprocessError, KeyboardInterrupt, ProcessLeaks) as error:
         print(f"Workspace tests failed: {error}", flush=True)
         raise SystemExit(1) from error

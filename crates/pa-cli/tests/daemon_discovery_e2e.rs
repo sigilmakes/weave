@@ -16,10 +16,11 @@
 #![cfg(unix)]
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::{Command, OwnedChild as Child};
 use std::io::{BufRead as _, BufReader, Write as _};
 use std::os::unix::net::UnixStream;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Output, Stdio};
+use std::process::{Output, Stdio};
 use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
@@ -162,7 +163,9 @@ fn interactive_launcher_detaches_supervisor_from_client_session() {
         pa_daemon::worker::WORKER_SUPERVISOR_LOST_EXIT_MS_ENV,
         "15000",
     );
-    let client = client.output().expect("spawn launcher client");
+    let (client, _detached_tree) = client
+        .output_with_detached_children()
+        .expect("spawn launcher client");
     assert!(
         client.status.success(),
         "the launcher client failed: {}{}",

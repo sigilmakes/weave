@@ -1,21 +1,31 @@
-//! Test-only scratch ownership: every test binary that links this crate gets a private `TMPDIR`,
-//! removed when the binary exits.
+//! Test-only subprocess and temporary-directory ownership.
 //!
-//! The suites create their fixtures with `std::env::temp_dir()`, and a fixture a test never removes
-//! (a panicking test, an early return, a child that outlives its assertion) used to land in the
-//! shared `/tmp` and stay there. Pointing `TMPDIR` at one directory per test binary makes the
-//! kernel's own temporary-directory contract do the cleanup: the root is removed at exit, whatever
-//! the tests left behind.
+//! Linking installs a private, short `TMPDIR` before the test binary starts. Unix exit hooks
+//! remove owned roots only after successful cleanup; failures exit nonzero and retain scratch.
+//! Linux additionally starts a guardian that
+//! watches a close-on-exec liveness pipe, cleans inherited subprocess ownership markers after
+//! abrupt binary termination, and preserves scratch roots when cleanup cannot complete.
 //!
-//! The root stays short on purpose. Unix socket paths must fit `sun_path` (103 portable bytes) and
-//! the daemon relocates its endpoints to `/tmp` when a `TMPDIR`-relative probe overruns that
-//! budget, so a deep root silently changes which socket every fixture uses. The workspace gate
-//! passes its own per-target root in `PA_TEST_SCRATCH_ROOT`; otherwise the root is
-//! `<temp_dir>/pa-t-<pid>` for a short temp directory and `/tmp/pa-t-<pid>` for a deep one.
+//! Use [`Command`] rather than `std::process::Command` for test subprocesses. Its [`OwnedChild`]
+//! guard kills the dedicated process group and, on Linux, uniquely marked descendants even if
+//! they create their own sessions. [`ProcessGroup`] adopts an externally created dedicated group.
+//! Launchers deliberately leaving children running return a [`DetachedProcesses`] guard through
+//! [`Command::output_with_detached_children`]; keep that guard alive until the owning test ends.
 //!
-//! Linking is the switch: the hook below is a `.init_array` entry, so it runs before `main` and
-//! needs no call site. A test target opts in with `use pa_test_scratch as _;`, which is why the
-//! crate is a dev-dependency that no test code names.
+//! The workspace gate can supply `PA_TEST_SCRATCH_ROOT`. Otherwise short temporary paths use
+//! `<temp_dir>/pa-t-<pid>` and deep temporary paths use `/tmp/pa-t-<pid>`, preserving Unix socket
+//! path capacity. Child test-binary re-execs inherit the binary owner rather than minting roots.
+
+#[cfg(target_os = "linux")]
+mod guardian;
+mod process;
+pub use process::{Command, DetachedProcesses, OwnedChild, ProcessGroup};
+
+static CLEANUP_FAILED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+fn record_cleanup_failure() {
+    CLEANUP_FAILED.store(true, std::sync::atomic::Ordering::Relaxed);
+}
 
 #[cfg(unix)]
 mod hook {
@@ -31,6 +41,7 @@ mod hook {
     const SHORT_TEMP_DIR: usize = 16;
 
     static ROOT: OnceLock<PathBuf> = OnceLock::new();
+    static OWNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
     /// The private root, created on first use with `TMPDIR` pointing at it. Idempotent: the hook
     /// and any later call share one root.
@@ -41,12 +52,16 @@ mod hook {
             // The scratch root is the new temporary directory for this process and every child it
             // spawns, so a test that writes a fixture without naming a path still lands here.
             std::env::set_var("TMPDIR", &root);
-            // Statics are not dropped at exit, so the removal rides `atexit`. A runner-owned root
-            // stays: one root can serve several binaries (doctests), and the runner removes it.
-            if owned {
-                unsafe {
-                    libc::atexit(remove);
-                }
+            let process_owner = std::env::var_os("PA_TEST_PROCESS_OWNER").is_none();
+            #[cfg(target_os = "linux")]
+            if process_owner {
+                crate::guardian::install(&root, owned);
+            }
+            if process_owner {
+                OWNED.store(owned, std::sync::atomic::Ordering::Relaxed);
+            }
+            unsafe {
+                libc::atexit(remove);
             }
             root
         })
@@ -77,7 +92,35 @@ mod hook {
     }
 
     extern "C" fn remove() {
-        if let Some(root) = ROOT.get() {
+        if ROOT
+            .get()
+            .is_some_and(|root| root.join(".pa-test-leak").exists())
+        {
+            crate::record_cleanup_failure();
+        }
+        #[cfg(target_os = "linux")]
+        if !crate::guardian::cleanup(std::process::id()) {
+            crate::record_cleanup_failure();
+        }
+        if crate::CLEANUP_FAILED.load(std::sync::atomic::Ordering::Relaxed) {
+            if let Some(root) = ROOT.get() {
+                let _ = std::fs::write(root.join(".pa-test-leak"), "subprocess cleanup failed\n");
+            }
+        }
+        #[cfg(target_os = "linux")]
+        crate::guardian::finish();
+        if crate::CLEANUP_FAILED.load(std::sync::atomic::Ordering::Relaxed) {
+            if let Some(root) = ROOT.get() {
+                let _ = std::fs::write(root.join(".pa-test-leak"), "subprocess cleanup failed\n");
+            }
+            unsafe {
+                libc::_exit(1);
+            }
+        }
+        if let Some(root) = ROOT
+            .get()
+            .filter(|_| OWNED.load(std::sync::atomic::Ordering::Relaxed))
+        {
             let _ = std::fs::remove_dir_all(root);
         }
     }
@@ -96,6 +139,37 @@ mod hook {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn reexec_cleanup_failure_fixture() {
+        if std::env::var_os("PA_TEST_CLEANUP_FAILURE_FIXTURE").is_some() {
+            crate::record_cleanup_failure();
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn inherited_owner_reexec_reports_cleanup_failure_in_its_exit_status() {
+        let scratch = std::env::temp_dir().join(format!("cleanup-failure-{}", std::process::id()));
+        std::fs::create_dir_all(&scratch).unwrap();
+        let output = crate::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "tests::reexec_cleanup_failure_fixture",
+                "--nocapture",
+            ])
+            .env("PA_TEST_CLEANUP_FAILURE_FIXTURE", "1")
+            .env("PA_TEST_SCRATCH_ROOT", &scratch)
+            .output()
+            .unwrap();
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "inherited-owner fixture must fail at exit"
+        );
+        assert!(scratch.join(".pa-test-leak").exists());
+        std::fs::remove_dir_all(scratch).unwrap();
+    }
+
     #[test]
     fn the_test_binary_runs_with_its_own_temporary_directory() {
         let root = std::env::temp_dir();

@@ -112,7 +112,9 @@ impl PrintLane {
                 .kill_on_drop(true)
                 .spawn()
                 .expect("binary present");
-            let pid = child.id().expect("running child") as i32;
+            let child_pid = child.id().expect("running child");
+            let _group = pa_test_scratch::ProcessGroup::new(child_pid);
+            let pid = child_pid as i32;
             if let Ok(status) =
                 tokio::time::timeout(std::time::Duration::from_secs(120), child.wait()).await
             {

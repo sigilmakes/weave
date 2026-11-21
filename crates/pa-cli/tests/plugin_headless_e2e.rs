@@ -6,8 +6,9 @@ use serde_json::{json, Value};
 
 #[path = "plugin_headless/daemon.rs"]
 mod daemon;
+use pa_test_scratch::Command;
 use std::path::PathBuf;
-use std::process::{Command, Output};
+use std::process::Output;
 
 const PLUGIN: &str = r"
 return {
@@ -134,7 +135,6 @@ impl Fixture {
     }
 
     fn run(&self, args: &[&str], script: &Value) -> Output {
-        use std::os::unix::process::CommandExt;
         use std::process::Stdio;
         let child = self
             .command()

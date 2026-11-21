@@ -1,10 +1,11 @@
 //! Production supervisor and worker, with configured loopback model metadata, no faux engine.
 
+use pa_test_scratch::OwnedChild as Child;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
-use std::os::unix::{net::UnixStream, process::CommandExt};
+use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
-use std::process::{Child, Stdio};
+use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 use super::Fixture;

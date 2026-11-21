@@ -16,9 +16,9 @@
 //! `package.json`, `prime-agent-runtime/` sidecar, and `skills/`).
 
 use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on exit
+use pa_test_scratch::Command;
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 /// The repo root (crates/pa-cli -> crates -> root).
 fn repo_root() -> PathBuf {
