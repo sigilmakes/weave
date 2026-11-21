@@ -94,6 +94,7 @@ const SCENARIO_TESTS: [&str; 3] = [
     "agent_message_rows_dump_their_glyphs",
 ];
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_battery_source_defines_the_three_scenarios() {
     let battery =
@@ -111,6 +112,7 @@ fn the_battery_source_defines_the_three_scenarios() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_pr_wave_runs_on_windows_touched_paths() {
     let (_, triggers) = workflow_yaml();
@@ -148,6 +150,7 @@ fn the_pr_wave_runs_on_windows_touched_paths() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_nightly_wave_runs_on_main() {
     let (_, triggers) = workflow_yaml();
@@ -161,6 +164,7 @@ fn the_nightly_wave_runs_on_main() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_dispatch_loop_stays_available() {
     let (_, triggers) = workflow_yaml();
@@ -170,6 +174,7 @@ fn the_dispatch_loop_stays_available() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_tui_battery_job_boots_the_binary_and_dumps_the_panes() {
     let (workflow, _) = workflow_yaml();
@@ -292,6 +297,7 @@ fn the_tui_battery_job_boots_the_binary_and_dumps_the_panes() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_deep_battery_stays_off_the_pr_wave() {
     let (workflow, _) = workflow_yaml();

@@ -225,6 +225,7 @@ mod tests {
         OutboundFrame::session_event(serde_json::to_vec(&payload).unwrap())
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn every_ts_trigger_event_type_flushes() {
         for event_type in ROSTER_SESSION_EVENT_TRIGGERS {
@@ -236,6 +237,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn non_trigger_events_and_frame_kinds_stay_silent() {
         for event_type in [
@@ -284,6 +286,7 @@ mod tests {
         )));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_disabled_queue_never_pushes() {
         let queue = RosterPushQueue::disabled();
@@ -294,6 +297,7 @@ mod tests {
     /// supervisor collapses into a couple of flushes with the latest state.
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_burst_collapses_behind_a_slow_supervisor() {
         let dir = tempfile::TempDir::new().unwrap();
         let socket = dir.path().join("sup.sock");
@@ -389,6 +393,7 @@ mod tests {
     /// the first request is answered.
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_wedged_supervisor_holds_one_in_flight_roster_push() {
         type StubArrival = (Value, tokio::net::unix::OwnedWriteHalf);
         let dir = tempfile::TempDir::new().unwrap();

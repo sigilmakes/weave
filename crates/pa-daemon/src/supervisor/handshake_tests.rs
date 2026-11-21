@@ -75,6 +75,7 @@ async fn answer_supervisor_frame(socket: &mut FakeWorkerSocket, request_id: &str
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn handshake_channel_stays_private_until_auth_answers() {
     let dir = std::env::temp_dir().join(format!("pa-handshake-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -157,11 +158,13 @@ async fn handshake_channel_stays_private_until_auth_answers() {
 /// A tombstoned stop's entire silent-peer authentication uses the strict
 /// one-second budget, closes both transport halves, and drops its pending slot.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn silent_peer_stop_auth_closes_socket_without_leaving_pending() {
     run_silent_peer_auth(false).await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn cancelled_auth_closes_socket_without_leaving_pending() {
     run_silent_peer_auth(true).await;
 }
@@ -243,6 +246,7 @@ async fn run_silent_peer_auth(cancel_connect: bool) {
 /// the wire carries EXACTLY the auth frame (no route rides the private
 /// channel), the registration itself succeeds, and the launch completes.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_mid_handshake_registration_cannot_kill_the_handshake() {
     let dir = std::env::temp_dir().join(format!("pa-wedge-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -345,6 +349,7 @@ async fn a_mid_handshake_registration_cannot_kill_the_handshake() {
 /// lock, so the stale install is dropped and the newer channel stays
 /// routable.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_stale_epoch_never_overwrites_the_installed_channel() {
     let dir = std::env::temp_dir().join(format!("pa-install-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -420,6 +425,7 @@ async fn a_stale_epoch_never_overwrites_the_installed_channel() {
 /// slots when the socket ends, so a route waiting on the worker's answer
 /// cannot outlive the connection it was sent on.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_lost_worker_connection_fails_its_in_flight_route() {
     let dir = std::env::temp_dir().join(format!("pa-lost-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -509,6 +515,7 @@ async fn a_lost_worker_connection_fails_its_in_flight_route() {
 
 /// New supervisors must not send optional commands to old or partial workers.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn model_refresh_requires_negotiated_worker_capability_and_revision() {
     for (data, expected) in [
         (
@@ -667,6 +674,7 @@ fn assert_no_retirement(supervisor: &Supervisor, resident: &ResidentWorker) {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_graceful_shutdown_refusal_preserves_worker_then_retry_or_force_completes() {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
     for (command, force) in [("shutdown", false), ("restart", false), ("shutdown", true)] {
@@ -746,6 +754,7 @@ async fn public_graceful_shutdown_refusal_preserves_worker_then_retry_or_force_c
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn per_session_graceful_stop_refusal_does_not_retire_and_can_retry() {
     let (_dir, supervisor, resident, verdict, worker) = accounting_refusal_fixture("w-close").await;
     super::worker_lifecycle::retirement_overrides()
@@ -767,6 +776,7 @@ async fn per_session_graceful_stop_refusal_does_not_retire_and_can_retry() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn concurrent_shutdown_attempt_cannot_duplicate_stop_or_reopen_completed_gate() {
     let (_dir, supervisor, resident, verdict, worker) = accounting_refusal_fixture("w-close").await;
     let first = {
@@ -793,6 +803,7 @@ async fn concurrent_shutdown_attempt_cannot_duplicate_stop_or_reopen_completed_g
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_plain_kill_refusal_does_not_run_finally_retirement() {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
     let (_dir, supervisor, resident, verdict, worker) = accounting_refusal_fixture("w-close").await;
@@ -841,6 +852,7 @@ async fn public_plain_kill_refusal_does_not_run_finally_retirement() {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn first_signal_accounting_refusal_preserves_worker_without_closing_event() {
     let (_dir, supervisor, resident, verdict, worker) = accounting_refusal_fixture("w-close").await;
     super::worker_lifecycle::retirement_overrides()
@@ -874,6 +886,7 @@ async fn first_signal_accounting_refusal_preserves_worker_without_closing_event(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn idle_eviction_fences_racing_client_routes_until_refusal_or_retirement() {
     let (_dir, supervisor, resident, verdict, worker) = accounting_refusal_fixture("w-idle").await;
     super::worker_lifecycle::retirement_overrides()
@@ -943,6 +956,7 @@ async fn idle_eviction_fences_racing_client_routes_until_refusal_or_retirement()
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn partial_shutdown_retry_targets_only_the_worker_that_refused_accounting() {
     let (_dir, supervisor, closed, closed_verdict, closed_worker) =
         accounting_refusal_fixture("a-closed").await;

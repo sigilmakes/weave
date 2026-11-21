@@ -206,7 +206,10 @@ fn view_options(socket: &std::path::Path) -> AgentsViewOptions {
 /// Run one headless plan and return the outcome. Holds the run lock: the click dispatch gates on
 /// the process-global tracking state.
 async fn run_plan(steps: Vec<AgentsStep>) -> pa_tui::agents_view::AgentsViewOutcome {
+    let lock_wait = pa_test_scratch::timing::span("setup.lock_wait");
     let _guard = RUN_LOCK.lock().await;
+    drop(lock_wait);
+    let fixture = pa_test_scratch::timing::span("setup.fixture");
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");
     let mock = MockSupervisor::bind(&socket);
@@ -223,12 +226,16 @@ async fn run_plan(steps: Vec<AgentsStep>) -> pa_tui::agents_view::AgentsViewOutc
         width: 120,
         height: 36,
     };
+    drop(fixture);
+    let run_wait = pa_test_scratch::timing::span("run.wait_and_render");
     let run = run_agents_view(
         view_options(&socket),
         AgentsViewUiMode::Headless(plan),
         None,
     )
     .await;
+    drop(run_wait);
+    let _teardown = pa_test_scratch::timing::span("teardown.server_join");
     connected_rx
         .recv_timeout(Duration::from_millis(2500))
         .expect("mock accepted the view connection")
@@ -263,6 +270,7 @@ fn locate_row(frames: &[String], needle: &str) -> Option<usize> {
 /// A plain click on a session row opens it: the press/release pair on the second row's line selects
 /// and opens that row (the default Enter would have opened the FIRST row).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_click_on_a_session_row_opens_it() {
     let outcome = run_plan(vec![AgentsStep::WaitSettle { timeout_ms: 2500 }]).await;
     let row = locate_row(&outcome.frames, "second one").expect("the second roster row renders");
@@ -281,6 +289,7 @@ async fn a_click_on_a_session_row_opens_it() {
 /// A dragged release never opens the row under it (the press-drag release is a select gesture, not
 /// a click).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_dragged_release_never_opens_the_row() {
     let outcome = run_plan(vec![AgentsStep::WaitSettle { timeout_ms: 2500 }]).await;
     let row = locate_row(&outcome.frames, "second one").expect("the second roster row renders");
@@ -303,11 +312,13 @@ async fn a_dragged_release_never_opens_the_row() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn settle_reports_the_unfinished_catalog_instead_of_releasing_the_plan() {
     assert_unfinished_catalog_fails_settle(vec![AgentsStep::WaitSettle { timeout_ms: 0 }]).await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn settle_after_a_satisfied_render_still_waits_for_the_catalog() {
     assert_unfinished_catalog_fails_settle(vec![
         AgentsStep::WaitRender {

@@ -128,6 +128,7 @@ fn run_cli(root: &Path, args: &[&str]) -> Output {
 /// process's ambient one, which on a dev box points at the real agent dir —
 /// and afterwards the whole client process is gone, not just its runtime:
 /// the terminal-close scenario. Only the supervisor it spawned may remain.
+#[pa_test_scratch::pa_test]
 #[test]
 fn interactive_launcher_detaches_supervisor_from_client_session() {
     use std::io::{BufRead as _, BufReader};
@@ -198,6 +199,7 @@ fn interactive_launcher_detaches_supervisor_from_client_session() {
 /// run the real launcher (`ensure_daemon_running_with`, the interactive
 /// mode's pre-TUI path) against the fixture socket and exit, leaving only
 /// the detached supervisor behind.
+#[pa_test_scratch::pa_test]
 #[test]
 fn launcher_client_child_mode() {
     let Some(socket) = std::env::var_os(LAUNCHER_CLIENT_SOCKET_ENV) else {
@@ -319,6 +321,7 @@ fn reported_socket_paths(report: &Value) -> Vec<String> {
         .collect()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn doctor_lists_and_then_reaps_an_idle_root_owned_daemon() {
     let fixture = tempfile::tempdir().expect("fixture");
@@ -382,6 +385,7 @@ fn doctor_lists_and_then_reaps_an_idle_root_owned_daemon() {
     wait_until_stopped(&socket, &mut daemon);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn shutdown_without_force_requires_confirmation_and_harms_nothing() {
     let fixture = tempfile::tempdir().expect("fixture");
@@ -433,6 +437,7 @@ fn shutdown_without_force_requires_confirmation_and_harms_nothing() {
     assert!(daemon.child.try_wait().expect("wait").is_none());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn discovery_and_shutdown_from_another_root_leave_a_foreign_daemon_alive() {
     // Fixture A holds a live supervisor; fixture B is a completely different
@@ -726,6 +731,7 @@ fn tracked_worker_pid(agent_dir: &Path, supervisor_socket: &Path) -> u32 {
 /// live workers of their own. A shutdown must stop only the daemons its
 /// root owns — the pinned socket, never the pinned directory — and never
 /// another daemon's workers.
+#[pa_test_scratch::pa_test]
 #[test]
 fn force_shutdown_from_an_env_pinned_root_stops_only_that_daemon_tree() {
     let shared_tmp = tempfile::tempdir().expect("shared tmpdir");
@@ -921,6 +927,7 @@ fn fixture_process_scalars(pid: u32) -> (u32, Option<char>, Option<u32>, Option<
 /// An agent-dir override can contain the shared worker directory while its
 /// own supervisor is pinned elsewhere. Such a root must still exclude other
 /// supervisors' workers from both discovery and the force residual sweep.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_pinned_root_with_an_overlapping_agent_dir_never_stops_foreign_workers() {
     let shared_tmp = tempfile::tempdir().expect("shared worker tmpdir");
@@ -1020,6 +1027,7 @@ fn a_pinned_root_with_an_overlapping_agent_dir_never_stops_foreign_workers() {
 /// child, so `prime-agent --mode daemon --daemon-socket B` launched from
 /// inside a worker must come up as B's supervisor — never as a second
 /// worker of the live supervisor the inherited env points at.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_daemon_launched_with_an_inherited_worker_env_comes_up_as_a_supervisor() {
     let fixture = tempfile::tempdir().expect("fixture");

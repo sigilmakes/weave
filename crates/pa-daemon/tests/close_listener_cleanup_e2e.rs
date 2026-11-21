@@ -356,6 +356,7 @@ fn read_exact_timeout(stream: &mut UnixStream, buffer: &mut [u8], deadline: Inst
 /// inside the worker's bind->capture window poisons the captured
 /// identity, the worker's real exit path runs, and the successor's LIVE
 /// socket at the path must survive it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_poisoned_workers_shutdown_exit_spares_the_successors_live_socket() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -388,6 +389,7 @@ fn a_poisoned_workers_shutdown_exit_spares_the_successors_live_socket() {
 /// at the path inside the supervisor's bind->capture window poisons the
 /// captured identity, the real drain exit runs, and the successor's LIVE
 /// socket at the path must survive it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_poisoned_supervisors_drain_spares_the_successors_live_socket() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -427,6 +429,7 @@ fn a_poisoned_supervisors_drain_spares_the_successors_live_socket() {
 /// so the refusal exit unlinks its own dead file on Linux and
 /// conservatively preserves it everywhere else.
 #[cfg(target_os = "linux")]
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_refused_registrations_exit_removes_the_workers_own_dead_socket() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -456,6 +459,7 @@ fn a_refused_registrations_exit_removes_the_workers_own_dead_socket() {
 /// exit must leave the file alone rather than guess - the next bind's
 /// stale-socket prepare is what clears it.
 #[cfg(not(target_os = "linux"))]
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_refused_registrations_exit_preserves_its_dead_file_off_linux() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -483,6 +487,7 @@ fn a_refused_registrations_exit_preserves_its_dead_file_off_linux() {
 /// unlink even though the poisoned identity gate would match. This pins
 /// the refusal exit to the same successor-protection contract the
 /// routed-shutdown exit carries.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_refused_registrations_exit_spares_the_poisoning_successor() {
     let dir = tempfile::TempDir::new().expect("temp dir");

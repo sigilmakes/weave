@@ -70,6 +70,7 @@ mod resume_settings_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn compacted_create_restores_settings_and_honors_explicit_overrides() {
         let dir = tempfile::tempdir().unwrap();
         for mode in [0, 1, 2, 3, 4] {
@@ -179,6 +180,7 @@ mod resume_settings_tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn create_backfills_the_default_tier_when_the_resumed_file_has_none() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("no-tier.jsonl");

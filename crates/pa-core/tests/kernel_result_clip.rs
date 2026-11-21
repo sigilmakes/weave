@@ -34,6 +34,7 @@ for line in sys.stdin:
 "#;
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn result_clipping_counts_characters_and_preserves_follow_up_cells() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let python = dir.path().join("fake-kernel");

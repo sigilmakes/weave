@@ -116,6 +116,7 @@ pub fn from_value_lenient(value: &Value) -> Settings {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn wrong_typed_fields_load_as_none() {
         let value: Value = serde_json::json!({
@@ -137,6 +138,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn typed_plugins_load_and_null_is_unset() {
         let settings = from_value_lenient(&serde_json::json!({
@@ -154,6 +156,7 @@ mod tests {
         assert_eq!(settings.plugins, None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn malformed_plugin_map_stays_visible_as_raw_data() {
         let raw = serde_json::json!({"alpha": {"enabled": true, "unknown": 1}});
@@ -162,6 +165,7 @@ mod tests {
         assert_eq!(settings.extra.get("plugins"), Some(&raw));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn clean_document_strict_parses() {
         let value: Value = serde_json::json!({ "theme": "prime", "rlmMaxDepth": 4 });
@@ -170,6 +174,7 @@ mod tests {
         assert_eq!(settings.rlm_max_depth, Some(4));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn removed_extensions_key_loads_gracefully() {
         let value: Value = serde_json::json!({
@@ -187,6 +192,7 @@ mod tests {
 
     /// A wrong-typed `requestTiming` behaves as unset (the known-field
     /// registry entry), never a surviving raw value.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn wrong_typed_request_timing_loads_as_none() {
         let value: Value = serde_json::json!({ "requestTiming": "yes" });

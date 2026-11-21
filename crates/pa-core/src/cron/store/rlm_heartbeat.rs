@@ -258,6 +258,7 @@ mod tests {
     use super::*;
     use crate::cron::store::input;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rlm_heartbeat_management() {
         let dir = tempfile::TempDir::new().unwrap();

@@ -281,6 +281,7 @@ async fn export(host: &PluginHost, name: &str) -> Value {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tool_call_block_denies_with_reason_and_skips_execution() {
     let hooks = ToolStageHooks::new(host(&[("alpha", BLOCK)]), "hook-test".into());
     let run = run_probe(Some(hooks), "original result").await;
@@ -294,6 +295,7 @@ async fn tool_call_block_denies_with_reason_and_skips_execution() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
+#[pa_test_scratch::pa_test]
 async fn tool_call_timeout_blocks_and_produces_an_error_result() {
     let hooks = ToolStageHooks::new(host(&[("alpha", TIMEOUT)]), "hook-test".into());
     let run = run_probe(Some(hooks), "original result").await;
@@ -308,6 +310,7 @@ async fn tool_call_timeout_blocks_and_produces_an_error_result() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tool_result_rewrite_persists_on_the_existing_tool_result_row() {
     let hooks = ToolStageHooks::new(host(&[("alpha", REWRITE)]), "hook-test".into());
     let run = run_probe(Some(hooks), "original result").await;
@@ -331,6 +334,7 @@ async fn tool_result_rewrite_persists_on_the_existing_tool_result_row() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tool_result_failure_keeps_the_original_result() {
     let hooks = ToolStageHooks::new(host(&[("alpha", FAILURE)]), "hook-test".into());
     let run = run_probe(Some(hooks), "original result").await;
@@ -345,6 +349,7 @@ async fn tool_result_failure_keeps_the_original_result() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn no_plugins_keeps_byte_identical_messages() {
     let plain = run_probe(None, "original result").await;
     let empty = run_probe(
@@ -364,6 +369,7 @@ async fn no_plugins_keeps_byte_identical_messages() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tool_result_hooks_run_in_alphabetical_plugin_order() {
     let hooks = ToolStageHooks::new(
         host(&[("zeta", ZETA_APPEND), ("alpha", ALPHA_APPEND)]),
@@ -383,6 +389,7 @@ async fn tool_result_hooks_run_in_alphabetical_plugin_order() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compaction_observer_fires_once_for_ran_and_skipped() {
     let host = host(&[("alpha", COMPACTION_OBSERVER)]);
     let skipped = CompactOutcome::Skipped("session too short");

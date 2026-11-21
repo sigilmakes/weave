@@ -174,6 +174,7 @@ async fn export(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_engine_tree_covers_history_scoped_auxiliary_recall_append_and_main_call() {
     let f = Fixture::new(96).await;
     let calls = f.calls().await;
@@ -283,6 +284,7 @@ async fn public_engine_tree_covers_history_scoped_auxiliary_recall_append_and_ma
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_engine_failed_summary_keeps_previous_view_and_journal() {
     let f = Fixture::new(32).await;
     let previous = f.export("optchat", "status", json!({})).await.unwrap();
@@ -325,6 +327,7 @@ async fn public_engine_failed_summary_keeps_previous_view_and_journal() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_engine_resume_window_uses_full_source_and_fresh_session_never_imports_tree() {
     let f = Fixture::new(64).await;
     {
@@ -420,6 +423,7 @@ async fn public_engine_resume_window_uses_full_source_and_fresh_session_never_im
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_model_switch_rechecks_bound_without_source_loss() {
     let f = Fixture::new(64).await;
     f.native.push_text_turn("large model answer");
@@ -459,6 +463,7 @@ async fn public_model_switch_rechecks_bound_without_source_loss() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_oversized_mandatory_instructions_fail_before_main_inference() {
     let f = Fixture::new(32).await;
     let previous = f.engine.session.agent().state().await.messages;
@@ -514,6 +519,7 @@ impl crate::plugins::HostCapabilities for Arc<Gate> {
     }
 }
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_engine_cancelled_or_retired_auxiliary_work_cannot_publish() {
     for retire in [false, true] {
         let f = Fixture::new(32).await;
@@ -598,6 +604,7 @@ async fn public_engine_cancelled_or_retired_auxiliary_work_cannot_publish() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_branch_navigation_builds_candidate_tree_not_previous_sibling() {
     let f = Fixture::new(32).await;
     let foreign = f
@@ -665,6 +672,7 @@ async fn public_branch_navigation_builds_candidate_tree_not_previous_sibling() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_explicit_selection_disable_and_resume_never_fall_back() {
     let f = Fixture::new(48).await;
     f.engine
@@ -759,6 +767,7 @@ async fn public_explicit_selection_disable_and_resume_never_fall_back() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_failed_tree_selection_preserves_rolling_authority_and_history() {
     let f = Fixture::new(32).await;
     f.engine
@@ -863,6 +872,7 @@ async fn read_http_request(socket: &mut tokio::net::TcpStream) -> Value {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_text_tree_two_round_native_http_preserves_current_executed_tool_outcome() {
     use tokio::io::AsyncWriteExt;
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -977,6 +987,7 @@ async fn public_text_tree_two_round_native_http_preserves_current_executed_tool_
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_tiny_typed_image_fails_before_any_inference_and_requires_explicit_strategy_change()
 {
     let f = Fixture::new(32).await;
@@ -1214,6 +1225,7 @@ async fn actual_responses_archive_fixture(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn public_native_archives_and_typed_signatures_fail_before_projection_inference() {
     enum Source {
         Archive(pa_types::session::ContextRepresentation),

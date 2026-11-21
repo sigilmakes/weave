@@ -244,6 +244,7 @@ fn wait(needle: &str) -> HeadlessStep {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn refresh_reports_fixed_fields_without_changing_the_selected_model() {
     let (frames, commands) = run_plan(
@@ -274,6 +275,7 @@ fn refresh_reports_fixed_fields_without_changing_the_selected_model() {
         .any(|command| command["type"] == "set_model"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn old_or_unadvertised_daemons_are_not_sent_refresh_commands() {
     for (revision, supported) in [(31, true), (32, false)] {
@@ -296,6 +298,7 @@ fn old_or_unadvertised_daemons_are_not_sent_refresh_commands() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn busy_refresh_is_rejected_without_a_request() {
     let (_, commands) = run_plan(
@@ -314,6 +317,7 @@ fn busy_refresh_is_rejected_without_a_request() {
         .any(|command| command["type"] == "refresh_models"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_hanging_refresh_does_not_block_input_or_paint() {
     let (tx, rx) = std::sync::mpsc::channel();

@@ -74,6 +74,7 @@ fn fast_policy() -> ProviderRetryPolicy {
 /// parks the session when the park seam reports a park: the give-up
 /// status becomes the parked sentence (TS #2375).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn quota_reset_beyond_cap_parks_through_the_seam() {
     let events = Arc::new(Mutex::new(Vec::new()));
     let parked_calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
@@ -138,6 +139,7 @@ async fn quota_reset_beyond_cap_parks_through_the_seam() {
 /// A park seam that declines keeps the give-up: the surfaced status
 /// stays the plain exceeds-cap sentence.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn quota_reset_beyond_cap_keeps_the_give_up_when_the_seam_declines() {
     let events = Arc::new(Mutex::new(Vec::new()));
     let events_for_emit = Arc::clone(&events);
@@ -179,6 +181,7 @@ async fn quota_reset_beyond_cap_keeps_the_give_up_when_the_seam_declines() {
 /// server-requested wait on a non-quota failure keeps the give-up
 /// even when a park is armed (TS parks only from the usage path).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn non_quota_exceeds_cap_never_consults_the_park_seam() {
     let events = Arc::new(Mutex::new(Vec::new()));
     let events_for_emit = Arc::clone(&events);
@@ -215,6 +218,7 @@ async fn non_quota_exceeds_cap_never_consults_the_park_seam() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn transient_failure_is_retried_until_success_with_events() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));
@@ -294,6 +298,7 @@ async fn transient_failure_is_retried_until_success_with_events() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn exhausted_retries_surface_the_final_error() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));
@@ -375,6 +380,7 @@ fn stream_drop_message() -> AssistantMessage {
 /// (the retryable `stream_drop` class) is retried — the re-issued turn
 /// completes on the retry, never settling as the silent empty turn.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stream_drop_retries_until_the_turn_completes() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));
@@ -436,6 +442,7 @@ async fn stream_drop_retries_until_the_turn_completes() {
 /// failure row names the `stream_drop` class — never a silent empty
 /// turn.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stream_drop_exhausts_retries_surfacing_the_class() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));
@@ -488,6 +495,7 @@ async fn stream_drop_exhausts_retries_surfacing_the_class() {
 /// `auto_retry_end` (attempt 0) — the disclosure row must fire for
 /// every provider failure, not only retry episodes.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn permanent_failures_never_retry_but_disclose() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));
@@ -537,6 +545,7 @@ async fn permanent_failures_never_retry_but_disclose() {
 /// failure-scoped disclosure still fires, so the turn never settles
 /// as a silent empty message.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn payment_failures_settle_once_with_the_disclosure() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));
@@ -581,6 +590,7 @@ async fn payment_failures_settle_once_with_the_disclosure() {
 /// rejection) is a deterministic rejection — one attempt, no retry
 /// loop — with the failure-scoped disclosure (attempt 0).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn safety_failures_are_permanent_never_retry_but_disclose() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));
@@ -630,6 +640,7 @@ async fn safety_failures_are_permanent_never_retry_but_disclose() {
 /// `_isRetryableError`'s overflow guard): the turn surfaces the error
 /// immediately so the compact-and-retry recovery owns it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn context_overflow_never_enters_the_retry_loop() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));
@@ -667,6 +678,7 @@ async fn context_overflow_never_enters_the_retry_loop() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn cancelled_wait_aborts_with_retry_cancelled() {
     let events = Arc::new(Mutex::new(Vec::new()));
     let events_for_emit = Arc::clone(&events);
@@ -706,6 +718,7 @@ async fn cancelled_wait_aborts_with_retry_cancelled() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn aborted_signal_racing_failure_stops_aborted() {
     let controller = pa_agent::abort::AbortController::new();
     controller.abort();
@@ -724,6 +737,7 @@ async fn aborted_signal_racing_failure_stops_aborted() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn server_retry_after_over_cap_ends_the_loop() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));
@@ -773,6 +787,7 @@ async fn server_retry_after_over_cap_ends_the_loop() {
 /// A disabled retry policy never retries, but a provider failure
 /// still settles with the failure-scoped disclosure (attempt 0).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn disabled_policy_never_retries_but_discloses() {
     let policy = ProviderRetryPolicy {
         enabled: false,
@@ -818,6 +833,7 @@ async fn disabled_policy_never_retries_but_discloses() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn attempt_errors_propagate() {
     let error = run_turn_with_auto_retry(
         &fast_policy(),
@@ -838,6 +854,7 @@ async fn attempt_errors_propagate() {
 /// one attempt with the failure-scoped disclosure (attempt 0), like
 /// the other non-retryable provider failures.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn unsupported_tool_failures_surface_with_the_disclosure() {
     let attempts = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let events = Arc::new(Mutex::new(Vec::new()));

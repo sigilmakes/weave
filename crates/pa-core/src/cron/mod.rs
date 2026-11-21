@@ -875,6 +875,7 @@ mod tests {
 
     const BASE: u64 = 1_700_000_000_000; // 2023-11-14T22:13:20Z
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parse_one_shot_and_interval_schedules() {
         let (schedule, next) = parse_agent_cron_schedule("in 10m", BASE).unwrap();
@@ -899,6 +900,7 @@ mod tests {
         assert_eq!(schedule.expression, "in 10m");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cron_expressions_evaluate() {
         // @hourly fires at the next whole hour.
@@ -922,6 +924,7 @@ mod tests {
         assert!(parse_agent_cron_schedule("a * * * *", BASE).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn next_run_rollover() {
         let (_, next) = parse_agent_cron_schedule("@daily", BASE).unwrap();
@@ -951,6 +954,7 @@ mod tests {
         assert_eq!(next_run_at_for_schedule(&once, BASE).unwrap(), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn heartbeat_command_parsing() {
         use ParsedHeartbeatCommand::*;
@@ -1034,6 +1038,7 @@ mod tests {
         assert!(parse_heartbeat_command("/heartbeat --every 10m").is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn heartbeat_deferral_rules() {
         let job = |source: &str, mode: Option<DeliveryMode>| AgentCronJob {
@@ -1101,6 +1106,7 @@ mod tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn due_jobs_and_formatting() {
         let mut job = AgentCronJob {

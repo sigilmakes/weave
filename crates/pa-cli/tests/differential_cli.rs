@@ -354,6 +354,7 @@ fn isolate_child(command: &mut Command, sandbox: &Path) {
 }
 
 fn run(binary: &Path, args: &[&str], sandbox: &Path) -> InvocationOutput {
+    let _timing_span = pa_test_scratch::timing::span("run.child_process");
     let mut command = Command::new("timeout");
     command.arg("20").arg(binary).args(args);
     isolate_child(&mut command, sandbox);
@@ -368,6 +369,7 @@ fn run(binary: &Path, args: &[&str], sandbox: &Path) -> InvocationOutput {
 /// Normalize version numbers so the TS product version (0.9.x) and the Rust
 /// workspace version can be compared structurally.
 fn normalize(text: &str, sandbox_roots: &[&Path]) -> String {
+    let _timing_span = pa_test_scratch::timing::span("run.normalization");
     let mut text = text.to_string();
     // Sandbox paths leak into cwd-related error messages; normalize them so
     // the per-binary sandbox roots compare equal.
@@ -449,6 +451,7 @@ fn normalize_versions(text: &str) -> String {
 }
 
 fn sandbox(prefix: &str) -> PathBuf {
+    let _timing_span = pa_test_scratch::timing::span("setup.fixture");
     let base = std::env::temp_dir().join(format!(
         "pa-cli-differential-{prefix}-{}",
         std::process::id()
@@ -591,6 +594,7 @@ fn declared_late_console_case(case: &[&str]) -> bool {
 
 // These declared divergences are also native contracts when no TS reference is
 // installed. None disables only the TS expectation, never the native assertion.
+#[pa_test_scratch::pa_test]
 #[test]
 fn native_cli_contract_fixtures() {
     let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
@@ -631,6 +635,7 @@ fn native_cli_contract_fixtures() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn differential_corpus_matches_ts_binary() {
     let Some(ts) = ts_binary() else {
@@ -692,6 +697,7 @@ fn run_with_env(
     sandbox: &Path,
     envs: &[(&str, &str)],
 ) -> InvocationOutput {
+    let _timing_span = pa_test_scratch::timing::span("run.child_process");
     let mut command = Command::new("timeout");
     command.arg("20").arg(binary).args(args);
     isolate_child(&mut command, sandbox);
@@ -706,6 +712,7 @@ fn run_with_env(
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn differential_env_flag_cases_match_ts_binary() {
     let Some(ts) = ts_binary() else {
@@ -777,6 +784,7 @@ fn exported_css_vars(html: &str) -> Vec<String> {
 /// Differential parity for `session export`: the same fixture exported by
 /// both binaries prints the same success line and produces files carrying
 /// the same session data, theme CSS variables, and template scaffolding.
+#[pa_test_scratch::pa_test]
 #[test]
 fn differential_session_export_matches_ts_binary() {
     let Some(ts) = ts_binary() else {

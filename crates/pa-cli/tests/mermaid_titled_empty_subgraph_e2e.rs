@@ -333,6 +333,7 @@ fn headless_options(
 /// the attach paint; the fixed one paints the surviving clusters, omits the
 /// empty one titled `on the workers`, and keeps taking turns.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn attach_survives_a_titled_empty_subgraph_diagram() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     std::fs::create_dir_all(dir.path().join("agent").join("sessions")).expect("session dir");

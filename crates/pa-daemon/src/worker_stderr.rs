@@ -193,6 +193,7 @@ mod tests {
         filetime::set_file_mtime(path, mtime).expect("set mtime");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tail_reads_the_last_4k_from_a_line_boundary() {
         use std::fmt::Write as _;
@@ -222,6 +223,7 @@ mod tests {
         assert!(tail.starts_with("panic trace line"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tail_is_none_for_missing_and_empty_logs() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -233,6 +235,7 @@ mod tests {
         assert!(matches!(read_tail(&path), Ok(None)));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn spawn_open_truncates_a_leftover_log() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -252,6 +255,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn not_ready_error_carries_the_tail() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -277,6 +281,7 @@ mod tests {
         assert!(message.contains("  thread 'main' panicked"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn not_ready_error_keeps_the_bare_headline_for_a_silent_worker() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -288,6 +293,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prune_keeps_the_newest_retained_logs() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -346,6 +352,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn socket_log_retention_keeps_the_newest_and_spares_foreign_logs() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -386,6 +393,7 @@ mod tests {
         assert!(jsonl.exists());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn prune_spares_a_fresh_burst_of_launches() {
         let dir = tempfile::tempdir().expect("temp dir");

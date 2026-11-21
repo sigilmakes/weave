@@ -60,6 +60,7 @@ mod tests {
     use std::time::Duration;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn serializes_same_file() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("f.txt");
@@ -88,6 +89,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn parallel_across_files() {
         let dir = tempfile::tempdir().unwrap();
         let a = dir.path().join("a.txt");
@@ -112,6 +114,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn registry_cleans_up() {
         let dir = tempfile::tempdir().unwrap();
         let p = dir.path().join("x.txt").to_str().unwrap().to_string();

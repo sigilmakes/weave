@@ -216,6 +216,7 @@ mod tests {
 
     /// The embedded base64 session data decodes to the exact
     /// header/entries/leaf shape.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn export_from_file_shape() {
         let dir = tempfile::TempDir::new().expect("temp dir");
@@ -254,6 +255,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn default_output_name() {
         let dir = tempfile::TempDir::new().expect("temp dir");
@@ -270,6 +272,7 @@ mod tests {
     }
 
     /// A missing input file is the TS error, verbatim.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn missing_input_file() {
         let dir = tempfile::TempDir::new().expect("temp dir");
@@ -283,6 +286,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tools_section_wire_shape() {
         use pa_agent::types::{AgentTool, AgentToolResult};
@@ -332,6 +336,7 @@ mod tests {
     }
 
     /// Serializes with the template's wire keys (camelCase).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn export_data_wire_keys() {
         let data = SessionExportData {

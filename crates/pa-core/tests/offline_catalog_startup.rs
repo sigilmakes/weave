@@ -141,6 +141,7 @@ fn prime_payload() -> serde_json::Value {
 
 // Keep the isolated child actions together so the env-cleared entry point is explicit.
 #[allow(clippy::too_many_lines)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn startup_child() {
     let Ok(action) = std::env::var(CHILD) else {
@@ -468,11 +469,13 @@ async fn fenced_children(actions: &[&str]) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn production_default_catalog_makes_zero_offline_requests() {
     fenced_children(&["models"]).await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn online_loopback_and_rejecting_proxy_are_live() {
     fenced_children(&["online", "fence"]).await;
 }

@@ -61,6 +61,7 @@ fn session_with_image(png: &str, with_text_prompt: bool) -> String {
     )
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn replayed_image_blocks_render_placeholder_rows() {
     let png = tiny_png_base64();
@@ -78,6 +79,7 @@ fn replayed_image_blocks_render_placeholder_rows() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn replayed_images_hidden_setting_swaps_the_placeholder_form() {
     let png = tiny_png_base64();

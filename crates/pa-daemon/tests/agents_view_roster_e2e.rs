@@ -167,6 +167,7 @@ impl Client {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn roster_subscribe_snapshot_and_live_update_pushes() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -318,6 +319,7 @@ fn roster_subscribe_snapshot_and_live_update_pushes() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn worker_roster_delta_requires_authentication() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -342,6 +344,7 @@ fn worker_roster_delta_requires_authentication() {
 /// Family-depth roster rows: a supervisor-backed RLM child joins the roster keyed
 /// `parentSessionPath#childId` (TS `rosterAgentIdForSummary`).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rlm_children_key_the_roster_by_parent_path_and_child_id() {
     use pa_core::session_engine::rlm_host::{RlmSpawnRequest, RlmSubagentHost};
     use pa_daemon::rlm_children::{ParentIdentity, SupervisorChildSessions};

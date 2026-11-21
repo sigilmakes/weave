@@ -123,6 +123,7 @@ fn signal_name(status: std::process::ExitStatus) -> String {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn capture_trims_stdout_and_reports_failures() {
         let out = run_command_capture("echo", &["-n", " hi "], None, None, &[]).unwrap();
@@ -135,6 +136,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn capture_times_out() {
         let error =

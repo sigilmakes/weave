@@ -288,6 +288,7 @@ fn peer_auth(worker: &mut WorkerClient, ticket: &Value) -> Value {
     )
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn direct_attach_ticket_streams_across_supervisor_kill9() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -542,6 +543,7 @@ fn direct_attach_ticket_streams_across_supervisor_kill9() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn unused_ticket_expires() {
     let dir = tempfile::TempDir::new().expect("temp dir");

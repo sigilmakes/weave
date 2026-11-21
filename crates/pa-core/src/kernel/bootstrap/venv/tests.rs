@@ -1,6 +1,7 @@
 //! The venv module's unit battery: Windows executable candidates, the
 //! skill-manifest parsing, the version-file round trip, the two-layer
 //! probe memo oracles, and the skill-sync batching.
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_executable_candidates_default_order() {
     assert_eq!(
@@ -15,6 +16,7 @@ fn windows_executable_candidates_default_order() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_executable_candidates_follows_pathext_order() {
     assert_eq!(
@@ -23,6 +25,7 @@ fn windows_executable_candidates_follows_pathext_order() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_executable_candidates_skips_suffix_and_duplicates() {
     assert_eq!(
@@ -43,6 +46,7 @@ fn windows_executable_candidates_skips_suffix_and_duplicates() {
 
 use super::*;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn dependency_names_parse() {
     let dir = tempfile::tempdir().unwrap();
@@ -96,6 +100,7 @@ fn collect_memo_files(root: &Path, found: &mut Vec<std::path::PathBuf>) {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn version_file_round_trips() {
     let dir = tempfile::tempdir().unwrap();
@@ -110,6 +115,7 @@ fn version_file_round_trips() {
     ));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn probe_memo_key_distinguishes_every_input_and_drops_on_invalidate() {
     let _memo_state = MEMO_STATE_LOCK
@@ -152,6 +158,7 @@ fn probe_memo_key_distinguishes_every_input_and_drops_on_invalidate() {
 /// The out-of-band-detection trio: the memo must hit on an unchanged venv, miss when the installed
 /// `rlm` tree or the interpreter changes, and miss after invalidation.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn probe_memo_misses_on_out_of_band_venv_mutation() {
     let _memo_state = MEMO_STATE_LOCK
@@ -259,6 +266,7 @@ fn probe_memo_misses_on_out_of_band_venv_mutation() {
 /// The cross-process layer, pinned: a fresh process (empty in-process map)
 /// hits the on-disk memo under the same identity key and runs ZERO probes.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn disk_memo_hits_across_a_fresh_process_with_zero_probes() {
     let _memo_state = MEMO_STATE_LOCK
@@ -318,6 +326,7 @@ fn disk_memo_hits_across_a_fresh_process_with_zero_probes() {
 /// Damage across processes: process A memoizes, the venv is damaged
 /// out of band, and a FRESH process must miss both layers and re-probe.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn disk_memo_damage_across_processes_misses_and_reprobes() {
     let _memo_state = MEMO_STATE_LOCK
@@ -406,6 +415,7 @@ fn disk_memo_damage_across_processes_misses_and_reprobes() {
 /// The masked class, pinned against the DISK layer: fingerprint-invisible damage is masked by a
 /// cross-process hit until the first failed kernel start drops BOTH layers and.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn disk_memo_masked_class_hits_across_processes_until_invalidation() {
     let _memo_state = MEMO_STATE_LOCK
@@ -478,6 +488,7 @@ fn disk_memo_masked_class_hits_across_processes_until_invalidation() {
 /// key-valid entry. That is BENIGN — the entry's key matches the current environment — and the next
 /// failed start re-invalidates.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn disk_memo_late_write_after_invalidate_is_benign() {
     let _memo_state = MEMO_STATE_LOCK
@@ -544,6 +555,7 @@ static PRIME_AGENT_ENV_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_
 /// the DIRECT probe and never reads or writes any memo file.
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn custom_override_never_touches_the_disk_memo() {
     let _guard = PRIME_AGENT_ENV_LOCK.lock().await;
     let dir = tempfile::tempdir().unwrap();
@@ -592,6 +604,7 @@ async fn custom_override_never_touches_the_disk_memo() {
 
 /// The Windows venv layout (`<venv>/Lib/site-packages/rlm`, no python-version layer) is a
 /// fingerprint input: mutations under it change the memo key.
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_layout_venv_rlm_is_witnessed() {
     let dir = tempfile::tempdir().unwrap();
@@ -620,6 +633,7 @@ fn windows_layout_venv_rlm_is_witnessed() {
 /// Live (ignored by default; run with `--ignored` on a machine with a kernel venv under `HOME`):
 /// the memo behavior against a REAL interpreter and a REAL `rlm` import.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "live: needs a real kernel venv under HOME (bench VMs)"]
 fn live_probe_memo_reprobes_when_installed_rlm_is_removed() {
@@ -778,6 +792,7 @@ fn live_probe_memo_reprobes_when_installed_rlm_is_removed() {
 /// Live-gated closure freeze (run with `--ignored` on a machine with a real kernel venv): the
 /// runtime-ready probe's import closure must stay stdlib-or- rlm-relative at MODULE level. Pins the
 /// shipped artifact.
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "live: needs a real kernel venv under HOME (bench VMs)"]
 fn live_probe_closure_is_stdlib_or_rlm_relative() {
@@ -887,6 +902,7 @@ print(json.dumps({"closure": sorted(closure), "violations": violations}))
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn extra_recorded_skills_do_not_force_reinstall() {
     // A session's set ([edit]) must be served by a venv that also carries
@@ -932,6 +948,7 @@ fn uv_invocations(dir: &Path) -> Vec<String> {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn skill_sync_installs_only_missing_skills() {
     // A fake uv records its args: every missing skill must land in ONE
     // invocation, and already-installed skills must stay out of it.
@@ -1002,6 +1019,7 @@ async fn skill_sync_installs_only_missing_skills() {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn skill_sync_checkpoints_successes_and_excludes_failed_skills() {
     // A batch covering several skills fails; the fallback retries each missing skill alone.
     let dir = tempfile::tempdir().unwrap();
@@ -1064,6 +1082,7 @@ async fn skill_sync_checkpoints_successes_and_excludes_failed_skills() {
     assert_eq!(recorded, vec!["edit"], "only the healthy skill is recorded");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn inline_dependencies_and_cycles_resolve_to_local_skills() {
     let root = tempfile::tempdir().unwrap();
@@ -1096,6 +1115,7 @@ fn inline_dependencies_and_cycles_resolve_to_local_skills() {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn changed_recorded_skills_each_install_and_checkpoint_without_dropping_later_records() {
     let root = tempfile::tempdir().unwrap();
     let venv = root.path().join("kernel");
@@ -1150,6 +1170,7 @@ async fn changed_recorded_skills_each_install_and_checkpoint_without_dropping_la
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn failed_local_dependency_is_still_offered_as_trusted_source_to_its_dependent() {
     let root = tempfile::tempdir().unwrap();
     let venv = root.path().join("kernel");

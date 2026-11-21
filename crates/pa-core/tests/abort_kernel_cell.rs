@@ -114,6 +114,7 @@ fn scripted_model() -> pa_agent::types::Model {
 /// The abort budget is generous for CI but far below the cell's 120s
 /// sleep: a wedge waits the sleep out (or forever).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn abort_during_a_kernel_cell_settles_the_turn_immediately() {
     let Some(kernel_python) = kernel_python() else {
         return;

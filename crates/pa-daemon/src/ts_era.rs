@@ -34,6 +34,7 @@ mod tests {
         files
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ordinary_boot_hook_preserves_legacy_runtime_and_shared_state() {
         let dir = tempfile::tempdir().unwrap();

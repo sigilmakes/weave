@@ -61,6 +61,7 @@ pub fn strip_frontmatter(content: &str) -> String {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_simple_frontmatter() {
         let (frontmatter, body) =
@@ -70,6 +71,7 @@ mod tests {
         assert_eq!(body, "Use it well.");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn no_frontmatter_returns_body() {
         let (frontmatter, body) = parse_frontmatter("Just text");
@@ -77,6 +79,7 @@ mod tests {
         assert_eq!(body, "Just text");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unterminated_frontmatter_returns_body() {
         let (frontmatter, body) = parse_frontmatter("---\nname: x\nno end");
@@ -84,6 +87,7 @@ mod tests {
         assert_eq!(body, "---\nname: x\nno end");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_empty_frontmatter_block_is_no_frontmatter() {
         // TS `!yamlString`: the close follows the open, so the whole
@@ -95,6 +99,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_empty_first_line_between_delimiters_is_no_frontmatter() {
         // `---x\n---\nbody`: TS slice(4, 4) = "" -> falsy -> no frontmatter.
@@ -103,6 +108,7 @@ mod tests {
         assert_eq!(body, "---x\n---\nbody");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn crlf_and_bom_normalized() {
         let (frontmatter, _) = parse_frontmatter("\u{feff}---\r\nname: x\r\n---\r\nbody");

@@ -247,6 +247,7 @@ mod tests {
         .unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn loads_user_and_project_skills_with_collision() {
         let tmp = tempfile::tempdir().unwrap();
@@ -279,6 +280,7 @@ mod tests {
             .any(|d| matches!(d, ResourceDiagnostic::Collision { .. })));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn skills_list_in_load_order_ts_map_semantics() {
         // TS `Map` insertion order: user dir first, then project, then the
@@ -313,6 +315,7 @@ mod tests {
         assert_eq!(names, vec!["zeta", "alpha", "gamma"]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn explicit_paths_and_missing_paths() {
         let tmp = tempfile::tempdir().unwrap();

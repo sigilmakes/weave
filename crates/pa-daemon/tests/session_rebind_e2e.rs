@@ -198,6 +198,7 @@ impl Client {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn stale_active_id_rebinds_after_worker_replacement() {
     let dir = tempfile::TempDir::new().expect("temp dir");

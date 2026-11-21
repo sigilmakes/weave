@@ -309,6 +309,7 @@ fn plain_position() -> (usize, usize) {
 
 /// A press-release without a drag over the link label opens its OSC 8 target (TS
 /// `fullscreenPressedHyperlink`'s release branch).
+#[pa_test_scratch::pa_test]
 #[test]
 fn click_on_a_transcript_link_opens_it() {
     let (row, col) = link_position();
@@ -328,6 +329,7 @@ fn click_on_a_transcript_link_opens_it() {
 }
 
 /// The release with a selection copies and never opens (TS: the hasSelection branch wins).
+#[pa_test_scratch::pa_test]
 #[test]
 fn drag_over_a_link_selects_it_instead_of_opening() {
     let (row, col) = link_position();
@@ -347,6 +349,7 @@ fn drag_over_a_link_selects_it_instead_of_opening() {
 }
 
 /// Only cells inside a link's OSC 8 range resolve a URL.
+#[pa_test_scratch::pa_test]
 #[test]
 fn click_on_plain_text_opens_nothing() {
     let (row, col) = plain_position();

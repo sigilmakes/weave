@@ -369,6 +369,7 @@ impl Harness {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn killed_mid_goal_worker_rehydrates_the_goal_with_counts() {
     let mut harness = setup("goal-recovery");
@@ -611,6 +612,7 @@ fn killed_mid_goal_worker_rehydrates_the_goal_with_counts() {
 /// `red-goal-recovery-faux-exhaustion-20260926-1`: the goal-continuation loop's unbounded
 /// churn can empty a finite script queue mid-flow; the last scripted reply's `message_end`
 /// is the witness.
+#[pa_test_scratch::pa_test]
 #[test]
 fn repeat_last_script_stays_answerable_once_the_goal_churn_empties_it() {
     let mut harness = setup("goal-recovery-exhaustion");

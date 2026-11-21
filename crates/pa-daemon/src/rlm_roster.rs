@@ -271,6 +271,7 @@ mod tests {
         write_session_text(path, &content);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn passive_child_summary_carries_the_persisted_thinking_level() {
         let dir = temp_dir("thinking");
@@ -318,6 +319,7 @@ mod tests {
             .is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn passive_child_summary_carries_the_saved_usage_summary() {
         let dir = temp_dir("usage");
@@ -366,6 +368,7 @@ mod tests {
         write_session_text(path, &content);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn walks_passive_children_from_saved_and_resident_roots() {
         let dir = temp_dir("walk");
@@ -461,6 +464,7 @@ mod tests {
         assert_eq!(walked[0].edge.child_id, "sub-2");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn passive_rows_carry_the_subagent_identity() {
         let dir = temp_dir("rows");

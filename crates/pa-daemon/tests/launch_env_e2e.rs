@@ -328,6 +328,7 @@ fn session_header_depth(session_file: &Path) -> u64 {
 /// workers stamp depth-0 root headers, and the durable descriptor for
 /// A carries no trace of the client env.
 #[cfg(target_os = "linux")] // /proc/<pid>/environ
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_client_launch_env_reaches_only_its_own_worker() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -413,6 +414,7 @@ fn the_client_launch_env_reaches_only_its_own_worker() {
 /// The kernel under the worker runs in the client's env too (the audit
 /// #1 repro: `bash()`/kernel subprocesses see the terminal's PATH, not
 /// the daemon's). One scripted cell writes its `os.environ` to a receipt.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_kernel_runs_in_the_client_launch_env() {
     let Some(kernel_python) = kernel_python() else {
@@ -494,6 +496,7 @@ fn the_kernel_runs_in_the_client_launch_env() {
 /// along.
 #[cfg(target_os = "linux")] // /proc/<pid>/environ
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_rlm_spawn_child_inherits_the_parent_worker_env() {
     use pa_core::session_engine::rlm_host::{RlmSpawnRequest, RlmSubagentHost};
     use pa_daemon::rlm_children::{ParentIdentity, SupervisorChildSessions};
@@ -586,6 +589,7 @@ async fn an_rlm_spawn_child_inherits_the_parent_worker_env() {
 /// The update-restart roster's `launch_env` rows respawn workers with the
 /// supervisor's INTERNAL identity only: the client env a session was
 /// created with never lands in the durable roster.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_update_roster_never_carries_the_client_env() {
     let dir = tempfile::TempDir::new().expect("temp dir");

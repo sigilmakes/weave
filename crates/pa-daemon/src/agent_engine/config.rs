@@ -128,6 +128,7 @@ mod tests {
 
     /// The create payload's legacy `executionMode` remains accepted;
     /// a create without one (an agent-spawned session) stays `None`.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn create_resources_read_the_execution_mode() {
         let payload = serde_json::json!({ "cwd": "/tmp", "executionMode": "interactive" });

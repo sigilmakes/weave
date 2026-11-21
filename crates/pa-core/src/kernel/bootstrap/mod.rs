@@ -331,6 +331,7 @@ mod tests {
     use super::*;
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn cancelled_caller_does_not_unlock_a_running_bootstrap() {
         let root = tempfile::tempdir().unwrap();
         let venv = root.path().join("kernel-venv");
@@ -363,6 +364,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn lock_timeout_prevents_venv_rebuild() {
         let root = tempfile::tempdir().unwrap();
         let venv = root.path().join("kernel-venv");

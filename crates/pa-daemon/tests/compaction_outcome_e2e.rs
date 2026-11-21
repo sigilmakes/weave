@@ -368,6 +368,7 @@ impl Client {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn forced_failed_auto_compaction_records_the_durable_outcome_row() {
     let dir = tempfile::tempdir().expect("temp dir");

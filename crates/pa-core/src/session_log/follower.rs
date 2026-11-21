@@ -148,6 +148,7 @@ mod tests {
         Instant::now() + Duration::from_secs(10)
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn independent_cursors_extend_without_replaying_the_prefix() {
         let dir = tempfile::tempdir().unwrap();
@@ -183,6 +184,7 @@ mod tests {
         assert!(log.read_tail(&mut cursor, deadline()).unwrap().is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn repair_and_regrowth_cannot_reuse_a_followers_boundary() {
         let dir = tempfile::tempdir().unwrap();

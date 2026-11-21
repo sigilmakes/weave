@@ -1,6 +1,7 @@
 //! The kill9 restart regression: the session re-registers and survives
 use super::*;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn supervisor_kill9_restart_sessions_re_register_and_survive() {
     let dir = tempfile::TempDir::new().expect("temp dir");

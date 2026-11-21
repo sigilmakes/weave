@@ -661,6 +661,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancel_closes_idle_accepted_sockets_and_joins_all_requests() {
         let server = ephemeral_server().await;
         let mut events = server.sockets.lock().unwrap().progress.subscribe();
@@ -680,6 +681,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn drop_closes_idle_accepted_sockets_without_a_runtime_turn() {
         let server = ephemeral_server().await;
         let port = server.port;
@@ -701,6 +703,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn idle_connections_are_bounded_and_releasing_one_resumes_acceptance() {
         let server = ephemeral_server().await;
         let mut events = server.sockets.lock().unwrap().progress.subscribe();
@@ -735,6 +738,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn fragmented_headers_do_not_settle_before_the_terminator() {
         let server = ephemeral_server().await;
         let mut events = server.sockets.lock().unwrap().progress.subscribe();
@@ -761,6 +765,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn upgrades_close_without_settling_even_with_valid_query_parameters() {
         let server = ephemeral_server().await;
         for upgrade in [
@@ -781,6 +786,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn oversized_request_head_is_rejected_without_settling() {
         let server = ephemeral_server().await;
         let mut stream = TcpStream::connect(("127.0.0.1", server.port))
@@ -798,6 +804,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn incomplete_head_has_one_total_deadline_not_a_per_read_deadline() {
         let server = ephemeral_server().await;
         let mut events = server.sockets.lock().unwrap().progress.subscribe();
@@ -831,6 +838,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn settlement_is_persistent_and_wakes_all_registered_waiters() {
         let server = ephemeral_server().await;
         let mut first = Box::pin(server.wait_for_code());
@@ -860,6 +868,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn settled_browser_code_survives_ready_input_after_listener_exit() {
         // An accept loop can exit while a previously accepted request is still completing.
         // Complete listener cleanup first so input cancellation will not yield on a join.
@@ -886,6 +895,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn dropping_a_registered_callback_releases_the_port_without_yielding() {
         let (reservation, ownership) = test_listener::reserve_listener();
         let port = reservation.port();
@@ -900,6 +910,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn registered_port_is_exact_and_released_after_cancel() {
         let blocker = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
         let port = blocker.local_addr().unwrap().port();
@@ -939,6 +950,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn falls_back_to_the_next_free_port() {
         let blocker = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
         let blocked_port = blocker.local_addr().unwrap().port();
@@ -952,6 +964,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn all_candidates_bound_fails_clearly() {
         let blockers: Vec<_> = (0..2)
             .map(|_| std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap())
@@ -968,6 +981,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn callback_flow_settles_code_and_state() {
         let server = ephemeral_server().await;
         let response = reqwest::Client::new()
@@ -989,6 +1003,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn error_callback_settles_none() {
         let server = ephemeral_server().await;
         let response = reqwest::Client::new()
@@ -1004,6 +1019,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unknown_route_is_404_without_settling() {
         let server = ephemeral_server().await;
         let response = reqwest::Client::new()
@@ -1017,6 +1033,7 @@ mod tests {
         assert!(server.wait_for_code().await.is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn query_and_percent_decoding() {
         for (encoded, decoded) in [
@@ -1037,6 +1054,7 @@ mod tests {
         assert_eq!(query_param("code", "state"), None);
     }
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn zero_callback_port_is_rejected_before_binding_or_registration() {
         assert!(redirect_uris(Some(0))
             .unwrap_err()
@@ -1047,6 +1065,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn pinned_port_is_owned_until_drop() {
         let (reservation, ownership) = test_listener::reserve_listener();
         let port = reservation.port();

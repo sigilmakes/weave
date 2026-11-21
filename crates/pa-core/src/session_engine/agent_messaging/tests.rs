@@ -4,6 +4,7 @@ use super::*;
 /// TS #2493: an observation row carries the typed family status and
 /// its live activity (a separate axis), and a member with no live
 /// session omits the activity field entirely.
+#[pa_test_scratch::pa_test]
 #[test]
 fn observe_rows_carry_the_typed_status_and_activity() {
     let mut row = AgentObserveSummary {
@@ -41,6 +42,7 @@ fn observe_rows_carry_the_typed_status_and_activity() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn message_ids_and_validation() {
     let id = create_agent_session_message_id();
@@ -60,6 +62,7 @@ fn message_ids_and_validation() {
     assert!(normalize_agent_session_message(&at_limit).is_ok());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn target_and_capacity_guards() {
     assert_eq!(
@@ -82,6 +85,7 @@ fn target_and_capacity_guards() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn message_prompts_and_id_parsing() {
     let payload = AgentMessagePromptPayload {
@@ -110,6 +114,7 @@ fn message_prompts_and_id_parsing() {
     assert!(!is_agent_session_message_prompt("plain text"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_custom_row_carries_the_ts_agent_message_shape() {
     let prompt = "[agent-message from child:lane]\n\nfinished the research";
@@ -163,6 +168,7 @@ fn the_custom_row_carries_the_ts_agent_message_shape() {
     assert_eq!(plain["details"]["from"], Value::Null);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn observe_limits_clamp() {
     assert_eq!(normalize_observe_limit(None).unwrap(), 8);
@@ -175,6 +181,7 @@ fn observe_limits_clamp() {
     assert!(normalize_observe_max_chars(Some(2_001)).is_err());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn observe_previews_truncate() {
     let user = pa_types::session::AgentMessage::User(pa_types::ai::UserMessage {
@@ -270,6 +277,7 @@ fn send_request(send: &crate::kernel::shared::HostHandlerFn, data: Value) -> any
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn message_host_handler_round_trip() {
     let mut handlers = HostRequestHandlers::default();
     register_agent_message_host_handlers(
@@ -385,6 +393,7 @@ async fn message_host_handler_round_trip() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn broadcast_without_family_is_empty_and_failures_settle() {
     struct NoFamilyController;
     impl AgentMessageController for NoFamilyController {
@@ -445,6 +454,7 @@ async fn broadcast_without_family_is_empty_and_failures_settle() {
 /// broadcast: both shapes carry the target, the delivery status, and the
 /// queued reason (issue #33). A caller can decide from either receipt.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn broadcast_and_direct_report_the_same_admission_receipt() {
     struct HeldTargetController;
     impl AgentMessageController for HeldTargetController {

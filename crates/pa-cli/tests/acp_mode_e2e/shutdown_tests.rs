@@ -45,6 +45,7 @@ fn withhold_shutdown_acknowledgement(socket: &Path, pid: u32) -> std::thread::Jo
     })
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn missing_acknowledgement_passes_after_stubborn_child_is_confirmed_absent() {
     let root = tempfile::tempdir().expect("shutdown fixture root");
@@ -64,6 +65,7 @@ fn missing_acknowledgement_passes_after_stubborn_child_is_confirmed_absent() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn missing_hello_cleanup_fixture() {
     let Some(root) = std::env::var_os("PA_TEST_MISSING_HELLO_ROOT") else {
@@ -96,6 +98,7 @@ fn missing_hello_cleanup_fixture() {
     server.join().expect("missing hello fixture server");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn missing_hello_confirms_owned_tree_absence_and_names_handshake_failure() {
     let root = tempfile::tempdir().expect("missing hello fixture root");

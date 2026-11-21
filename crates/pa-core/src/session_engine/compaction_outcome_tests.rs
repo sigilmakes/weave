@@ -51,6 +51,7 @@ fn seeded_assistant() -> SessionAgentMessage {
     })
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn outcome_row_shape_matches_ts() {
     let row = create_compaction_outcome_message(
@@ -77,6 +78,7 @@ fn outcome_row_shape_matches_ts() {
 /// The row lands in the entry chain and on the live loop context, a rebuild
 /// keeps it, and the LLM conversion drops it — the model never sees the disclosure.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn record_appends_row_to_entries_and_live_context_but_not_llm_input() {
     let tmp = tempfile::tempdir().unwrap();
     let session = scripted_session_over(SessionManager::in_memory(tmp.path())).await;
@@ -135,6 +137,7 @@ async fn record_appends_row_to_entries_and_live_context_but_not_llm_input() {
 
 /// A failed disclosure append cannot publish a row absent from durable history.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn record_refuses_a_failed_disk_write_without_publishing() {
     let tmp = tempfile::tempdir().unwrap();
     let sessions = tmp.path().join("sessions");
@@ -159,6 +162,7 @@ async fn record_refuses_a_failed_disk_write_without_publishing() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn message_end_persist_failure_refuses_publication() {
     let tmp = tempfile::tempdir().unwrap();
     let sessions = tmp.path().join("sessions");

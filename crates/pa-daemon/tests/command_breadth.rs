@@ -518,6 +518,7 @@ const WIRE_FIXTURES: &[(&str, &str)] = &[
 ];
 
 /// The accept list is the TS list, in TS order, then the Rust-native supervisor/worker frames.
+#[pa_test_scratch::pa_test]
 #[test]
 fn known_command_types_match_the_ts_list() {
     // Keep the ordered TS baseline intact. These declared public extensions
@@ -562,6 +563,7 @@ fn known_command_types_match_the_ts_list() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn every_command_type_parses_and_routes() {
     for (type_name, wire) in WIRE_FIXTURES {
@@ -590,6 +592,7 @@ fn every_command_type_parses_and_routes() {
 }
 
 /// Unknown types keep the TS wire error, not a parse accident.
+#[pa_test_scratch::pa_test]
 #[test]
 fn unknown_type_keeps_the_ts_error_string() {
     let line = r#"{"type":"command","id":"c1","protocol":{"name":"prime-agent.daemon","version":7},"command":{"type":"not_a_command"}}"#;

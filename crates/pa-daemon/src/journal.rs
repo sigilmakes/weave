@@ -619,6 +619,7 @@ mod tests {
         dir.join(name)
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_read_failures_are_not_empty_recovery_state() {
         let path = temp_path("unreadable.jsonl");
@@ -633,6 +634,7 @@ mod tests {
         fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_keeps_latest_per_session() {
         let path = temp_path("worker.recovery.jsonl");
@@ -651,6 +653,7 @@ mod tests {
         let _ = fs::remove_dir_all(path.parent().unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_interrupted_evidence_tracks_latest_busy() {
         let path = temp_path("interrupted.recovery.jsonl");
@@ -671,6 +674,7 @@ mod tests {
         let _ = fs::remove_dir_all(path.parent().unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_batched_checkpoint_matches_sequential_form() {
         let sequential_path = temp_path("sequential.recovery.jsonl");
@@ -749,6 +753,7 @@ mod tests {
         let _ = fs::remove_dir_all(batched_path.parent().unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_batched_checkpoint_is_all_or_nothing() {
         let path = temp_path("allornothing.recovery.jsonl");
@@ -767,6 +772,7 @@ mod tests {
 
     /// TS parity oracle: TS compacts at every changed-idle record, and so
     /// does the port.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_settle_compacts_single_session() {
         let path = temp_path("settle-compacts.recovery.jsonl");
@@ -808,6 +814,7 @@ mod tests {
         let _ = fs::remove_dir_all(path.parent().unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_batched_settle_compacts_and_restores() {
         let path = temp_path("batched-settle.recovery.jsonl");
@@ -877,6 +884,7 @@ mod tests {
 
     /// An unchanged verdict appends the snapshot alone and never compacts
     /// (TS `record` early-returns before its compaction check).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_unchanged_verdict_does_not_compact() {
         let path = temp_path("unchanged-nocompact.recovery.jsonl");
@@ -896,6 +904,7 @@ mod tests {
         let _ = fs::remove_dir_all(path.parent().unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_missing_or_unreadable_file_is_not_interrupted() {
         let path = temp_path("missing.recovery.jsonl");
@@ -905,6 +914,7 @@ mod tests {
         let _ = fs::remove_dir_all(path.parent().unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_open_skips_torn_utf8_tail() {
         let path = temp_path("torn-utf8-tail.recovery.jsonl");
@@ -964,6 +974,7 @@ mod tests {
         let _ = fs::remove_dir_all(path.parent().unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_journal_open_heals_torn_ascii_tail() {
         let path = temp_path("torn-ascii-tail.recovery.jsonl");
@@ -994,6 +1005,7 @@ mod tests {
         let _ = fs::remove_dir_all(path.parent().unwrap());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn corrupt_complete_queue_bytes_are_preserved_before_recovery_fails() {
         for newline_terminated in [true, false] {
@@ -1033,6 +1045,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn corrupt_complete_worker_identifiers_are_preserved_before_recovery_fails() {
         for newline_terminated in [true, false] {
@@ -1062,6 +1075,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_complete_worker_record_without_newline_survives_healing() {
         let path = temp_path("complete-eof.recovery.jsonl");
@@ -1081,6 +1095,7 @@ mod tests {
         fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn competing_worker_writers_cannot_replace_an_active_append() {
         for contender in ["open", "settle"] {
@@ -1128,6 +1143,7 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     #[allow(clippy::used_underscore_binding)] // Intentionally duplicate the private lifetime guard to model an inherited descriptor.
     fn dropping_a_journal_releases_ownership_while_a_duplicate_handle_survives() {

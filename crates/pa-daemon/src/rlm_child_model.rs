@@ -241,6 +241,7 @@ mod tests {
         .unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn resolves_parent_exact_and_short_form_references() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -296,6 +297,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_allowlist_refuses_resolved_models_loudly() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -357,6 +359,7 @@ mod tests {
         assert_eq!(resolved, "test-provider/glm-5.3");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unmatched_references_carry_the_ts_error_with_close_matches() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -395,6 +398,7 @@ mod tests {
         assert!(!error.to_string().contains("close matches:"), "{error}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn thinking_support_follows_the_resolved_model() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -414,6 +418,7 @@ mod tests {
     /// The child-propagation regression: a spawned child resolves an
     /// entitled private `internal/*` model through the worker's same disk caches.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_spawned_child_resolves_an_entitled_private_model() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -520,6 +525,7 @@ mod tests {
 
     /// The catalog-repo child-resolution regression: a fetched entry the compiled fallback lacks
     /// resolves through the on-disk provider catalog, once its provider is auth-configured.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_spawned_child_resolves_a_catalog_repo_entry_the_compiled_fallback_lacks() {
         const PROBE_ID: &str = "gpt-6-probe";
@@ -609,6 +615,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn roster_text_is_collapsed_and_capped() {
         let label = rlm_child_label("  ship   the\nlane  ");
@@ -625,6 +632,7 @@ mod tests {
         assert!(preview.ends_with("..."));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_binding_lane_keeps_far_more_than_the_preview_cap() {
         // The collect envelope's full-answer lane: a fenced JSON output

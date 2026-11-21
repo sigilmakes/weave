@@ -189,6 +189,7 @@ fn channel_step_run(workflow: &Workflow) -> &str {
     .expect("the channel-manifest step runs a script")
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_workflow_wires_the_channel_manifest_producer() {
     let (text, workflow) = load_workflow();
@@ -282,6 +283,7 @@ fn the_workflow_wires_the_channel_manifest_producer() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_rolling_nightly_refresh_is_a_serialized_job() {
     let (_, workflow) = load_workflow();
@@ -373,6 +375,7 @@ fn the_rolling_nightly_refresh_is_a_serialized_job() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_producer_emits_a_stable_manifest_the_reader_accepts() {
     let (_, workflow) = load_workflow();
@@ -420,6 +423,7 @@ fn the_producer_emits_a_stable_manifest_the_reader_accepts() {
     assert_reader_artifacts_are_truthful(&release, &out);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_producer_emits_a_nightly_manifest_the_reader_accepts() {
     let (_, workflow) = load_workflow();
@@ -447,6 +451,7 @@ fn the_producer_emits_a_nightly_manifest_the_reader_accepts() {
     assert_reader_artifacts_are_truthful(&release, &out);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_producer_refuses_rows_the_reader_rejects() {
     let (_, workflow) = load_workflow();
@@ -476,6 +481,7 @@ fn the_producer_refuses_rows_the_reader_rejects() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_producer_refuses_a_manifest_missing_a_platform_row() {
     let (_, workflow) = load_workflow();
@@ -542,6 +548,7 @@ fn assert_reader_artifacts_are_truthful(release: &LatestRelease, out: &Path) {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn assembled_archives_carry_the_platform_alias_the_reader_demands() {
     let (_, workflow) = load_workflow();

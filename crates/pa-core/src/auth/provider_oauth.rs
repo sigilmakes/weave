@@ -381,6 +381,7 @@ mod tests {
         crate::auth::AuthStorage::in_memory_without_env(&data, integrations())
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_expired_codex_credential_refreshes_and_resolves() {
         let mut auth =
@@ -406,6 +407,7 @@ mod tests {
         assert_eq!(account_id.as_deref(), Some("acct-2"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_expired_anthropic_credential_refreshes_and_resolves() {
         let mut auth = storage_with_credential(
@@ -427,6 +429,7 @@ mod tests {
         assert!(expires > 1, "the fresh expiry landed");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_expired_copilot_credential_refreshes_through_the_enterprise_domain() {
         let mut auth = storage_with_credential(
@@ -457,6 +460,7 @@ mod tests {
         assert!(expires > 1, "the fresh expiry landed");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_expired_xai_credential_refreshes_and_resolves() {
         let mut auth =
@@ -476,6 +480,7 @@ mod tests {
         assert!(expires > 1, "the fresh expiry landed");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_failed_refresh_keeps_the_stored_credential() {
         // Nothing scripted: the refresh fails, the stored credential stays.
@@ -499,6 +504,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn non_subscription_providers_do_not_refresh() {
         let mut auth = storage_with_credential("other-oauth", &expired_credential("other-oauth"));
@@ -506,6 +512,7 @@ mod tests {
         assert!(auth.get_all().credential("other-oauth").is_some());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_unexpired_credential_serves_without_a_refresh() {
         let unexpired = AuthCredential::Oauth {

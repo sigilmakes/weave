@@ -205,6 +205,7 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn bootstrap_code_without_skills_binds_rlm() {
         let code = build_rlm_bootstrap_code(&[]);
@@ -214,6 +215,7 @@ mod tests {
         assert!(!code.contains("_PrimeAgentUnavailableSkill"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn bootstrap_recovery_advice_preserves_typescript_runtime() {
         let code = build_rlm_bootstrap_code(&[]);
@@ -225,6 +227,7 @@ mod tests {
         assert!(!code.contains("Remove ~/.prime/agent/kernel-venv "));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn bootstrap_code_imports_skills() {
         let skills = vec![KernelPythonSkill {
@@ -240,6 +243,7 @@ mod tests {
 
     /// The TS #2381 parser table: marker+JSON, noise-prefixed marker, no marker, non-JSON payload
     /// all land where the host-side report decides notice vs silence.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parse_unavailable_python_skills_table() {
         let cases: Vec<(String, Option<UnavailablePythonSkills>)> = vec![
@@ -266,6 +270,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parse_unavailable_python_skills_drops_non_string_and_empty_values() {
         // Non-string values and empty messages drop (TS keeps only

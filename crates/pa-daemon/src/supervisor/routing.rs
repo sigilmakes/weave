@@ -1219,6 +1219,7 @@ mod roster_wake_tests {
         json!({"id":id,"sessionId":id,"sessionFile":path,"runtimeKind":"top-level","rlmDepth":0})
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn exact_passive_durable_id_preserves_custom_path_and_active_id_preference() {
         let mut roster = crate::agent_roster::AgentRoster::new();
@@ -1242,6 +1243,7 @@ mod roster_wake_tests {
             .is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn distinct_passive_files_with_same_durable_id_are_ambiguous() {
         let mut roster = crate::agent_roster::AgentRoster::new();

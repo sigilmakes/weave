@@ -510,6 +510,7 @@ mod tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn import_publication_never_overwrites_and_respects_the_append_lock() {
         let dir = tempfile::tempdir().unwrap();
@@ -535,6 +536,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn import_prepare_preserves_current_bytes_on_invalid_sources_and_collisions() {
         let worker = created_worker().await;
         let dir = tempfile::tempdir().unwrap();
@@ -582,6 +584,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn new_session_answers_the_ts_cancelled_shape() {
         let worker = created_worker().await;
         let response = worker
@@ -598,6 +601,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn switch_session_replaces_the_store_and_fails_on_missing_files() {
         let worker = created_worker().await;
         let response = worker
@@ -622,6 +626,7 @@ mod tests {
     // awaited turns that consume its queue.
     #[allow(clippy::await_holding_lock)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn replacement_flows_retire_only_on_a_prepared_file() {
         let _faux = crate::agent_engine::FAUX_TEST_LOCK
             .lock()
@@ -741,6 +746,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn switch_session_rebinds_the_worker_cwd_and_new_session_keeps_it() {
         let worker = created_worker().await;
         let state = worker
@@ -811,6 +817,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn fork_rebinds_the_scheduled_jobs_onto_the_forked_session() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let sessions_dir = dir.path().join("sessions");
@@ -897,6 +904,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn import_jsonl_answers_the_ts_file_not_found_error() {
         let worker = created_worker().await;
         let response = worker
@@ -921,6 +929,7 @@ mod tests {
 
     /// The typed issue carries the fallback cwd the client's confirm answers with.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn import_jsonl_answers_the_ts_missing_cwd_error_info() {
         let dir = std::env::temp_dir().join(format!("pa-import-cwd-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();

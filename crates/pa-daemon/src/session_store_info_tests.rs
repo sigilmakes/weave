@@ -219,6 +219,7 @@ fn reencode(content: &str) -> String {
     fs::read_to_string(path).unwrap()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "writes fixtures through the durable append path for byte-equivalence evidence"]
 fn bulk_large_session_fixture_matches_durable_appends() {
@@ -228,6 +229,7 @@ fn bulk_large_session_fixture_matches_durable_appends() {
     session_fixture::assert_durable_equivalent(&path);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "writes fixtures through the durable append path for byte-equivalence evidence"]
 fn bulk_zero_usage_session_fixtures_match_durable_appends() {
@@ -259,6 +261,7 @@ fn bulk_large_session_fixture(path: &Path) {
     assert_eq!(fixture.finish(), 2_005);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn streaming_fold_matches_legacy_across_large_file_and_appends() {
     let dir = test_dir();
@@ -279,6 +282,7 @@ fn streaming_fold_matches_legacy_across_large_file_and_appends() {
     fs::remove_dir_all(dir).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cache_rejects_replacement_and_same_length_in_place_rewrite() {
     let dir = test_dir();
@@ -311,6 +315,7 @@ fn cache_rejects_replacement_and_same_length_in_place_rewrite() {
     fs::remove_dir_all(dir).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn untimestamped_fallback_is_not_cached() {
     let dir = test_dir();
@@ -329,6 +334,7 @@ fn untimestamped_fallback_is_not_cached() {
     fs::remove_dir_all(dir).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn captured_fixture_matches_legacy_if_available() {
     let Ok(path) = std::env::var("PA_SESSION_INFO_CAPTURED_FIXTURE") else {
@@ -337,6 +343,7 @@ fn captured_fixture_matches_legacy_if_available() {
     assert_fold_matches(Path::new(&path));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "run with PA_SESSION_INFO_CAPTURED_FIXTURE to benchmark the real corpus"]
 fn captured_fixture_cold_and_warm_timings() {
@@ -367,6 +374,7 @@ fn captured_fixture_cold_and_warm_timings() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_torn_trailing_line_folds_once_completed() {
     let dir = test_dir();
@@ -399,6 +407,7 @@ fn a_torn_trailing_line_folds_once_completed() {
     assert!(completed.all_messages_text.contains("torn text"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_same_size_rewrite_rescans_from_the_top() {
     let dir = test_dir();
@@ -434,6 +443,7 @@ fn a_same_size_rewrite_rescans_from_the_top() {
     assert_fold_matches(&path);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn multi_round_appends_match_the_legacy_fold() {
     let dir = test_dir();
@@ -457,6 +467,7 @@ fn multi_round_appends_match_the_legacy_fold() {
     assert_eq!(final_info.message_count, 250);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_failed_prefix_check_rescans_from_byte_zero() {
     let dir = test_dir();
@@ -509,6 +520,7 @@ fn a_failed_prefix_check_rescans_from_byte_zero() {
 /// cache (and so persistable) only on Unix - `read_session_info_from`'s
 /// store gate - so no sidecar exists to load elsewhere.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_persisted_scan_state_resumes_like_the_full_fold() {
     let dir = test_dir();
@@ -596,6 +608,7 @@ fn a_persisted_scan_state_resumes_like_the_full_fold() {
 /// it), and scans cold past a corrupt one or one at another version.
 /// Unix-only like its sibling: only Unix certifies a state to persist.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_symlinked_lease_release_persists_a_sidecar_the_next_read_serves() {
     let dir = test_dir();
@@ -639,6 +652,7 @@ fn a_symlinked_lease_release_persists_a_sidecar_the_next_read_serves() {
     fs::remove_dir_all(dir).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_valid_unterminated_final_line_folds_only_after_its_newline() {
     let dir = test_dir();
@@ -677,6 +691,7 @@ fn bulk_zero_usage_session_fixture(path: &Path, index: usize) {
     assert_eq!(fixture.finish(), 2);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn zero_usage_states_are_capped_by_count_not_only_the_usage_budget() {
     let dir = test_dir();
@@ -707,6 +722,7 @@ fn zero_usage_states_are_capped_by_count_not_only_the_usage_budget() {
     ))));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn scan_cache_recency_tracks_updates_and_removals_without_growth() {
     let dir = test_dir();
@@ -753,6 +769,7 @@ fn scan_cache_recency_tracks_updates_and_removals_without_growth() {
 
 /// The old-record regression (the Mac bug's shape): `modified` is the
 /// header's creation timestamp, never a scan-time `now()`.
+#[pa_test_scratch::pa_test]
 #[test]
 fn no_timestamp_record_modified_is_the_header_time_across_rescans() {
     let dir = test_dir();
@@ -785,6 +802,7 @@ fn no_timestamp_record_modified_is_the_header_time_across_rescans() {
 }
 
 /// TS falls to `stats.mtime` — including after an mtime cache bust — never the scan time.
+#[pa_test_scratch::pa_test]
 #[test]
 fn unparseable_header_modified_falls_back_to_the_file_mtime() {
     let dir = test_dir();
@@ -809,6 +827,7 @@ fn unparseable_header_modified_falls_back_to_the_file_mtime() {
     fs::remove_dir_all(dir).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn message_timestamps_still_win_over_the_header_fallback() {
     let dir = test_dir();
@@ -834,6 +853,7 @@ fn message_timestamps_still_win_over_the_header_fallback() {
 
 /// The parser rejects an impossible calendar date (2026-02-31) instead of normalizing it
 /// into March (TS `Date.parse` rejects it too).
+#[pa_test_scratch::pa_test]
 #[test]
 fn impossible_calendar_date_header_falls_back_to_the_file_mtime() {
     let dir = test_dir();
@@ -856,6 +876,7 @@ fn impossible_calendar_date_header_falls_back_to_the_file_mtime() {
 }
 
 /// A durable zero stays distinct from an unavailable value (blank).
+#[pa_test_scratch::pa_test]
 #[test]
 fn epoch_zero_mtime_renders_the_epoch_not_blank() {
     let dir = test_dir();
@@ -871,6 +892,7 @@ fn epoch_zero_mtime_renders_the_epoch_not_blank() {
     fs::remove_dir_all(dir).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn content_borrow_matches_full_parse_across_content_matrix() {
     let header =
@@ -1025,6 +1047,7 @@ fn content_borrow_matches_full_parse_across_content_matrix() {
     fs::remove_dir_all(empty_dir).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[allow(clippy::used_underscore_binding)] // the envelope scalars the fold
                                           // keeps only for acceptance (`_timestamp`, `_parent_id`)
@@ -1252,6 +1275,7 @@ fn borrowed_metadata_reads_match_full_parse_across_shape_matrix() {
 
 /// The single-writer premise: a fold by a process that does not hold the
 /// file's lease (the daemon catalog's cold read) never persists a sidecar.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_non_holder_fold_writes_no_sidecar() {
     let dir = test_dir();

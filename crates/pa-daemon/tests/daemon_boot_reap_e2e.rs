@@ -266,6 +266,7 @@ fn orphan_the_worker(daemon: &mut Daemon, agent_dir: &Path, socket: &Path, sessi
 
 /// The operator's exact report, end to end: kill -9 the daemon plus the descriptor loss,
 /// boot a new daemon on the SAME socket, open the session — the boot reaps the leftover.
+#[pa_test_scratch::pa_test]
 #[test]
 fn boot_reap_clears_the_leftover_and_the_session_reopens() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -382,6 +383,7 @@ fn boot_reap_clears_the_leftover_and_the_session_reopens() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn boot_reap_never_touches_a_different_socket_daemon() {
     let dir = tempfile::TempDir::new().expect("temp dir");

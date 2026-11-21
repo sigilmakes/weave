@@ -188,6 +188,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn recoverable_accept_errors_do_not_exit_the_loop() {
         let dir = TempDir::new().unwrap();
         let supervisor = test_supervisor(&dir);
@@ -220,6 +221,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn recoverable_error_storms_back_off_but_never_escalate() {
         let dir = TempDir::new().unwrap();
         let supervisor = test_supervisor(&dir);
@@ -254,6 +256,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn non_recoverable_accept_errors_back_off_and_keep_serving() {
         let dir = TempDir::new().unwrap();
         let supervisor = test_supervisor(&dir);
@@ -288,6 +291,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn a_served_connection_resets_the_give_up_budget() {
         let dir = TempDir::new().unwrap();
         let supervisor = test_supervisor(&dir);
@@ -315,6 +319,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn permanent_accept_failure_escalates_after_the_budget() {
         let dir = TempDir::new().unwrap();
         let supervisor = test_supervisor(&dir);
@@ -346,6 +351,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn accept_errors_while_shutting_down_do_not_back_off_or_escalate() {
         let dir = TempDir::new().unwrap();
         let supervisor = test_supervisor(&dir);
@@ -375,6 +381,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn a_shutdown_wake_ends_the_backoff_early() {
         let dir = TempDir::new().unwrap();
         let supervisor = test_supervisor(&dir);

@@ -137,6 +137,7 @@ fn fill_until_saturated(capture: &RequestPayloadCapture, marker_prefix: &str) ->
     fills
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_capture_writes_the_exact_body_and_envelope() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -182,6 +183,7 @@ fn the_capture_writes_the_exact_body_and_envelope() {
 }
 
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_capture_writes_owner_only_modes_even_into_an_existing_dir() {
     use std::os::unix::fs::PermissionsExt;
@@ -211,6 +213,7 @@ fn the_capture_writes_owner_only_modes_even_into_an_existing_dir() {
 }
 
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn symlinked_components_end_the_capture_before_any_write() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -252,6 +255,7 @@ fn symlinked_components_end_the_capture_before_any_write() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_failed_write_takes_its_temp_file_with_it() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -290,6 +294,7 @@ fn a_failed_write_takes_its_temp_file_with_it() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_over_budget_body_drops_without_cloning() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -346,6 +351,7 @@ fn an_over_budget_body_drops_without_cloning() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_ring_keeps_the_newest_bodies() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -380,6 +386,7 @@ fn the_ring_keeps_the_newest_bodies() {
     assert_eq!(bodies, [2, 3], "the oldest body left first: {bodies:?}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn two_wirings_sharing_one_dir_each_keep_their_capture() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -404,6 +411,7 @@ fn two_wirings_sharing_one_dir_each_keep_their_capture() {
     assert_eq!(wirings, ["a", "b"], "both captures survived intact");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn two_sessions_captures_own_their_directories() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -445,6 +453,7 @@ fn two_sessions_captures_own_their_directories() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_unwritable_target_disables_the_capture_silently() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -464,6 +473,7 @@ fn an_unwritable_target_disables_the_capture_silently() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_record_hands_off_without_waiting_for_the_write() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -497,6 +507,7 @@ fn a_record_hands_off_without_waiting_for_the_write() {
 
 /// The slot reserve precedes the clone; the self-calibrating bound compares the probe's
 /// handoff against the same body's measured clone cost.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_saturated_queue_drops_without_cloning() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();
@@ -561,6 +572,7 @@ fn a_saturated_queue_drops_without_cloning() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn concurrent_producers_drop_at_the_reserve_when_the_queue_is_full() {
     let _writer_lock = super::WRITER_TEST_LOCK.blocking_lock();

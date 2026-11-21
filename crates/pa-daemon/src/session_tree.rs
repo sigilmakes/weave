@@ -418,6 +418,7 @@ mod tests {
         (dir, store)
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn flat_tree_carries_labels() {
         let (_dir, mut store) = temp_store();
@@ -434,6 +435,7 @@ mod tests {
         assert_eq!(labeled["entry"]["id"], json!(a));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn labels_last_write_wins_and_clears() {
         let (_dir, mut store) = temp_store();
@@ -445,6 +447,7 @@ mod tests {
         assert_eq!(state.labels.get(&a), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn user_messages_for_forking_lists_texted_user_messages() {
         let (_dir, mut store) = temp_store();
@@ -460,6 +463,7 @@ mod tests {
         assert_eq!(messages[0]["text"], json!("first prompt"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_to_moves_leaf_and_validates() {
         let (_dir, mut store) = temp_store();
@@ -476,6 +480,7 @@ mod tests {
         assert_eq!(store.leaf_id(), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_summary_preserves_paid_output_and_unknown_details() {
         let (_dir, mut store) = temp_store();
@@ -502,6 +507,7 @@ mod tests {
         assert_eq!(entry.parent_id.as_deref(), Some(parent.as_str()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_summary_entry_shape() {
         let (_dir, mut store) = temp_store();
@@ -527,6 +533,7 @@ mod tests {
 
     /// A summary served by an auxiliary model persists its serving identity on
     /// the entry: the per-model cost fold bills the row on the model that billed it.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_summary_entry_records_the_serving_model() {
         let (_dir, mut store) = temp_store();
@@ -551,6 +558,7 @@ mod tests {
         assert_eq!(entry.fields["usage"]["totalTokens"], json!(55));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn fork_file_keeps_path_and_carries_labels() {
         let (dir, mut store) = temp_store();
@@ -576,6 +584,7 @@ mod tests {
         let _ = c;
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn replace_with_branch_swaps_in_memory_entries() {
         let (_dir, mut store) = temp_store();
@@ -594,6 +603,7 @@ mod tests {
     /// file — a fork whose kept path carries the marker answers open (its
     /// first open draws no second warning), and a fork cut ABOVE the
     /// marker (the genuinely-new-session case) answers closed.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn forked_stores_hydrate_the_warning_gate_from_their_own_rows() {
         let (dir, mut store) = temp_store();
@@ -635,6 +645,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn file_entries_round_trip() {
         let (_dir, mut store) = temp_store();
@@ -643,6 +654,7 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].id().unwrap(), a);
     }
+    #[pa_test_scratch::pa_test]
     #[test]
     fn selection_survives_reopen_without_a_following_message() {
         let dir = tempfile::tempdir().unwrap();
@@ -668,6 +680,7 @@ mod tests {
         store.branch_to(None).unwrap();
         assert_eq!(SessionFile::open(&path).unwrap().leaf_id(), None);
     }
+    #[pa_test_scratch::pa_test]
     #[test]
     fn legacy_open_never_repairs_or_rewrites_the_source() {
         let dir = tempfile::tempdir().unwrap();

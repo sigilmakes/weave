@@ -63,6 +63,7 @@ mod tests {
         ]
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn notice_names_each_failed_skill_and_its_error() {
         let message = notice_message(&errors());

@@ -390,6 +390,7 @@ fn sigkill(pid: u32) {
 /// as a settled row from the surviving spawn edge, and the child stays
 /// visible as a passive ledger row (the close is a plain stop - the
 /// spawn edge survives, no delete record).
+#[pa_test_scratch::pa_test]
 #[test]
 fn sigkill_closes_the_spawned_child_and_passivates_the_row() {
     let Some(kernel_python) = kernel_python() else {
@@ -530,6 +531,7 @@ fn sigkill_closes_the_spawned_child_and_passivates_the_row() {
 /// `rlm.create_session` depth-0 roots are NOT parent-linked (TS `createRlmRootSession`
 /// carries no `parentActiveSessionId`, so `getChildActiveSessionStates` never matches
 /// them): a created root survives the parent's hard death.
+#[pa_test_scratch::pa_test]
 #[test]
 fn sigkill_keeps_a_created_root_session_running() {
     let Some(kernel_python) = kernel_python() else {
@@ -642,6 +644,7 @@ fn semantic_ledger(path: &Path) -> Vec<LedgerEvent> {
 /// `recordChildReturned`; the spawn runs mid-turn through the product
 /// `rlm.spawn` surface, and both engines are real over the faux
 /// provider).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_spawned_child_ledger_names_its_spawning_request_and_the_parent_records_the_return() {
     let Some(kernel_python) = kernel_python() else {

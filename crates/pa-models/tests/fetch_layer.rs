@@ -10,6 +10,7 @@ use pa_models::fetch::{CatalogFetcher, FetchOutcome};
 use std::time::Duration;
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn serves_200_bodies_with_etags_and_sends_catalog_headers() {
     let server = common::MockServer::start(vec![ok_json(
         "{\"schemaVersion\":1,\"models\":[]}",
@@ -46,6 +47,7 @@ async fn serves_200_bodies_with_etags_and_sends_catalog_headers() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn redirects_are_refused() {
     let server = common::MockServer::start(vec![redirect()]).await;
     let fetcher = CatalogFetcher::new();
@@ -57,6 +59,7 @@ async fn redirects_are_refused() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn non_success_statuses_surface_with_their_code() {
     let server = common::MockServer::start(vec![status(404, "Not Found")]).await;
     let fetcher = CatalogFetcher::new();
@@ -74,6 +77,7 @@ async fn non_success_statuses_surface_with_their_code() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn content_length_over_the_cap_fails_before_reading() {
     let server = common::MockServer::start(vec![common::oversized_header()]).await;
     let fetcher = CatalogFetcher::new();
@@ -81,6 +85,7 @@ async fn content_length_over_the_cap_fails_before_reading() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn streamed_bodies_past_the_cap_fail_mid_read() {
     let server = common::MockServer::start(vec![common::oversized_stream()]).await;
     let fetcher = CatalogFetcher::with_limits(Duration::from_secs(5), 64 * 1024);
@@ -92,6 +97,7 @@ async fn streamed_bodies_past_the_cap_fail_mid_read() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn hard_timeout_aborts_unresponsive_servers() {
     // A server that accepts but never answers: the 5s timeout would make the
     // test slow, so bound the same policy with a short explicit limit.
@@ -116,6 +122,7 @@ async fn hard_timeout_aborts_unresponsive_servers() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn connection_failures_are_transport_errors() {
     // Bind then close: nothing listens on this port anymore.
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

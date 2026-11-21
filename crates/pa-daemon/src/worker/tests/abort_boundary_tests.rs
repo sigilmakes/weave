@@ -5,6 +5,7 @@ use super::*;
 /// row it rejects plain prompts until a resume site (a steer), and with nothing
 /// parked it releases itself instead of wedging the idle session (issue #33).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn abort_with_parked_work_suspends_plain_prompts_until_steer_resumes() {
     let worker = created_dispatch_worker().await;
     park_steering_row(&worker, "parked row");
@@ -56,6 +57,7 @@ async fn abort_with_parked_work_suspends_plain_prompts_until_steer_resumes() {
 /// An abort on an idle session with nothing queued has nothing to hold: it must
 /// not leave the session deaf to every later prompt and agent message.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn abort_with_an_empty_queue_releases_the_gate() {
     let worker = created_dispatch_worker().await;
     let aborted = worker.dispatch("abort", &json!({})).await;
@@ -80,6 +82,7 @@ async fn abort_with_an_empty_queue_releases_the_gate() {
 /// nothing left to hold: it releases its own gate instead of leaving the idle
 /// session suspended until an unrelated resume site fires.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_success_with_an_empty_queue_releases_the_gate() {
     let worker = created_dispatch_worker().await;
     let compact = worker
@@ -115,6 +118,7 @@ async fn compact_success_with_an_empty_queue_releases_the_gate() {
 /// A skipped compaction (nothing to compact) is the same empty-hold case: the
 /// gate must not outlive it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_skip_with_an_empty_queue_releases_the_gate() {
     let worker = crate::worker::compaction_admission_tests::compaction_admission_worker(json!({
         "responses": [{ "error": "Session is too short to compact", "skipped": true }],
@@ -146,6 +150,7 @@ async fn compact_skip_with_an_empty_queue_releases_the_gate() {
 /// A failed compaction that parked work MID-window keeps the park (the hold
 /// still protects rows); the explicit resume boundary is the way out.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_failure_with_parked_work_keeps_the_park() {
     let worker = crate::worker::compaction_admission_tests::compaction_admission_worker(json!({
         "responses": [{ "error": "provider exploded" }],
@@ -180,6 +185,7 @@ async fn compact_failure_with_parked_work_keeps_the_park() {
 
 /// The interrupt aborts the run AND delivers the parked queue right after the turn settles.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 // the faux registry is process-global: the guard must span the async flow
 #[allow(clippy::await_holding_lock)]
 async fn abort_and_send_queued_delivers_the_parked_queue_at_the_boundary() {
@@ -354,6 +360,7 @@ async fn abort_and_send_queued_delivers_the_parked_queue_at_the_boundary() {
 /// Abort-and-send with nothing queued is an abort with nothing to send: it
 /// releases its gate instead of parking the session forever.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn abort_and_send_queued_with_an_empty_queue_releases_the_gate() {
     let worker = created_dispatch_worker().await;
     let aborted = worker.dispatch("abort_and_send_queued", &json!({})).await;
@@ -455,6 +462,7 @@ impl Drop for ProviderAdmission {
 
 /// The sanctioned divergence: the OLDEST queued follow-up starts the next turn after the settle.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 async fn abort_and_send_queued_with_only_follow_ups_starts_the_oldest() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
@@ -659,6 +667,7 @@ async fn abort_and_send_queued_with_only_follow_ups_starts_the_oldest() {
 /// Abort-and-clear empties the lanes before it suspends, so it has nothing to
 /// hold either: the gate releases and later input is admitted.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn abort_and_clear_queue_with_nothing_parked_releases_the_gate() {
     let worker = created_dispatch_worker().await;
     let cleared = worker.dispatch("abort_and_clear_queue", &json!({})).await;
@@ -696,6 +705,7 @@ async fn abort_and_clear_queue_with_nothing_parked_releases_the_gate() {
 /// `cancelOwned`. The running admission's `cancelOwned` aborts its turn
 /// and the settle clears the admission.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn cancel_owned_admission_aborts_the_running_prompt() {
     let dir = std::env::temp_dir().join(format!("pa-worker-cancel-owned-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -1045,6 +1055,7 @@ async fn agent_message_transcript(worker: &Worker) -> (Option<Value>, Vec<String
 /// the aborted turn settles, then the parked row delivers as the next turn
 /// (TS's ctrl+c must never strand agent mail behind the suspension).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 // the faux registry is process-global: the guard must span the async flow
 #[allow(clippy::await_holding_lock)]
 async fn abort_and_send_queued_delivers_the_parked_agent_message() {
@@ -1125,6 +1136,7 @@ async fn abort_and_send_queued_delivers_the_parked_agent_message() {
 /// abort clears the suspension, the pump holds the delivery while the pause
 /// stands, and the pause release delivers the parked agent message.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 // the faux registry is process-global: the guard must span the async flow
 #[allow(clippy::await_holding_lock)]
 async fn abort_and_send_queued_under_a_held_pause_delivers_on_the_release() {

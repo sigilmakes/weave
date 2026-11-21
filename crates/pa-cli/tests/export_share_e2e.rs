@@ -67,6 +67,7 @@ fn process_stat_alive(stat: &str) -> bool {
     !rest.trim_start().starts_with('Z')
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn process_stat_parser_distinguishes_zombies_from_live_workers() {
     assert!(!process_stat_alive("123 (test worker) Z 1 2 3"));
@@ -209,6 +210,7 @@ fn make_executable(path: &Path) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn export_refuses_unavailable_tools_while_session_log_is_locked() {
     use std::io::Write as _;
     use std::os::unix::ffi::OsStrExt as _;
@@ -369,6 +371,7 @@ end}}}
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn cached_build_failure_keeps_the_leaf_diagnostic_in_display_reads() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -484,6 +487,7 @@ async fn cached_build_failure_keeps_the_leaf_diagnostic_in_display_reads() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_export_and_share_surface() {
     use base64::Engine as _;
     let dir = tempfile::TempDir::new().expect("temp dir");

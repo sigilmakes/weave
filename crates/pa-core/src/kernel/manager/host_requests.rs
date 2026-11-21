@@ -231,6 +231,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn exact_cancel_is_idempotent_and_cleans_map_without_affecting_other_requests() {
         let (started_tx, mut started) = mpsc::unbounded_channel();
         let (dropped_tx, mut dropped) = mpsc::unbounded_channel();
@@ -294,6 +295,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn dropping_last_manager_aborts_handler_instead_of_leaking_kernel_owner() {
         let (started_tx, mut started) = mpsc::unbounded_channel();
         let (dropped_tx, mut dropped) = mpsc::unbounded_channel();
@@ -331,6 +333,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn completion_failure_panic_and_pre_poll_cancel_remove_task_entries() {
         let mut handlers = HostRequestHandlers::new();
         handlers.register("ok", host_handler(|_| async { Ok(json!(42)) }));
@@ -360,6 +363,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cancelled_large_reply_finishes_admitted_frame_and_keeps_stdin_reusable() {
         use std::os::unix::fs::PermissionsExt;
         let dir = tempfile::tempdir().unwrap();

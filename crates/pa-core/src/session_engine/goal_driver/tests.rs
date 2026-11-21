@@ -150,6 +150,7 @@ fn usage(input: u64, output: u64) -> pa_types::ai::Usage {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compacted_goal_restore_and_mutation_do_not_hydrate_history() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("goal.jsonl");
@@ -192,6 +193,7 @@ async fn compacted_goal_restore_and_mutation_do_not_hydrate_history() {
     assert!(std::fs::read(&path).unwrap().starts_with(&original));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn start_resume_pause_lifecycle() {
     let (_session_dir, mut session) = persisted_session();
@@ -232,6 +234,7 @@ fn start_resume_pause_lifecycle() {
     assert_eq!(driver.state().objective, None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn usage_accounting_and_budget_limit() {
     let (_session_dir, mut session) = persisted_session();
@@ -272,6 +275,7 @@ fn usage_accounting_and_budget_limit() {
     assert_eq!(driver.state().status, GoalStatus::BudgetLimited);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn terminal_messages_fail_or_keep_the_goal() {
     use pa_types::ai::StopReason;
@@ -296,6 +300,7 @@ fn terminal_messages_fail_or_keep_the_goal() {
     assert_eq!(driver.state().status, GoalStatus::Error);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn continuations_increment() {
     let (_session_dir, mut session) = persisted_session();
@@ -332,6 +337,7 @@ fn continuations_increment() {
     assert_eq!(reloaded.state().continuations_used, 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_mint_refuses_and_finishes_on_an_errored_turn() {
     let (_session_dir, mut session) = persisted_session();
@@ -361,6 +367,7 @@ fn the_mint_refuses_and_finishes_on_an_errored_turn() {
 }
 
 /// A rate-limited corpse never triggers the hard finish; it counts toward the no-output backoff.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_rate_limited_turn_keeps_the_goal_alive() {
     let (_session_dir, mut session) = persisted_session();
@@ -396,6 +403,7 @@ fn a_rate_limited_turn_keeps_the_goal_alive() {
     assert_eq!(driver.state().continuations_used, 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn no_output_turns_count_to_the_cap_and_backoff() {
     let (_session_dir, mut session) = persisted_session();
@@ -466,6 +474,7 @@ fn no_output_turns_count_to_the_cap_and_backoff() {
 }
 
 /// Only a turn the goal's own lifetime produced (timestamp after `created_at`) can judge it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_stale_pre_goal_corpse_never_finishes_the_new_goal() {
     let (_session_dir, mut session) = persisted_session();
@@ -494,6 +503,7 @@ fn a_stale_pre_goal_corpse_never_finishes_the_new_goal() {
     assert_eq!(driver.state().no_progress_streak, Some(0));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_replacement_goal_starts_with_a_fresh_streak() {
     let (_session_dir, mut session) = persisted_session();
@@ -534,6 +544,7 @@ fn a_replacement_goal_starts_with_a_fresh_streak() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rate_limit_and_empty_text_corpses_and_the_examined_gate() {
     let (_session_dir, mut session) = persisted_session();
@@ -593,6 +604,7 @@ fn rate_limit_and_empty_text_corpses_and_the_examined_gate() {
 
 /// The examined-turn dedup keys on the millisecond timestamp (the operator's
 /// ruling) — NOT a total order across settle paths: the kill is UNCONDITIONAL.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_terminal_error_sharing_the_millisecond_still_refuses() {
     let (_session_dir, mut session) = persisted_session();
@@ -655,6 +667,7 @@ fn a_terminal_error_sharing_the_millisecond_still_refuses() {
 
 /// A same-ms pre-goal row never judges the new goal — the gate requires a
 /// STRICTLY later turn — and a parked refusal clears an earlier strike's window.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_same_ms_pre_goal_corpse_never_judges_the_new_goal() {
     let (_session_dir, mut session) = persisted_session();
@@ -691,6 +704,7 @@ fn a_same_ms_pre_goal_corpse_never_judges_the_new_goal() {
     assert_eq!(driver.state().status, GoalStatus::Error);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_parked_refusal_clears_an_earlier_strikes_window() {
     let (_session_dir, mut session) = persisted_session();
@@ -730,6 +744,7 @@ fn a_parked_refusal_clears_an_earlier_strikes_window() {
 /// deadline passed during the settled run: the take still yields the
 /// overdue deadline once — the sleep saturates to zero — and consuming
 /// it admits exactly one wake per strike.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_print_wake_take_yields_an_overdue_window_once() {
     let (_session_dir, mut session) = persisted_session();
@@ -754,6 +769,7 @@ fn the_print_wake_take_yields_an_overdue_window_once() {
     assert_eq!(driver.take_backoff_wake_at(), None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_rate_limit_refusal_sticks_across_reconsults() {
     let (_session_dir, mut session) = persisted_session();
@@ -788,6 +804,7 @@ fn the_rate_limit_refusal_sticks_across_reconsults() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_restored_goal_at_the_cap_finishes_at_the_first_consult() {
     let (_session_dir, mut session) = persisted_session();
@@ -818,6 +835,7 @@ fn a_restored_goal_at_the_cap_finishes_at_the_first_consult() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn load_persisted_adopts_the_stale_active_failure() {
     let (_session_dir, mut session) = persisted_session();
@@ -879,6 +897,7 @@ fn load_persisted_adopts_the_stale_active_failure() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn owed_continuation_defers_and_delivers_once() {
     let (_session_dir, mut session) = persisted_session();
@@ -920,6 +939,7 @@ fn owed_continuation_defers_and_delivers_once() {
     assert!(!driver.owes_continuation());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rollback_continuation_mint_restores_the_count() {
     let (_session_dir, mut session) = persisted_session();
@@ -945,6 +965,7 @@ fn rollback_continuation_mint_restores_the_count() {
     assert_eq!(driver.state().continuations_used, 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn resume_resolves_the_existing_goal() {
     let (_session_dir, mut session) = persisted_session();
@@ -972,6 +993,7 @@ fn resume_resolves_the_existing_goal() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn restore_persisted_adopts_the_state_without_rewriting_it() {
     let state = GoalState {
@@ -1024,6 +1046,7 @@ fn restore_persisted_adopts_the_state_without_rewriting_it() {
     assert_eq!(driver.state().continuations_used, 3);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn branch_seedable_rules() {
     let (_session_dir, mut session) = persisted_session();
@@ -1053,6 +1076,7 @@ fn append_goal_row(session: &mut SessionManager, state: &GoalState) {
         .unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn same_timeline_reload_never_regresses_the_same_goal() {
     let (_session_dir, mut session) = persisted_session();
@@ -1095,6 +1119,7 @@ fn same_timeline_reload_never_regresses_the_same_goal() {
     assert_eq!(driver.state().tokens_used, 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn same_timeline_reload_keeps_a_fired_budget_gate() {
     let (_session_dir, mut session) = persisted_session();
@@ -1131,6 +1156,7 @@ fn same_timeline_reload_keeps_a_fired_budget_gate() {
 
 /// A different goal adopts faithfully even under the same-timeline
 /// rule (the clamp is same-goal only).
+#[pa_test_scratch::pa_test]
 #[test]
 fn same_timeline_reload_adopts_a_different_goal_faithfully() {
     let (_session_dir, mut session) = persisted_session();
@@ -1186,6 +1212,7 @@ fn same_timeline_reload_adopts_a_different_goal_faithfully() {
     assert_eq!(driver.state().time_used_seconds, 9);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_skips_invalid_rows() {
     let (_session_dir, mut session) = persisted_session();
@@ -1226,6 +1253,7 @@ fn reload_skips_invalid_rows() {
 
 /// The operator's exact case (2026-09-28): a goal created ~2 hours
 /// ago reads ~2 hours, and no accounting write compounds it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn creation_based_timer_reads_the_goals_age() {
     let (_session_dir, mut session) = persisted_session();
@@ -1274,6 +1302,7 @@ fn creation_based_timer_reads_the_goals_age() {
 
 /// The paused goal displays the same creation-based age (the
 /// operator's ruling).
+#[pa_test_scratch::pa_test]
 #[test]
 fn paused_goal_reads_its_age() {
     let (_session_dir, mut session) = persisted_session();
@@ -1300,6 +1329,7 @@ fn paused_goal_reads_its_age() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rows_without_created_at_backfill_from_updated_at() {
     let (_session_dir, mut session) = persisted_session();
@@ -1341,6 +1371,7 @@ fn rows_without_created_at_backfill_from_updated_at() {
     assert_eq!(GoalDriver::load_persisted(&fresh).state().created_at, None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn pending_continuation_never_re_arms() {
     let (_session_dir, mut session) = persisted_session();

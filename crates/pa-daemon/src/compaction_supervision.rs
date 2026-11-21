@@ -543,6 +543,7 @@ mod tests {
         supervision
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn armed_run_settles_on_its_own_end() {
         let supervision = supervision_with_run("manual");
@@ -551,6 +552,7 @@ mod tests {
         assert_eq!(supervision.declare_terminal_if_unresolved(epoch), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unresolved_abort_declares_terminal() {
         let supervision = supervision_with_run("threshold");
@@ -566,6 +568,7 @@ mod tests {
         assert_eq!(supervision.declare_terminal_if_unresolved(epoch), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_newer_run_escapes_an_older_watch() {
         let supervision = supervision_with_run("manual");
@@ -582,12 +585,14 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn abort_without_a_run_supervises_nothing() {
         let supervision = CompactionSupervision::default();
         assert_eq!(supervision.request_abort(), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_gone_declares_only_aborted_runs() {
         let plain = supervision_with_run("manual");
@@ -609,6 +614,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn fallback_arm_is_abort_requested_manual() {
         let supervision = CompactionSupervision::default();
@@ -624,6 +630,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn fallback_arm_respects_a_live_run() {
         let supervision = supervision_with_run("threshold");
@@ -643,6 +650,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_delayed_start_frame_carries_the_fallback_abort() {
         let supervision = CompactionSupervision::default();
@@ -667,6 +675,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_normal_replacement_arms_unaborted() {
         let supervision = supervision_with_run("manual");
@@ -687,6 +696,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn epochs_stay_monotonic_across_clears() {
         let supervision = supervision_with_run("manual");
@@ -698,6 +708,7 @@ mod tests {
         assert_eq!(supervision.declare_terminal_if_unresolved(first), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn journal_survives_restart_until_consumed_or_cleared() {
         let dir = std::env::temp_dir().join(format!("pa-comp-sup-{}", uuid::Uuid::new_v4()));
@@ -752,6 +763,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_manual_declaration_never_displaces_a_pending_record() {
         let dir = std::env::temp_dir().join(format!("pa-comp-sup-{}", uuid::Uuid::new_v4()));
@@ -808,6 +820,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_failed_durable_write_stays_retryable_until_the_replay() {
         let dir = std::env::temp_dir().join(format!("pa-comp-sup-{}", uuid::Uuid::new_v4()));
@@ -851,6 +864,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn terminal_journal_read_failure_stops_recovery() {
         let dir = std::env::temp_dir().join(format!("pa-comp-sup-{}", uuid::Uuid::new_v4()));
@@ -864,6 +878,7 @@ mod tests {
         std::fs::remove_dir_all(&dir).unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn terminal_journal_open_heals_torn_utf8_tail() {
         let dir = std::env::temp_dir().join(format!("pa-comp-sup-{}", uuid::Uuid::new_v4()));
@@ -899,6 +914,7 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn corrupt_complete_terminal_identifiers_are_preserved_before_recovery_fails() {
         for newline_terminated in [true, false] {
@@ -936,6 +952,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_competing_terminal_writer_cannot_replace_an_active_append() {
         use std::io::Write;
@@ -985,6 +1002,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_competing_supervisor_does_not_heal_before_socket_admission() {
         use std::io::Write;
         let dir = std::path::PathBuf::from("/tmp").join(format!("pa-c-{}", uuid::Uuid::new_v4()));

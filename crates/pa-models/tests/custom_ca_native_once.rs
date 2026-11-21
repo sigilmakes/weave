@@ -6,6 +6,7 @@ use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on e
 mod common;
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_native_trust_store_is_read_once_per_process() {
     let mut server = common::tls_catalog_server(2).await;
     let ca_env = common::ca_bundle_env("SSL_CERT_FILE", &server.ca_pem);

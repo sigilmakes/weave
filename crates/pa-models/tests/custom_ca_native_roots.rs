@@ -6,6 +6,7 @@ use pa_test_scratch as _; // a private TMPDIR for this test binary, deleted on e
 mod common;
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn ssl_cert_file_backs_the_unix_native_catalog_loader() {
     common::fetch_trusting_test_ca("SSL_CERT_FILE").await;
 }

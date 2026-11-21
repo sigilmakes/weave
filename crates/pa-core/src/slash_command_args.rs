@@ -94,6 +94,7 @@ fn parse_goal_budget_value(value: &str) -> Result<u64, String> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn goal_command_kinds() {
         assert_eq!(parse_goal_command("").unwrap(), GoalCommand::Status);

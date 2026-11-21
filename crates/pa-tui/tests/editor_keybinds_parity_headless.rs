@@ -239,6 +239,7 @@ fn ctrl_home() -> HeadlessStep {
     key(KeyCode::Home, KeyModifiers::CONTROL)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn paste_undo_redo_round_trip() {
     let frames = run_plan(vec![
@@ -282,6 +283,7 @@ fn paste_undo_redo_round_trip() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn select_all_replaces_and_undo_restores() {
     let frames = run_plan(vec![
@@ -307,6 +309,7 @@ fn select_all_replaces_and_undo_restores() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn shift_selection_backspace_deletes_the_selection() {
     let frames = run_plan(vec![
@@ -325,6 +328,7 @@ fn shift_selection_backspace_deletes_the_selection() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn ctrl_home_jumps_to_the_start() {
     let frames = run_plan(vec![

@@ -228,6 +228,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn publish_reaches_only_the_attached_connection() {
         let registry = SessionSubscribers::new();
         let (first_tx, mut first_rx) = queue(8);
@@ -253,6 +254,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn detach_stops_delivery_at_the_detach_instant() {
         let registry = SessionSubscribers::new();
         let (tx, mut rx) = queue(8);
@@ -266,6 +268,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn rebind_moves_the_subscription_between_ids() {
         let registry = SessionSubscribers::new();
         let (tx, mut rx) = queue(8);
@@ -285,6 +288,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_full_queue_drops_once_per_stall_cycle() {
         let registry = SessionSubscribers::new();
         let (tx, mut rx) = queue(2);
@@ -313,6 +317,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_closed_queue_prunes_its_subscription() {
         let registry = SessionSubscribers::new();
         let (tx, rx) = queue(2);
@@ -329,6 +334,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn attach_is_idempotent_and_disconnect_clears_every_session() {
         let registry = SessionSubscribers::new();
         let (tx, mut rx) = queue(8);

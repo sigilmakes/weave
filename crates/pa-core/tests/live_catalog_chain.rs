@@ -222,6 +222,7 @@ fn pi_payload(repriced_id: &str, repriced_input: f64) -> String {
 /// The credentialed fetches carry the Bearer + team headers (the
 /// $0-pricing bug: production fetched without them).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn refresh_lands_live_pricing_private_models_and_layer_a_entries() {
     let agent_dir = tempfile::tempdir().unwrap();
     let bundled_dir = tempfile::tempdir().unwrap();
@@ -305,6 +306,7 @@ async fn refresh_lands_live_pricing_private_models_and_layer_a_entries() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn startup_refresh_warms_the_process_shared_catalog() {
     let agent_dir = tempfile::tempdir().unwrap();
     let bundled_dir = tempfile::tempdir().unwrap();
@@ -341,6 +343,7 @@ async fn startup_refresh_warms_the_process_shared_catalog() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn without_credentials_the_compiled_fallback_serves_unchanged() {
     let agent_dir = tempfile::tempdir().unwrap();
     let bundled_dir = tempfile::tempdir().unwrap();
@@ -375,6 +378,7 @@ async fn without_credentials_the_compiled_fallback_serves_unchanged() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn layer_a_fetch_adds_entries_the_compiled_fallback_lacks() {
     let agent_dir = tempfile::tempdir().unwrap();
     let bundled_dir = tempfile::tempdir().unwrap();
@@ -405,6 +409,7 @@ async fn layer_a_fetch_adds_entries_the_compiled_fallback_lacks() {
 /// the full catalog but is gated out of the picker (the production openai-codex picker gap was
 /// missing auth, not missing wiring).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_picker_available_list_shows_a_fetched_entry_once_its_provider_auth_is_configured() {
     async fn refreshed_registry_with_openai_auth(
         openai_auth_configured: bool,
@@ -469,6 +474,7 @@ async fn the_picker_available_list_shows_a_fetched_entry_once_its_provider_auth_
 /// `findSessionModelWithReadinessWait`: the session boot gives the daemon restart's fetch a bounded
 /// window before the lookup is allowed to fail).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn session_model_restore_waits_out_a_slow_catalog_fetch() {
     let agent_dir = tempfile::tempdir().unwrap();
     let bundled_dir = tempfile::tempdir().unwrap();
@@ -501,6 +507,7 @@ async fn session_model_restore_waits_out_a_slow_catalog_fetch() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn session_model_restore_is_bounded_when_the_fetch_never_lands() {
     let agent_dir = tempfile::tempdir().unwrap();
     let bundled_dir = tempfile::tempdir().unwrap();
@@ -527,6 +534,7 @@ async fn session_model_restore_is_bounded_when_the_fetch_never_lands() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn session_model_restore_fast_path_never_fetches() {
     let agent_dir = tempfile::tempdir().unwrap();
     let bundled_dir = tempfile::tempdir().unwrap();

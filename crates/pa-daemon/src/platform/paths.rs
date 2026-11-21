@@ -93,6 +93,7 @@ mod tests {
     use super::*;
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn default_endpoints_are_separate_from_typescript_for_the_real_uid() {
         let uid = pa_core::platform::process::current_user_id();
@@ -118,6 +119,7 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn generated_endpoints_fit_even_when_tmpdir_is_deep() {
         use std::os::unix::net::SocketAddr;
@@ -146,6 +148,7 @@ mod tests {
     /// a client that connects by the descriptor's path string cannot address a deep socket,
     /// so a deep `TMPDIR` loses to a connectable directory on every Unix.
     #[cfg(target_os = "linux")]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn deep_tmpdir_yields_to_a_connectable_directory() {
         use std::os::unix::net::SocketAddr;
@@ -166,6 +169,7 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn deep_tmpdirs_get_distinct_socket_directories() {
         let first = PathBuf::from(format!("/{}", "a".repeat(120)));
@@ -174,6 +178,7 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn short_tmpdir_keeps_the_rust_socket_directory() {
         assert_eq!(
@@ -182,6 +187,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_socket_names_are_deterministic_and_supervisor_scoped() {
         let supervisor = Path::new("/fixture/first/daemon.sock");
@@ -196,6 +202,7 @@ mod tests {
         assert!(a.starts_with(socket_dir()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     #[cfg(windows)]
     fn windows_default_endpoints_are_separate_from_typescript() {

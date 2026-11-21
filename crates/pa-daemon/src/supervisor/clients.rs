@@ -1134,6 +1134,7 @@ mod tests {
     /// shutdown task has not claimed its owner yet. Keep the receiver alive
     /// through that cleanup window, then release the real shutdown dispatch.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_late_shutdown_cannot_send_into_a_retired_client_queue() {
         let dir = tempfile::TempDir::new().unwrap();
         let supervisor = Arc::new(
@@ -1208,6 +1209,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_shutdown_request_logs_its_client() {
         let dir = tempfile::TempDir::new().unwrap();
         let options = SupervisorOptions {
@@ -1265,6 +1267,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_lagged_client_event_stream_is_logged() {
         use tokio::io::AsyncReadExt as _;
         let dir = tempfile::TempDir::new().unwrap();
@@ -1389,6 +1392,7 @@ mod tests {
     /// the slot clears, but the descriptor read can yield to a new client.
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn reconnect_during_expired_cleanup_keeps_owned_worker() {
         let dir = tempfile::TempDir::new().unwrap();
         let supervisor = Arc::new(
@@ -1463,6 +1467,7 @@ mod tests {
     /// of firing at the disconnect.
     #[cfg(unix)]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_client_owned_worker_stops_after_its_owner_s_last_connection_closes() {
         let dir = tempfile::TempDir::new().unwrap();
         let supervisor = Arc::new(

@@ -87,6 +87,7 @@ pub fn rename_onto(from: &Path, to: &Path) -> io::Result<()> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn win32_retries_busy_failures_with_linear_backoff_until_cap() {
         for failure in [RenameFailure::AccessDenied, RenameFailure::Busy] {
@@ -110,6 +111,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unix_and_fatal_failures_never_retry() {
         for failure in [
@@ -130,6 +132,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rename_onto_replaces_destination() {
         let dir = tempfile::tempdir().unwrap();
@@ -142,6 +145,7 @@ mod tests {
         assert!(!from.exists());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rename_onto_missing_source_surfaces_the_error() {
         let dir = tempfile::tempdir().unwrap();
@@ -151,6 +155,7 @@ mod tests {
         assert_eq!(error.kind(), std::io::ErrorKind::NotFound);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn classification_marks_only_the_win32_busy_family_transient() {
         use io::ErrorKind;
@@ -181,6 +186,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     #[cfg(unix)]
     fn unix_surfaces_real_permission_failures() {
@@ -253,6 +259,7 @@ mod durable_tests {
         dir
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn durable_rename_replaces_the_destination_and_keeps_its_bytes() {
         let dir = scratch("replace");
@@ -269,6 +276,7 @@ mod durable_tests {
         fs::remove_dir_all(&dir).ok();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn durable_rename_creates_a_new_name_without_a_prior_destination() {
         let dir = scratch("create");
@@ -283,11 +291,13 @@ mod durable_tests {
     /// A bare relative name syncs the current directory: that IS its containing
     /// directory, so the proof is real rather than silently skipped. This matches
     /// the append path's normalisation, so the two durability helpers agree.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn bare_relative_name_syncs_the_current_directory() {
         sync_parent_directory(Path::new("bare-name.jsonl")).expect("current directory sync");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_missing_parent_directory_surfaces_the_open_error() {
         let dir = scratch("missing-parent");

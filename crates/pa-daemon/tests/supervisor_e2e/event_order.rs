@@ -25,6 +25,7 @@ const SOCKET_SLACK: usize = 1 << 20;
 /// a wire offset past [`SOCKET_SLACK`] was still queued in the supervisor
 /// when `wait_for_idle` answered; the test asserts a minimum count of
 /// those, so a turn too small to build a queue fails loudly.
+#[pa_test_scratch::pa_test]
 #[test]
 fn slow_client_reads_turn_events_before_the_reply() {
     let dir = tempfile::TempDir::new().expect("temp dir");

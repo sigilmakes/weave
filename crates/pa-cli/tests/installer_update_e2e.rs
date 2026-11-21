@@ -157,6 +157,7 @@ fn prime_agent(args: &[&str], sandbox: &Sandbox) -> Command {
     command
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn update_runs_the_downloaded_installer_and_preserves_the_session_store() {
     let sandbox = Sandbox::new();
@@ -193,6 +194,7 @@ fn update_runs_the_downloaded_installer_and_preserves_the_session_store() {
 /// A nightly install's `prime-agent update` fetches `install-beta.sh` from
 /// the download base (no installer override): the domain only forwards
 /// the stable `install.sh`, so nightly updates go to the bucket directly.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_nightly_update_fetches_install_beta_from_the_download_base() {
     let sandbox = Sandbox::new();
@@ -228,6 +230,7 @@ fn a_nightly_update_fetches_install_beta_from_the_download_base() {
 }
 
 /// A failing installer reports the error and keeps the previous install.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_failing_installer_keeps_the_previous_install() {
     let sandbox = Sandbox::new();
@@ -371,6 +374,7 @@ fn live_version(sandbox: &Sandbox) -> String {
 /// kept, `--rollback` swaps the kept payload back (keeping the one it
 /// replaces), so a second `--rollback` undoes the first; the session store
 /// is untouched throughout.
+#[pa_test_scratch::pa_test]
 #[test]
 fn update_archive_and_rollback_swap_installer_payloads() {
     let sandbox = Sandbox::new();
@@ -431,6 +435,7 @@ fn update_archive_and_rollback_swap_installer_payloads() {
 /// payload (the Windows update handoff runs this exact scan before it
 /// hands the real run off, so its exit code is honest for the
 /// deterministic refusals).
+#[pa_test_scratch::pa_test]
 #[test]
 fn rollback_check_answers_synchronously_without_touching_the_payload() {
     let sandbox = Sandbox::new();
@@ -500,6 +505,7 @@ fn rollback_check_answers_synchronously_without_touching_the_payload() {
 /// `--version` is the ground truth for the marker the install records
 /// (and the rollback later reports), so a name/payload mismatch would
 /// publish a lie.
+#[pa_test_scratch::pa_test]
 #[test]
 fn update_archive_refuses_a_misnamed_payload_version() {
     let sandbox = Sandbox::new();
@@ -552,6 +558,7 @@ fn update_archive_refuses_a_misnamed_payload_version() {
 /// payload at the un-suffixed `prime-agent.old` and never writes the
 /// generations record, so the CLI's rollback must fall back to that
 /// slot — a ps1-updated machine's only automated rollback path.
+#[pa_test_scratch::pa_test]
 #[test]
 fn update_rollback_reads_the_unsuffixed_installer_slot() {
     let sandbox = Sandbox::new();
@@ -602,6 +609,7 @@ fn update_rollback_reads_the_unsuffixed_installer_slot() {
 
 /// A fresh installer install has nothing to roll back: the run fails with
 /// the reason and the live payload stays.
+#[pa_test_scratch::pa_test]
 #[test]
 fn update_rollback_without_a_kept_version_changes_nothing() {
     let sandbox = Sandbox::new();
@@ -653,6 +661,7 @@ fn update_rollback_without_a_kept_version_changes_nothing() {
 /// Windows update handoff runs this exact validation before it hands
 /// the real run off, so its exit code is honest for the deterministic
 /// refusals).
+#[pa_test_scratch::pa_test]
 #[test]
 fn archive_check_answers_synchronously_without_publishing() {
     let sandbox = Sandbox::new();

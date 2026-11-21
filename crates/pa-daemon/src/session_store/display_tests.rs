@@ -22,6 +22,7 @@ fn display_row(kind: &str, id: &str, parent: Option<&str>, fields: Value) -> Val
     row
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn display_projection_keeps_chronology_and_branch_local_receipts_without_changing_model_context() {
     let sent = json!({"id":"receipt","message":"sent","deliveryStatus":"queued","target":{"activeSessionId":"active","sessionId":"session","sessionName":"child"}});
@@ -136,6 +137,7 @@ fn display_projection_keeps_chronology_and_branch_local_receipts_without_changin
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn display_projection_refuses_missing_parents_and_cycles() {
     for rows in [

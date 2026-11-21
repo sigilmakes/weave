@@ -1686,10 +1686,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "pa-test-macros"
+version = "0.10.0"
+dependencies = [
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "pa-test-scratch"
 version = "0.10.0"
 dependencies = [
  "libc",
+ "pa-test-macros",
+ "serde_json",
 ]
 
 [[package]]

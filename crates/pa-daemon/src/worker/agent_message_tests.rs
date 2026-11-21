@@ -43,6 +43,7 @@ fn queue_texts(core: &Mutex<SessionCore>, lane: Lane) -> Vec<String> {
 /// Receipt shape: id, source, target, sender echo, delivered status + timestamp,
 /// and the rendered prompt on the steering lane.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn deliver_message_answers_the_ts_receipt_shape() {
     let worker = created_worker().await;
     let response = worker
@@ -101,6 +102,7 @@ async fn deliver_message_answers_the_ts_receipt_shape() {
 /// The row's content is the rendered prompt; the details carry the identity the
 /// collapsed card reads, and the marker still targets `agent_messages_clear`/`pause`.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn deliver_message_carries_the_agent_message_custom_row() {
     let worker = created_worker().await;
     let response = worker
@@ -164,6 +166,7 @@ async fn deliver_message_carries_the_agent_message_custom_row() {
 
 /// An explicit `follow_up` delivery queues behind current work instead of steering.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn deliver_message_follow_up_lane_and_subagent_sender() {
     let worker = created_worker().await;
     let response = worker
@@ -197,6 +200,7 @@ async fn deliver_message_follow_up_lane_and_subagent_sender() {
 
 /// A busy session reports `queued` with `queuedAt` (`queueIfBusy`).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn deliver_message_while_busy_queues() {
     let worker = created_worker().await;
     worker.core.lock().unwrap().busy = true;
@@ -223,6 +227,7 @@ async fn deliver_message_while_busy_queues() {
 /// Agent-message deliveries admit as background work: later user input jumps
 /// them, FIFO behind earlier user input, on both lanes.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn user_input_jumps_parked_agent_message_deliveries() {
     for (command, delivery_mode, lane) in [
         ("steer", "steer", "steering"),
@@ -272,6 +277,7 @@ async fn user_input_jumps_parked_agent_message_deliveries() {
 
 /// The pending-capacity guard fails with the TS error string.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn deliver_message_respects_the_pending_capacity() {
     let worker = created_worker().await;
     {
@@ -313,6 +319,7 @@ async fn deliver_message_respects_the_pending_capacity() {
 /// TS `createAttachResult` key order: the slim response carries the messages
 /// exactly once; the non-slim duplicate is byte-identical to the copy.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn attach_response_wire_bytes_keep_the_ts_key_order() {
     let worker = created_worker().await;
     {
@@ -435,12 +442,14 @@ async fn attach_response_wire_bytes_keep_the_ts_key_order() {
 /// nothing (unix: the link endpoint is an `AF_UNIX` socket).
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn clear_queue_bounces_dropped_agent_messages_to_their_senders() {
     assert_clear_queue_bounces(/*restore_queue*/ false).await;
 }
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn clear_queue_bounces_recovered_agent_messages_to_their_senders() {
     assert_clear_queue_bounces(/*restore_queue*/ true).await;
 }
@@ -571,6 +580,7 @@ async fn assert_clear_queue_bounces(restore_queue: bool) {
 /// boundary. An idle target therefore wakes on the first delivery instead of
 /// refusing it, and the gate does not outlive the hold.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn deliver_message_releases_a_stale_suspension_on_an_idle_target() {
     let worker = created_worker().await;
     worker.core.lock().unwrap().queued_input_suspended = true;
@@ -604,6 +614,7 @@ async fn deliver_message_releases_a_stale_suspension_on_an_idle_target() {
 /// it instead of failing, and the receipt says queued plus why. The next
 /// resume boundary (an explicit `resume_queue` here) delivers the park.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn deliver_message_parks_under_a_held_suspension_with_receipt_truth() {
     let worker = created_worker().await;
     crate::worker::tests::park_steering_row(&worker, "held user row");
@@ -656,6 +667,7 @@ async fn deliver_message_parks_under_a_held_suspension_with_receipt_truth() {
 /// parked rows are agent-message deliveries must not outlive the turn that
 /// parked them (issue #33), or two agents could keep a session deaf by talking.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn agent_rows_never_protect_a_hold() {
     let worker = created_worker().await;
     {
@@ -698,6 +710,7 @@ async fn agent_rows_never_protect_a_hold() {
 /// parked keeps the row parked after the turn settles, so `queued` alone would
 /// tell the caller it will deliver at the turn boundary when it will not.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_busy_target_under_a_protected_hold_reports_the_hold() {
     let worker = created_worker().await;
     crate::worker::tests::park_steering_row(&worker, "held user row");
@@ -742,6 +755,7 @@ async fn a_busy_target_under_a_protected_hold_reports_the_hold() {
 /// row, no compaction window) is queued behind the turn alone. The turn
 /// boundary releases that gate, so the receipt must not claim a hold.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_busy_target_under_an_unprotected_hold_reports_a_plain_park() {
     let worker = created_worker().await;
     {
@@ -775,6 +789,7 @@ async fn a_busy_target_under_an_unprotected_hold_reports_a_plain_park() {
 /// A compaction window outranks a standing hold in the receipt: the delivery
 /// cannot run until the compaction ends, whatever the hold does afterwards.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_compaction_window_outranks_the_hold_reason() {
     let worker = created_worker().await;
     crate::worker::tests::park_steering_row(&worker, "held user row");
@@ -805,6 +820,7 @@ async fn the_compaction_window_outranks_the_hold_reason() {
 /// distinction is deterministic - a caller learns deliverability from its own
 /// answer instead of retrying blind (issue #32).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_idle_hold_refuses_a_plain_prompt_and_parks_an_agent_message() {
     let worker = created_worker().await;
     crate::worker::tests::park_steering_row(&worker, "held user row");

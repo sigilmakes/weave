@@ -618,6 +618,7 @@ impl Worker {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rekey_moves_a_live_admission_under_the_new_session_id() {
         let table = PromptAdmissionTable::default();
@@ -634,6 +635,7 @@ mod tests {
         assert!(table.with(&old_key, |_| ()).is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rekey_never_overwrites_an_occupied_destination() {
         let table = PromptAdmissionTable::default();
@@ -646,6 +648,7 @@ mod tests {
         assert!(table.with(&to, |_| ()).is_some());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn sole_admission_id_match_resolves_but_ambiguity_stays_unknown() {
         let table = PromptAdmissionTable::default();
@@ -659,6 +662,7 @@ mod tests {
         assert_eq!(table.sole_key_for_admission_id(""), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_nul_in_either_key_half_is_refused_at_registration() {
         let table = PromptAdmissionTable::default();

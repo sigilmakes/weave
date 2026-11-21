@@ -63,6 +63,7 @@ fn request_started_slice(
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_turn_lifecycle_is_ledgered_and_reopening_replays_without_reregistering() {
     let (identity, _dir) = identity("session-a");
@@ -98,6 +99,7 @@ fn a_turn_lifecycle_is_ledgered_and_reopening_replays_without_reregistering() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_parked_retry_reuses_its_id_only_for_an_identical_body_in_the_same_epoch() {
     let (identity, _dir) = identity("session-b");
@@ -155,6 +157,7 @@ fn a_parked_retry_reuses_its_id_only_for_an_identical_body_in_the_same_epoch() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn split_summary_slices_commit_in_resolve_order() {
     let (identity, _dir) = identity("session-g");
     let recorder = Arc::new(SemanticEdgeRecorder::open(identity.clone()));
@@ -227,6 +230,7 @@ async fn split_summary_slices_commit_in_resolve_order() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_ledger_failure_drops_the_spawn_anchor() {
     let (identity, _dir) = identity("session-e");
@@ -248,6 +252,7 @@ fn a_ledger_failure_drops_the_spawn_anchor() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_torn_final_line_is_ignored_on_replay_and_truncated_before_the_next_append() {
     let (identity, _dir) = identity("session-c");
@@ -358,6 +363,7 @@ async fn wrapped_call(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn turn_requests_carry_both_headers_and_settle_by_stop_reason() {
     let (identity, _dir) = identity("session-d");
     let recorder = Arc::new(SemanticEdgeRecorder::open(identity.clone()));

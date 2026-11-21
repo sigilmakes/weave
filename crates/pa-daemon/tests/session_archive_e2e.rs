@@ -291,6 +291,7 @@ fn log_mentions(agent_dir: &Path, needle: &str) -> bool {
         .any(|path| std::fs::read_to_string(&path).is_ok_and(|content| content.contains(needle)))
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn boot_sweep_archives_aged_sessions_and_the_catalog_excludes_them() {
     let dir = tempfile::tempdir().expect("temp dir");
@@ -349,6 +350,7 @@ fn boot_sweep_archives_aged_sessions_and_the_catalog_excludes_them() {
     });
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_archived_session_resumes_through_the_wake() {
     let dir = tempfile::tempdir().expect("temp dir");

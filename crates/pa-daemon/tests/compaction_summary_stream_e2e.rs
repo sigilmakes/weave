@@ -374,6 +374,7 @@ impl Client {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn threshold_compaction_streams_summary_deltas_to_attached_clients() {
     let dir = tempfile::tempdir().expect("temp dir");

@@ -398,6 +398,7 @@ fn wait_label(label: &str) -> HeadlessStep {
 /// TS #2709's regression shape: pick a level with Ctrl+O in one chat; the pick is saved as the
 /// `chatDetail` setting, and a later run — a fresh process re-reading the store — opens at the
 /// saved level. The later run attaches to a DIFFERENT session id: the setting is global.
+#[pa_test_scratch::pa_test]
 #[test]
 fn ctrl_o_pick_persists_and_a_later_chat_reopens_at_it() {
     // Run one: an unset store, so the chat starts at the `overview` startup level (the collapse
@@ -461,6 +462,7 @@ fn ctrl_o_pick_persists_and_a_later_chat_reopens_at_it() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_cycle_saves_the_overview_wrap_too() {
     let settings = Arc::new(StubSettings {

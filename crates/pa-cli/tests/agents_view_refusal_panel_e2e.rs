@@ -142,6 +142,7 @@ fn frame_text(frames: &[String]) -> String {
 /// A foreign process has no known daemon resume endpoint. Its execution-lock
 /// refusal names the actual holder and offers kill/retry, dismissed by any key.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_refused_open_renders_the_foreign_holder_takeover_notice_panel() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

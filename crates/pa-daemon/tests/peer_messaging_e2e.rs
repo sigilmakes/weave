@@ -349,6 +349,7 @@ fn setup_messaging() -> Option<Messaging> {
     })
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn worker_to_worker_kernel_send_delivers_over_the_peer_transport() {
     let Some(messaging) = setup_messaging() else {
@@ -432,6 +433,7 @@ fn worker_to_worker_kernel_send_delivers_over_the_peer_transport() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn attached_client_to_client_send_completes_without_route_starvation() {
     let Some(messaging) = setup_messaging() else {
@@ -517,6 +519,7 @@ fn attached_client_to_client_send_completes_without_route_starvation() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn supervisor_death_mid_conversation_still_delivers_after_re_registration() {
     let Some(mut messaging) = setup_messaging() else {

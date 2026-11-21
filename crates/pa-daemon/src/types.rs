@@ -243,6 +243,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn extracts_text_from_content_blocks() {
         let message = json!({
@@ -253,6 +254,7 @@ mod tests {
         assert_eq!(message_role(&message), Some("user"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn session_summary_serializes_snake_case_and_reads_camel_case() {
         let wire = r#"{

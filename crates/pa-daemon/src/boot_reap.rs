@@ -682,6 +682,7 @@ mod tests {
     }
 
     #[cfg(target_os = "linux")]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_abandoned_id_filter_matches_the_stamped_env_only() {
         let unstamped_guard = ReapOnDrop(
@@ -747,6 +748,7 @@ mod tests {
 
     #[cfg(target_os = "linux")]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_real_process_stops_inside_the_term_grace() {
         let mut child = std::process::Command::new("sleep")
             .arg("300")
@@ -766,6 +768,7 @@ mod tests {
     /// the guard's kill); its marker file is the readiness barrier.
     #[cfg(target_os = "linux")]
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_term_ignoring_process_dies_to_the_stop_escalation() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let trap_armed = dir.path().join("trap-armed");
@@ -793,6 +796,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_vanished_pid_reports_already_gone() {
         let mut child = std::process::Command::new("true")
             .spawn()
@@ -803,6 +807,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_recycled_pid_is_never_signaled() {
         let mut child = std::process::Command::new("sleep")
             .arg("300")
@@ -831,6 +836,7 @@ mod tests {
         let _ = child.wait();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_argv_shapes() {
         let worker = ["/bin/prime-agent", "worker"]
@@ -890,6 +896,7 @@ mod tests {
     }
 
     #[cfg(target_os = "linux")]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_exe_gate_reads_the_kernel_binary() {
         let mut child = std::process::Command::new("sleep")
@@ -904,6 +911,7 @@ mod tests {
         let _ = child.wait();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_exe_gate_accepts_replaced_binaries() {
         let replaced = "/opt/prime-agent/bin/prime-agent (deleted)";
@@ -914,6 +922,7 @@ mod tests {
     }
 
     #[cfg(target_os = "linux")]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_supervisor_match_normalizes_both_spellings() {
         let direct = [
@@ -950,6 +959,7 @@ mod tests {
     }
 
     #[cfg(target_os = "linux")]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn our_worker_socket_names_only() {
         let supervisor = Path::new("/tmp/prime-agent-1000/daemon.sock");
@@ -977,6 +987,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn supervisor_argv_shapes() {
         let product = [

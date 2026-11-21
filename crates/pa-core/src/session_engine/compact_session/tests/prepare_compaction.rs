@@ -7,6 +7,7 @@ use pa_types::session::EntryBase;
 
 /// The split arm of the skip guard: a mid-turn cut with no history still has
 /// the turn prefix to summarize, so the compaction prepares.
+#[pa_test_scratch::pa_test]
 #[test]
 fn prepare_compaction_split_arm_counts_the_turn_prefix_as_content() {
     let tmp = tempfile::tempdir().unwrap();
@@ -128,6 +129,7 @@ fn raw_assistant_text_entry(id: &str, text: &str) -> FileEntry {
 /// The recency anchor pins to the newest kept-tail assistant text: a direction
 /// flip fails (an older assistant sits in the same kept tail), thinking-only
 /// assistants skip, long text tail-truncates, and a text-less tail carries none.
+#[pa_test_scratch::pa_test]
 #[test]
 fn prepare_compaction_anchors_on_the_newest_kept_tail_assistant_text() {
     // 400-char texts (100 tokens at the chars/4 heuristic) keep the cuts
@@ -221,6 +223,7 @@ fn prepare_compaction_anchors_on_the_newest_kept_tail_assistant_text() {
 
 /// File-list blocks never reach the update prompt: the stored summary's blocks
 /// strip, and a file-blocks-only summary leaves no update anchor.
+#[pa_test_scratch::pa_test]
 #[test]
 fn prepare_compaction_strips_file_blocks_from_the_previous_summary() {
     let entries = vec![
@@ -254,6 +257,7 @@ fn prepare_compaction_strips_file_blocks_from_the_previous_summary() {
 
 /// The iterative update mode activates from a prior compaction: the prior
 /// summary becomes `previousSummary` and its first kept entry the boundary.
+#[pa_test_scratch::pa_test]
 #[test]
 fn prepare_compaction_update_mode_anchors_on_the_prior_compaction() {
     let entries = vec![
@@ -285,6 +289,7 @@ fn prepare_compaction_update_mode_anchors_on_the_prior_compaction() {
 
 /// The boundary fallback (the entry after the compaction when the retained
 /// entry is gone) and the guard (a prior summary alone is enough to run).
+#[pa_test_scratch::pa_test]
 #[test]
 fn prepare_compaction_boundary_fallback_and_prior_summary_guard() {
     let entries = vec![

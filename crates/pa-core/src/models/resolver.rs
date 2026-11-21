@@ -654,6 +654,7 @@ mod tests {
         ]
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn failover_candidates_order_by_catalog_after_current() {
         let mut catalog = catalog();
@@ -688,6 +689,7 @@ mod tests {
         assert!(candidates.iter().all(|model| model.provider != "zai"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn exact_and_fuzzy_matching() {
         let catalog = catalog();
@@ -702,6 +704,7 @@ mod tests {
         assert_eq!(fuzzy.map(|m| m.id.as_str()), Some("claude-sonnet-4-5"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn scoped_colon_tags_do_not_collapse_to_exact_prefixes() {
         let mut models = catalog();
@@ -739,6 +742,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn scoped_patterns_and_thinking_levels() {
         let catalog = catalog();
@@ -750,6 +754,7 @@ mod tests {
         assert_eq!(scoped[1].thinking_level, Some(ThinkingLevel::High));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cli_provider_model_resolution() {
         let catalog = catalog();
@@ -778,6 +783,7 @@ mod tests {
         assert!(missing.warning.unwrap().contains("Using custom model id"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn openrouter_slash_ids_resolve_without_provider_inference() {
         let catalog = catalog();
@@ -789,6 +795,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn fallback_model_prefers_private_template_for_private_ids() {
         let mut catalog = catalog();
@@ -807,6 +814,7 @@ mod tests {
     /// TS regression (#2459): Prime Inference rejects `enable_thinking`
     /// with a 400, so a fallback model — public or private — must never
     /// inherit the zai thinking format from its template.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn fallback_models_never_inherit_the_zai_thinking_format() {
         use pa_ai::types::ModelExt;
@@ -832,6 +840,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn initial_model_prefers_cli_flags() {
         let catalog = catalog();
@@ -850,6 +859,7 @@ mod tests {
         assert_eq!(model.id, "claude-sonnet-4-5");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn initial_model_saved_default_wins_over_featured_default() {
         let catalog = catalog();
@@ -868,6 +878,7 @@ mod tests {
         assert_eq!(model.id, "claude-sonnet-4-5");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn initial_model_rebuilds_missing_saved_id_on_template() {
         let catalog = catalog();
@@ -886,6 +897,7 @@ mod tests {
         assert_eq!(model.id, "claude-future-model");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn initial_model_falls_back_to_featured_then_first_available() {
         let catalog = catalog();
@@ -921,6 +933,7 @@ mod tests {
         assert_eq!(find_initial_model(&empty), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn initial_model_scope_prefers_saved_default_in_scope() {
         let catalog = catalog();
@@ -949,6 +962,7 @@ mod tests {
         assert_eq!(model.provider, "prime-inference");
         assert_eq!(model.id, "z-ai/glm-5.3");
     }
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ollama_cloud_default_matches_pinned_fallback() {
         assert_eq!(default_model_per_provider("ollama-cloud"), Some("glm-5.3"));

@@ -202,48 +202,57 @@ fn run(mode: &str) {
     finish(&mut child);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn native_processes_spend_refresh_once_and_both_receive_fresh_credentials() {
     run("race");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cooperative_remove_cannot_resurrect_after_held_refresh() {
     run("remove");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cooperative_replacement_wins_after_held_refresh() {
     run("replace");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn external_removal_during_fetch_is_not_resurrected() {
     run("external-remove");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn external_replacement_during_fetch_is_not_overwritten() {
     run("external-replace");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn manager_refresh_and_team_rebind_preserve_touched_and_unrelated_metadata() {
     run("metadata");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "requires explicit PA_TS_PACKAGE_DIR and pinned PA_TEST_NODE; no ambient lookup"]
 fn typescript_async_lock_is_not_stolen_after_ten_seconds() {
     run("ts-lock");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "requires explicit PA_TS_PACKAGE_DIR and pinned PA_TEST_NODE; no ambient lookup"]
 fn typescript_first_refresh_interoperates_with_rust_process() {
     run("ts-first");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "requires explicit PA_TS_PACKAGE_DIR and pinned PA_TEST_NODE; no ambient lookup"]
 fn rust_first_refresh_interoperates_with_typescript_process() {
@@ -616,27 +625,32 @@ fn ts_lock(root: &Path, mode: &str) {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[cfg(unix)]
 fn symlink_alias_writes_preserve_alias_and_update_real_target() {
     run("symlink");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn callback_error_releases_real_backend_lock() {
     run("callback-error");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn callback_panic_releases_real_backend_lock() {
     run("callback-panic");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn drop_does_not_remove_another_owners_replacement_lock() {
     run("lock-replacement");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[cfg(unix)]
 #[ignore = "requires explicit PA_TS_PACKAGE_DIR and pinned PA_TEST_NODE; no ambient lookup"]
@@ -669,6 +683,7 @@ fn rust_heartbeat(root: &Path) {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "requires explicit PA_TS_PACKAGE_DIR and pinned PA_TEST_NODE; no ambient lookup"]
 fn rust_refresh_heartbeat_prevents_typescript_sync_lock_steal() {
@@ -735,16 +750,19 @@ fn nested_team_metadata(root: &Path) {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn sameprocess_regular_writer_refuses_within_one_second_of_held_refresh() {
     run("sameprocess-timeout");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn same_key_preserve_team_keeps_nested_unknown_team_metadata() {
     run("nested-team-metadata");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn coexistence_guard_never_spends_refresh_and_observes_fresh_peer_credentials() {
     run("coexistence-guard");
@@ -816,6 +834,7 @@ fn coexistence_guard(root: &Path) {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn coexistence_guard_builtin_provider_dispatch_has_zero_transport_io() {
     run("coexistence-builtin");
@@ -879,6 +898,7 @@ fn coexistence_builtin() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn auth_refresh_compat_child() {
     let Ok(mode) = std::env::var("PA_AUTH_COMPAT_MODE") else {

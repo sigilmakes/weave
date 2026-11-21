@@ -54,6 +54,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn absent_choice_returns_none() {
         let mut store = SessionFile::create("/repo", None, 0);
@@ -63,6 +64,7 @@ mod tests {
         assert_eq!(store.latest_context_selection().unwrap(), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn valid_latest_choice_wins_without_parsing_older_data() {
         let mut store = SessionFile::create("/repo", None, 0);
@@ -82,6 +84,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn latest_malformed_choice_does_not_skip_older_choice() {
         for fields in [
@@ -107,6 +110,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unsupported_choice_version_is_rejected() {
         let mut store = SessionFile::create("/repo", None, 0);
@@ -121,6 +125,7 @@ mod tests {
         assert!(store.latest_context_selection().is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unknown_choice_field_is_rejected() {
         let mut store = SessionFile::create("/repo", None, 0);
@@ -135,6 +140,7 @@ mod tests {
         assert!(store.latest_context_selection().is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn choice_strategy_requires_a_slash() {
         let mut store = SessionFile::create("/repo", None, 0);
@@ -142,6 +148,7 @@ mod tests {
         assert!(store.latest_context_selection().is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn choice_strategy_matches_the_existing_split_once_validation() {
         // Schema validation is not strategy lookup: do not add route policy here.
@@ -155,6 +162,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn only_matching_custom_entry_type_is_read() {
         let mut store = SessionFile::create("/repo", None, 0);
@@ -181,6 +189,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn choice_is_session_wide_not_limited_to_the_active_branch() {
         let mut store = SessionFile::create("/repo", None, 0);
@@ -200,6 +209,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn choice_outside_retained_window_is_read_from_sparse_metadata() {
         let dir = tempfile::tempdir().unwrap();

@@ -65,6 +65,7 @@ async fn kill(worker: &Worker) {
 #[cfg(unix)]
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_ended_worker_session_leaves_a_current_info_sidecar() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()
@@ -93,6 +94,7 @@ async fn an_ended_worker_session_leaves_a_current_info_sidecar() {
 #[cfg(unix)]
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_reopened_session_ends_with_a_current_info_sidecar() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()

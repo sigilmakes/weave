@@ -198,6 +198,7 @@ fn dump_frames(label: &str, frames: &[String]) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn search_matches_names_ids_and_cwd_never_transcripts() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -357,6 +358,7 @@ async fn search_matches_names_ids_and_cwd_never_transcripts() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn ranked_hits_sort_by_relevance_then_recency() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

@@ -352,6 +352,7 @@ fn is_clock(token: &str) -> bool {
             .all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()))
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn hex_display_id_normalizes_as_a_timestamp_even_when_it_reads_as_an_age() {
     // The display id is the last 12 hex chars of a random uuid, so one
@@ -573,6 +574,7 @@ impl CliPair {
 
 // Rust end-to-end: pa-daemon + prime-agent
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rust_daemon_cli_commands_end_to_end() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -827,6 +829,7 @@ fn session_file_stem(row: &Value) -> String {
         .to_string()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn sessions_delete_is_all_or_nothing_and_reports_the_freed_bytes() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -1048,6 +1051,7 @@ fn sessions_delete_is_all_or_nothing_and_reports_the_freed_bytes() {
     assert_eq!(stop.status.code(), Some(0), "{}", stderr(&stop));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cli_connect_error_matches_ts_golden() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -1103,6 +1107,7 @@ fn cli_connect_error_matches_ts_golden() {
 /// The schedule commands' usage errors fire in the router's validation, before
 /// any daemon request (`--daemon-socket` before the command rotates into the
 /// operands; the TS CLI rejects the same shape).
+#[pa_test_scratch::pa_test]
 #[test]
 fn schedule_usage_errors_and_valid_invocations() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -1312,6 +1317,7 @@ fn assert_ts_fixture_turns(wire: &mut Wire, name: &str, expected: usize) {
 
 // TS differential: each CLI uses its own product-default TS counterpart server
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn ts_daemon_differential_cli_output() {
     let Some(ts) = ts_binary() else {

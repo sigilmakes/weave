@@ -380,6 +380,7 @@ mod tests {
         .unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn reads_and_validates_a_managed_installation() {
         let dir = tempfile::tempdir().unwrap();
@@ -395,6 +396,7 @@ mod tests {
         assert_eq!(installation.target.platform, "linux-x64");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rejects_a_damaged_release() {
         let dir = tempfile::tempdir().unwrap();
@@ -406,6 +408,7 @@ mod tests {
         assert!(read_installation(root, CURRENT_LAUNCHER).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn activation_state_wins_over_the_bare_previous_link() {
         let dir = tempfile::tempdir().unwrap();
@@ -425,6 +428,7 @@ mod tests {
         assert_eq!(rollback.version(), "0.1.0");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rollback_without_state_uses_the_previous_link() {
         let dir = tempfile::tempdir().unwrap();
@@ -435,6 +439,7 @@ mod tests {
         assert_eq!(rollback.version(), "0.1.0");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn anchors_the_running_release_directory() {
         let dir = tempfile::tempdir().unwrap();
@@ -454,6 +459,7 @@ mod tests {
         assert!(running_release(&stray).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn install_sources_must_be_http() {
         assert!(install_source_is_valid("https://example.com"));
@@ -462,6 +468,7 @@ mod tests {
         assert!(!install_source_is_valid("example.com"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_release_link_shapes_only() {
         assert!(parse_release_link(Path::new(

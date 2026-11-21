@@ -4,6 +4,7 @@ use super::*;
 /// An update boot relaunches the dead workers its roster keeps, plus any
 /// with durable busy evidence; an unkept idle descriptor must never revive
 /// (the parked session may have a newer worker from a client reopen).
+#[pa_test_scratch::pa_test]
 #[test]
 fn update_boot_revives_only_roster_kept_workers() {
     let dir = tempfile::TempDir::new().expect("temp dir");

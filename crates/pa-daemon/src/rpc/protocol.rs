@@ -141,6 +141,7 @@ pub fn command_streaming_behavior(
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn success_absent_data_omits_the_key() {
         let response = success(None, "prompt", ResponseData::Absent);
@@ -151,6 +152,7 @@ mod tests {
         assert!(response.get("id").is_none(), "absent id omits the key");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn success_null_data_keeps_the_key() {
         let response = success(
@@ -162,6 +164,7 @@ mod tests {
         assert_eq!(response["data"], Value::Null, "null data keeps the key");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parse_errors_carry_the_ts_prefix() {
         match parse_line("{nope") {
@@ -189,6 +192,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn commands_parse_with_id_echo() {
         let ParsedLine::Command(command) = parse_line(

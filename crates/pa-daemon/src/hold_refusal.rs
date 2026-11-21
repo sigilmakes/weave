@@ -396,6 +396,7 @@ mod tests {
 
     /// No third "open a different session" option: the user is already
     /// in the picker (operator-directed, 2026-09-24).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_typescript_refusal_is_exact() {
         let hold = HoldIdentity {
@@ -436,6 +437,7 @@ Session: ts01ab";
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn hostile_values_stay_paste_safe() {
         let hold = HoldIdentity {
@@ -503,6 +505,7 @@ Session: ts01ab";
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_thisbuild_and_anonymous_refusals_stay_actionable() {
         let hold = HoldIdentity {
@@ -538,6 +541,7 @@ Session: ts01ab";
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_footer_reads_the_session_name_and_the_path_fallback() {
         let dir = tempfile::TempDir::new().expect("temp dir");
@@ -584,6 +588,7 @@ Session: ts01ab";
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn corrupt_session_does_not_supply_a_partial_name() {
         let dir = tempfile::tempdir().unwrap();
@@ -604,6 +609,7 @@ Session: ts01ab";
 
     /// The classification matrix. The rust shapes contain the
     /// `prime-agent` substring family, so their checks must win first.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_holder_classification_matrix() {
         let own = Path::new("/Users/k/.local/share/prime-agent/prime-agent");
@@ -734,6 +740,7 @@ Session: ts01ab";
         assert_eq!(classify_from(Some(dev), Some(dev)), HolderFlavor::ThisBuild);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_create_failure_response_splits_typed_and_untyped() {
         let hold = SessionAlreadyActiveError {

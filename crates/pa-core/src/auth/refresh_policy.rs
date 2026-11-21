@@ -23,6 +23,7 @@ pub(super) fn disabled() -> bool {
 mod tests {
     use super::is_disabled;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn explicit_truthy_values_disable_refresh_only() {
         for (value, expected) in [

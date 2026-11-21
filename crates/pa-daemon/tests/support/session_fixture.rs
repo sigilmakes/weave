@@ -64,6 +64,7 @@ pub fn assert_durable_equivalent(path: &Path) {
     eprintln!("byte-identical fixture {id}: {} bytes", durable.len());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bulk_serialization_matches_durable_rows() {
     let dir = tempfile::tempdir().unwrap();

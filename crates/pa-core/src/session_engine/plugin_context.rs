@@ -150,6 +150,7 @@ mod tests {
     use pa_agent::stream::{event_stream, LlmContext, ModelStream, StreamRequestOptions};
     use std::sync::Mutex;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn recent_context_signal_is_bounded_text_only_newest_first() {
         let mut context = pa_agent::stream::LlmContext {
@@ -192,6 +193,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_failing_plugin_contribution_never_fails_the_model_call() {
         let dir = tempfile::tempdir().unwrap();
         let cwd = dir.path().join("project");

@@ -119,6 +119,7 @@ fn validate_consumed(data: &Value) -> anyhow::Result<BashConsumedNotice> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn completion_validation_matches_the_ts_contract() {
         assert!(validate_completion(&serde_json::json!({

@@ -289,6 +289,7 @@ fn loader_elapsed_secs(prompt_age_ms: u64) -> u64 {
 
 /// The operator's contract (2026-09-28): the waiting/executing timer counts since the LAST HUMAN
 /// PROMPT and NEVER resets on a view transition; a NEWER prompt re-anchors the clock onto itself.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_loader_anchor_survives_the_agents_view_round_trip() {
     // The turn's prompt landed 25s ago. First attach (the turn running): the loader already counts

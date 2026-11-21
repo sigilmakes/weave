@@ -372,6 +372,7 @@ mod tests {
     /// Dogfood P0 regression: a heartbeat created after the bind-time arm
     /// never fires unless the mutation's wake re-arms.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn wake_rearms_a_timer_for_a_job_created_after_start() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = Arc::new(AgentCronJobStore::new(dir.path().join("jobs.json")));
@@ -403,6 +404,7 @@ mod tests {
     /// The frozen-heartbeat incident: a panicking dispatch must not wedge
     /// the run-pass flag at `true` (later passes silently no-op forever).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_panicking_dispatch_does_not_wedge_the_run_pass() {
         struct PanickingHooks {
             runs: Arc<AtomicUsize>,
@@ -472,6 +474,7 @@ mod tests {
     /// The live incident: a wake landing while a fire pass is in-flight must
     /// not strand the claimed dispatch.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_mutation_wake_during_an_in_flight_pass_does_not_wedge_the_flag() {
         struct BlockingHooks {
             runs: Arc<AtomicUsize>,
@@ -532,6 +535,7 @@ mod tests {
     /// The store emptying mid-life must leave a parked timer a later
     /// wake re-arms (the mid-life death behind a re-adopted worker).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_timer_parks_on_an_empty_store_and_re_arms_on_wake() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = Arc::new(AgentCronJobStore::new(dir.path().join("jobs.json")));
@@ -570,6 +574,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn claims_and_runs_due_jobs() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = Arc::new(AgentCronJobStore::new(dir.path().join("jobs.json")));
@@ -595,6 +600,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn skip_outcomes_are_recorded() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = Arc::new(AgentCronJobStore::new(dir.path().join("jobs.json")));
@@ -618,6 +624,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn lane_serializes_same_session_dispatches() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = Arc::new(AgentCronJobStore::new(dir.path().join("jobs.json")));
@@ -638,6 +645,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn schedule_kind_from_create_is_interval() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = AgentCronJobStore::new(dir.path().join("jobs.json"));
@@ -646,6 +654,7 @@ mod tests {
         assert_eq!(job.schedule.kind, ScheduleKind::Interval);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn failure_backoff_doubles_then_caps() {
         assert_eq!(failure_backoff_ms(1), 120_000);
@@ -659,6 +668,7 @@ mod tests {
     /// Dogfood incident: a dead route re-fired an every-2m heartbeat
     /// ~120 times.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn consecutive_failures_back_off_the_next_run() {
         let dir = tempfile::TempDir::new().unwrap();
         let store = Arc::new(AgentCronJobStore::new(dir.path().join("jobs.json")));

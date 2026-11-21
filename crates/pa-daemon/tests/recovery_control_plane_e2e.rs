@@ -223,6 +223,7 @@ impl Client {
 /// race the control plane.
 const SESSIONS: usize = 12;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn control_plane_stays_responsive_while_a_large_adoption_pass_recovers() {
     let dir = tempfile::TempDir::new().expect("temp dir");

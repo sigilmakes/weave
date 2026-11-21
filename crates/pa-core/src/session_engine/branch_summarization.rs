@@ -494,6 +494,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn collects_old_branch_to_common_ancestor() {
         // root -> u1 -> a1 -> u2 (old leaf)
@@ -511,6 +512,7 @@ mod tests {
         assert_eq!(result.entries[1].id(), Some("u2"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn preparation_respects_budget_and_keeps_boundaries() {
         let mut entries = Vec::new();
@@ -531,6 +533,7 @@ mod tests {
         assert_eq!(unlimited.messages.len(), 10);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn request_and_finalize() {
         let entries = vec![entry("e0", None, user("explore the widget"))];
@@ -552,6 +555,7 @@ mod tests {
         assert!(branch_summary_presentation("s").contains("[branch-summary]"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn compaction_entries_become_summary_messages() {
         let compaction = FileEntry::Compaction {
@@ -583,6 +587,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn generates_summary_through_the_faux_provider() {
         // One faux provider per test (a process-global registry); the
         // guard is released before the awaited model call.
@@ -625,6 +630,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn empty_branch_summarizes_to_a_note() {
         let model: pa_types::ai::Model = serde_json::from_value(serde_json::json!({
             "id": "m", "name": "m", "api": "openai-completions", "provider": "test",
@@ -654,6 +660,7 @@ mod tests {
     /// A selector equal to the session model keeps it, and a selector
     /// that resolves to no model falls back the same way.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn branch_summary_auxiliary_selector_falls_back_to_the_session_model() {
         static FAUX_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
         for selector in ["faux/faux-1", "testaux/missing-model"] {
@@ -719,6 +726,7 @@ mod tests {
 
     /// The window estimate mirrors `generate_branch_summary`'s slicing
     /// and prompt exactly.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_summary_options_carry_the_owning_session_id() {
         let options = branch_summary_stream_options(None, None, Some("session-1"));
@@ -728,6 +736,7 @@ mod tests {
             .is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn branch_window_estimate_shapes() {
         // An entry too large for the slice budget: no wire request, but

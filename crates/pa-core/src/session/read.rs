@@ -47,6 +47,7 @@ pub fn read_entries_from(mut reader: impl BufRead) -> io::Result<Vec<FileEntry>>
 mod tests {
     use super::*;
     use crate::session_log::{Outcome, SessionLog};
+    #[pa_test_scratch::pa_test]
     #[test]
     fn reads_plain_rows_and_rejects_corruption_without_repairing_source() {
         let dir = tempfile::tempdir().unwrap();

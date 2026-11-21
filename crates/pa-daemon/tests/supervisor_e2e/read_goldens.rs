@@ -7,6 +7,7 @@ use super::*;
 
 // Differential goldens from the live TS daemon (protocol 7, schema 28:
 // read-only `get_session_header` / `get_session_stats` on a live session).
+#[pa_test_scratch::pa_test]
 #[test]
 fn session_stats_and_header_match_live_daemon_goldens() {
     let dir = tempfile::TempDir::new().expect("temp dir");

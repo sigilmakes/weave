@@ -151,6 +151,7 @@ fn selected(source: &str) -> Vec<String> {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn source_filtered_refresh_uses_models_json_key_then_local_apply_needs_no_fetch() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("models.json");
@@ -214,6 +215,7 @@ async fn source_filtered_refresh_uses_models_json_key_then_local_apply_needs_no_
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn ollama_forwards_custom_authorization_only_on_the_configured_origin() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("models.json");
@@ -265,6 +267,7 @@ async fn ollama_forwards_custom_authorization_only_on_the_configured_origin() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn ollama_cross_origin_override_never_sends_custom_authorization() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("models.json");
@@ -314,6 +317,7 @@ impl OAuthIntegration for OAuthProbe {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn local_apply_never_runs_command_keys_or_oauth_including_prime_credentials() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("models.json");
@@ -378,6 +382,7 @@ async fn local_apply_never_runs_command_keys_or_oauth_including_prime_credential
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn local_apply_does_not_replace_deferred_auth_with_models_json_fallback() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("models.json");
@@ -429,6 +434,7 @@ fn prime_auth() -> AuthStorage {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn private_prime_401_revokes_the_scoped_snapshot_for_fresh_registries() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("models.json");
@@ -488,6 +494,7 @@ async fn private_prime_401_revokes_the_scoped_snapshot_for_fresh_registries() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn timed_out_restore_keeps_late_publication_and_zero_budget_cached_fast_path() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("models.json");
@@ -599,6 +606,7 @@ async fn timed_out_restore_keeps_late_publication_and_zero_budget_cached_fast_pa
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn codex_refresh_adds_provider_models_and_local_apply_updates_the_picker_registry() {
     use base64::Engine as _;
 
@@ -690,6 +698,7 @@ async fn codex_refresh_adds_provider_models_and_local_apply_updates_the_picker_r
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn explicit_discovery_auth_replaces_inference_auth_case_insensitively() {
     for discovery in [
         json!({"format":"openai","apiKey":"catalog-key"}),
@@ -724,6 +733,7 @@ async fn explicit_discovery_auth_replaces_inference_auth_case_insensitively() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn id_only_builtin_lists_do_not_admit_untrusted_chat_capabilities() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("models.json");
@@ -757,6 +767,7 @@ async fn id_only_builtin_lists_do_not_admit_untrusted_chat_capabilities() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn custom_discovery_admits_new_ids_only_with_explicit_complete_defaults() {
     for allow_new in [false, true] {
         let dir = tempfile::tempdir().unwrap();
@@ -795,6 +806,7 @@ async fn custom_discovery_admits_new_ids_only_with_explicit_complete_defaults() 
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn inherited_team_environment_change_supersedes_publication() {
     struct EnvCleanup(String);
@@ -824,6 +836,7 @@ fn inherited_team_environment_change_supersedes_publication() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn picker_availability_never_executes_stored_commands_or_oauth_adapters() {
     let dir = tempfile::tempdir().unwrap();
@@ -865,6 +878,7 @@ fn picker_availability_never_executes_stored_commands_or_oauth_adapters() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn protocol_headers_do_not_authorize_unconfigured_provider_discovery() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("models.json");
@@ -921,6 +935,7 @@ fn write_fact_plugin(agent_dir: &Path, base: &str, context: u64) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_defaults_change_keeps_the_last_good_discovery_cache() {
     let dir = tempfile::tempdir().unwrap();
     let agent_dir = dir.path().join("agent");

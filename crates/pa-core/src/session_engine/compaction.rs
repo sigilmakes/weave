@@ -709,6 +709,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn estimate_context_tokens_anchors_on_the_last_valid_usage() {
         let messages = vec![
@@ -725,6 +726,7 @@ mod tests {
         assert_eq!(estimate.tokens, 2);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn threshold_crosses_the_reserve_headroom() {
         // 126_010 tokens on a 128k window with a 127_500 reserve leaves
@@ -757,6 +759,7 @@ mod tests {
         assert!(!threshold_compaction_due(&messages, 0, 0, &settings));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn threshold_fires_before_a_combined_limit_overflow() {
         // The live 400 shape: 1_017_457 input tokens under the old trigger
@@ -792,6 +795,7 @@ mod tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn threshold_percentage_ceiling_guards_large_windows() {
         // Past 95% of a large window the percentage ceiling fires before
@@ -801,6 +805,7 @@ mod tests {
         assert!(!should_compact(996_000, 1_048_576, 32_000, &settings));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn threshold_combined_ceiling_guards_small_windows() {
         // A 128k window with a 32k output budget: pure 95% (124_518) would under-reserve
@@ -811,6 +816,7 @@ mod tests {
         assert!(!should_compact(81_000, 131_072, 32_768, &settings));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn threshold_headroom_floor_covers_estimate_error() {
         // A tiny reserve still keeps the 4_096 estimate-error floor:
@@ -836,6 +842,7 @@ mod tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stale_pre_compaction_usage_never_retriggers() {
         let settings = CompactionSettings {
@@ -858,6 +865,7 @@ mod tests {
         assert!(threshold_compaction_due(&messages, 128_000, 0, &settings));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn token_estimation() {
         let user = AgentMessage::User(pa_types::ai::UserMessage {
@@ -878,6 +886,7 @@ mod tests {
         assert_eq!(calculate_context_tokens(&usage), 100);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn should_compact_threshold() {
         let settings = CompactionSettings::default();
@@ -891,6 +900,7 @@ mod tests {
         assert!(!should_compact(1, 0, 0, &settings));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cut_points_never_tool_results() {
         let entries = vec![
@@ -920,6 +930,7 @@ mod tests {
         assert_eq!(points, vec![0, 1]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cut_point_keeps_recent_tokens() {
         let entries = vec![
@@ -948,6 +959,7 @@ mod tests {
         assert_eq!(keep_small.turn_start_index, Some(2));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn summarization_prompt_shapes() {
         let initial = build_summarization_prompt(None, None);
@@ -960,6 +972,7 @@ mod tests {
         assert!(custom.contains("focus on tests"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn last_assistant_usage_skips_aborted() {
         let entries = vec![
@@ -1004,6 +1017,7 @@ mod tests {
         .unwrap()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn metadata_cut_before_user_preserves_exact_first_kept_without_split() {
         let entries = vec![
@@ -1037,6 +1051,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn metadata_cut_before_assistant_preserves_real_split() {
         let entries = vec![
@@ -1053,6 +1068,7 @@ mod tests {
         assert_eq!(cut.turn_start_index, Some(2));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn metadata_cut_stops_at_each_meaningful_boundary_before_later_user() {
         let mut boundaries = vec![

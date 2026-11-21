@@ -501,6 +501,7 @@ mod tests {
         ))
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_config_resolution_matches_ts_normalization() {
         assert_eq!(
@@ -527,6 +528,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_access_check_sends_the_ts_request_and_reads_the_scope() {
         let http = scripted(vec![(
             "https://api.example/api/v1/user/whoami",
@@ -544,6 +546,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_access_check_reports_each_denial_with_the_ts_message() {
         let http = scripted(vec![(
             "https://api.example/api/v1/user/whoami",
@@ -595,6 +598,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_team_list_paginates_the_ts_way() {
         let page = (0..100)
             .map(|index| {
@@ -635,6 +639,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_team_list_errors_with_the_ts_messages() {
         let http = scripted(vec![(
             "https://api.example/api/v1/user/teams?offset=0&limit=100",
@@ -659,6 +664,7 @@ mod tests {
     /// The production transport's wire shape: the request head the real
     /// client sends.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_reqwest_transport_sends_the_ts_request() {
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let port = listener.local_addr().unwrap().port();
@@ -706,6 +712,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_prime_cli_config_reuse_only_accepts_production() {
         let dir = tempfile::tempdir().expect("temp dir");

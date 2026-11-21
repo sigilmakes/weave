@@ -610,6 +610,7 @@ mod tests {
     /// (not "auto"), steering "all" (queued steers co-deliver as ONE turn),
     /// follow-up "one-at-a-time".
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn connection_state_seeds_the_settings_switches() {
         let worker = created_worker().await;
         let response = worker
@@ -663,6 +664,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cycle_model_on_a_non_switching_engine_fails_like_set_model() {
         let dir = std::env::temp_dir().join(format!("pa-worker-cm2-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -687,6 +689,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cycle_model_refuses_models_outside_the_allowlist() {
         let dir = std::env::temp_dir().join(format!("pa-worker-cm3-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -735,6 +738,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn create_resolves_the_models_scope_for_the_session() {
         let dir = std::env::temp_dir().join(format!("pa-worker-scope-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -820,6 +824,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_fresh_scoped_create_persists_the_scoped_startup_pick_in_its_file() {
         let dir =
             std::env::temp_dir().join(format!("pa-worker-scope-file-{}", uuid::Uuid::new_v4()));
@@ -870,6 +875,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn set_scoped_models_stores_and_validates() {
         let worker = created_worker().await;
         let scoped = json!([
@@ -908,6 +914,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cycle_thinking_level_without_reasoning_answers_null() {
         let worker = created_worker().await;
         let response = worker
@@ -923,6 +930,7 @@ mod tests {
     /// The durable row keeps the REQUESTED tier while an unsupported request clamps to
     /// `default` in the active state.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn set_service_tier_records_the_durable_row() {
         let worker = created_worker().await;
         let tier_rows = |worker: &Worker| {
@@ -999,6 +1007,7 @@ mod tests {
 
     /// On the scripted engine (no model) the restored preference re-clamps the tier to `default`.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn replacement_reseed_restores_the_tier_preference() {
         let worker = created_worker().await;
         worker.reseed_service_tier_for_replacement();
@@ -1032,6 +1041,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn set_transport_persists_the_setting() {
         let dir = std::env::temp_dir().join(format!("pa-worker-tr-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(dir.join("agent")).unwrap();
@@ -1062,6 +1072,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn queue_mode_switches_update_the_state() {
         let worker = created_worker().await;
         for (command, field) in [
@@ -1100,6 +1111,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn set_auto_retry_persists_the_toggle() {
         let dir = std::env::temp_dir().join(format!("pa-worker-ar-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(dir.join("agent")).unwrap();
@@ -1121,6 +1133,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn set_auto_compaction_persists_the_toggle() {
         let dir = std::env::temp_dir().join(format!("pa-worker-ac-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(dir.join("agent")).unwrap();
@@ -1178,6 +1191,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn set_auto_compaction_fails_without_flipping_on_a_failed_save() {
         let dir = std::env::temp_dir().join(format!("pa-worker-acf-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -1208,6 +1222,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn abort_retry_answers_success() {
         let worker = created_worker().await;
         let response = worker

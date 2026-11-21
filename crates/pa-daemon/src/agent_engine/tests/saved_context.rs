@@ -47,6 +47,7 @@ fn oracle_session() -> (
     (file, path, dir)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_context_windowed_matches_full_parse_without_a_boundary() {
     let (mut file, path, _dir) = oracle_session();
@@ -64,6 +65,7 @@ fn saved_context_windowed_matches_full_parse_without_a_boundary() {
     assert_saved_context_equals_reference("no-boundary session", &path);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_context_windowed_matches_full_parse_with_changes_inside_the_window() {
     let (mut file, path, _dir) = oracle_session();
@@ -88,6 +90,7 @@ fn saved_context_windowed_matches_full_parse_with_changes_inside_the_window() {
     assert_saved_context_equals_reference("boundary, changes inside the window", &path);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_context_windowed_matches_full_parse_with_model_only_before_the_boundary() {
     let (mut file, path, _dir) = oracle_session();
@@ -113,6 +116,7 @@ fn saved_context_windowed_matches_full_parse_with_model_only_before_the_boundary
     assert_saved_context_equals_reference("boundary, model only before", &path);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_context_windowed_matches_full_parse_with_thinking_only_before_the_boundary() {
     let (mut file, path, _dir) = oracle_session();
@@ -135,6 +139,7 @@ fn saved_context_windowed_matches_full_parse_with_thinking_only_before_the_bound
     assert_saved_context_equals_reference("boundary, thinking only before", &path);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_context_refuses_a_corrupt_committed_row_without_repair() {
     let (mut file, path, _dir) = oracle_session();
@@ -167,6 +172,7 @@ fn saved_context_refuses_a_corrupt_committed_row_without_repair() {
     assert_eq!(std::fs::read(&path).unwrap(), damaged);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn saved_context_from_the_open_store_matches_the_file_read_and_the_reference() {
     let (mut file, path, _dir) = oracle_session();

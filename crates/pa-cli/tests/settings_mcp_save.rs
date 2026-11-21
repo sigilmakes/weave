@@ -4,6 +4,7 @@ use pa_test_scratch::Command;
 use pa_core::settings::SettingsManager;
 use serde_json::{json, Value};
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn first_mcp_server_can_be_added_after_chat_detail_save_or_legacy_null() {
     for legacy_null in [false, true] {
@@ -40,6 +41,7 @@ fn first_mcp_server_can_be_added_after_chat_detail_save_or_legacy_null() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn mcp_registration_preserves_invalid_documents_and_non_null_maps() {
     for content in ["{bad", "[]", r#"{"mcpServers":[],"theme":"light"}"#] {

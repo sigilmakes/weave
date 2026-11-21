@@ -111,6 +111,7 @@ fn catalog(wire: &mut Wire, session: &str) -> Vec<Value> {
 
 // Keep the production lifecycle trace linear so the generation and history assertions stay ordered.
 #[allow(clippy::too_many_lines)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn real_supervisor_worker_discovers_invokes_reloads_and_retires_lua_commands() {
     let fixture = Fixture::new();

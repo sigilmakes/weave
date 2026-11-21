@@ -2,6 +2,7 @@
 use super::*;
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn queue_withdrawals_clear_only_the_last_idle_notes() {
     for command in [
         "mutate_queued_message",

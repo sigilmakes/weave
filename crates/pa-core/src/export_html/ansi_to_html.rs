@@ -232,12 +232,14 @@ pub fn ansi_lines_to_html(lines: &[String]) -> String {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn plain_text() {
         assert_eq!(ansi_to_html("hello"), "hello");
         assert_eq!(ansi_to_html("a < b & c"), "a &lt; b &amp; c");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn color_spans() {
         assert_eq!(
@@ -250,6 +252,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn text_styles() {
         assert_eq!(
@@ -263,6 +266,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn extended_colors() {
         assert_eq!(
@@ -280,6 +284,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn resets() {
         assert_eq!(
@@ -289,6 +294,7 @@ mod tests {
         assert_eq!(ansi_to_html("\x1b[mplain"), "plain");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unclosed_span() {
         assert_eq!(
@@ -297,6 +303,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn lines() {
         let lines = vec!["\x1b[1mx\x1b[0m".to_string(), String::new()];

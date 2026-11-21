@@ -111,6 +111,7 @@ mod tests {
         infos.into_iter().map(|(info, _)| info).collect()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rows_match_the_sequential_fold_and_order() {
         let dir = temp_dir();
@@ -123,17 +124,20 @@ mod tests {
         assert_eq!(scanned[0].name.as_deref(), Some("gamma"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn empty_dir_lists_nothing() {
         let dir = temp_dir();
         assert!(list_sessions(&dir).is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn missing_dir_lists_nothing() {
         assert!(list_sessions(&temp_dir().join("absent")).is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn skips_a_file_whose_first_parseable_line_is_not_the_session_header() {
         let dir = temp_dir();
@@ -161,6 +165,7 @@ mod tests {
         assert!(list_sessions(&dir).is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rejects_a_corrupt_first_line_even_when_a_later_header_is_valid() {
         let dir = temp_dir();
@@ -170,6 +175,7 @@ mod tests {
         assert!(list_sessions(&dir).is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn rejects_a_blank_first_line_in_a_log() {
         let dir = temp_dir();
@@ -179,6 +185,7 @@ mod tests {
         assert!(list_sessions(&dir).is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn still_lists_a_file_with_an_over_long_header_line() {
         let dir = temp_dir();
@@ -196,6 +203,7 @@ mod tests {
         assert_eq!(scanned[0].cwd, long_cwd);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     // Runs on demand: `cargo test -p pa-daemon --release -- --ignored roster_scan_wall_clock
     // --nocapture`.
@@ -219,6 +227,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn list_sessions_with_emits_rows_newest_first_with_scan_counts() {
         let dir = temp_dir();
@@ -260,6 +269,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn list_sessions_with_stops_when_the_consumer_stops() {
         let dir = temp_dir();

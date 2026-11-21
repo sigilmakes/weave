@@ -49,6 +49,7 @@ fn frame_text(session: &str, width: u16, height: u16) -> Vec<String> {
     rows
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn replayed_table_renders_boxed_aligned_rows() {
     let rows = frame_text(TABLE_SESSION, 100, 30);
@@ -82,6 +83,7 @@ fn replayed_table_renders_boxed_aligned_rows() {
     assert!(flat.contains("example.com/log)"), "link row 2: {flat}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn replayed_table_narrow_terminal_falls_back_to_raw() {
     let rows = frame_text(TABLE_SESSION, 12, 60);

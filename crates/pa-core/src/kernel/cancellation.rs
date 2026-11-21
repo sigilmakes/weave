@@ -106,6 +106,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn aborted_signal_short_circuits() {
         let signal = AbortSignal::aborted();
         assert!(signal.is_aborted());
@@ -113,6 +114,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn any_merges_sources() {
         let a = AbortSignal::new();
         let merged = AbortSignal::any(vec![Some(a.clone()), Some(AbortSignal::new())]).unwrap();

@@ -69,6 +69,7 @@ fn write_active_session(dir: &std::path::Path) -> (String, std::path::PathBuf) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_fire_at_a_killed_session_cancels_and_skips() {
     let dir = std::env::temp_dir().join(format!("pa-sched-dead-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -133,6 +134,7 @@ async fn a_fire_at_a_killed_session_cancels_and_skips() {
 /// A heartbeat parks as the injected `heartbeat_prompt` row with the TS preview (the
 /// queue strip reads `Heartbeat prompt: <content>`, the turn text keeps the raw content).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn heartbeat_fire_parks_the_labeled_preview_on_its_lane() {
     let dir = std::env::temp_dir().join(format!("pa-sched-fire-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -238,6 +240,7 @@ async fn heartbeat_fire_parks_the_labeled_preview_on_its_lane() {
 /// heartbeat re-fired ~120x): a real error settles as a run, abort/withdrawal
 /// as a clean run and a skip.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn settles_classify_ran_failed_or_skipped() {
     // Park one fire, settle it with `settle`, and return the verdict.
     async fn settle_one(
@@ -334,6 +337,7 @@ async fn settles_classify_ran_failed_or_skipped() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rlm_heartbeat_mutation_hook_fires_into_the_session_queue() {
     let dir = std::env::temp_dir().join(format!("pa-hb-fire-{}", uuid::Uuid::new_v4()));
     let sessions_dir = dir.join("sessions");

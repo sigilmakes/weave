@@ -164,6 +164,7 @@ fn write_fixture(dir: &Path, id: &str, name: &str, turns: &[(&str, &str)]) -> Pa
 
 /// Enter opens the anchor's file, not the first-listed session's.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn entry_anchor_selects_the_left_session() {
     let dir = tempfile::TempDir::new().expect("temp dir");
 
@@ -237,6 +238,7 @@ async fn entry_anchor_selects_the_left_session() {
 /// The `--continue` launch's view contract (P6 continue-recent safety): preselect the
 /// newest saved session; Enter opens the candidate — the user confirms.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn continue_recent_view_preselects_the_candidate_and_renders_the_notice() {
     let dir = tempfile::TempDir::new().expect("temp dir");
 
@@ -326,6 +328,7 @@ async fn continue_recent_view_preselects_the_candidate_and_renders_the_notice() 
 /// Through the real daemon (`rename_saved_session` wire path, which a unit test cannot
 /// exercise): the row renames in place, the file gains the name.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rename_saved_session_renames_the_row_and_the_file() {
     let dir = tempfile::TempDir::new().expect("temp dir");
 

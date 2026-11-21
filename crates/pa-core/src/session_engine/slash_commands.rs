@@ -41,6 +41,7 @@ pub fn parse_session_command(
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn session_command_extraction() {
         let registry = SlashCommandRegistry::builtin();

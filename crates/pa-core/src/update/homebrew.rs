@@ -59,6 +59,7 @@ pub fn upgrade_instruction(kind: HomebrewKind) -> String {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn detects_formula_and_cask_layouts() {
         let root = tempfile::tempdir().unwrap();
@@ -75,6 +76,7 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn resolves_brew_bin_symlinks_into_the_formula_keg() {
         let root = tempfile::tempdir().unwrap();
@@ -89,6 +91,7 @@ mod tests {
         assert_eq!(managed_kind(&launcher), Some(HomebrewKind::Formula));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ignores_other_kegs_and_non_homebrew_installs() {
         let root = tempfile::tempdir().unwrap();

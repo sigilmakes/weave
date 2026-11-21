@@ -219,6 +219,7 @@ async fn scripted_agent_with(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn normal_turn_streams_and_completes() {
     let (agent, provider, events) = scripted_agent(vec![]).await;
     provider.push_text_turn("hello world");
@@ -263,6 +264,7 @@ async fn normal_turn_streams_and_completes() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tool_call_turn_dispatches_and_feeds_result_back() {
     let echo = EchoTool::new("echo");
     let (agent, provider, _events) = scripted_agent(vec![echo.clone()]).await;
@@ -301,6 +303,7 @@ async fn tool_call_turn_dispatches_and_feeds_result_back() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn parallel_tool_calls_execute_concurrently_and_emit_in_order() {
     // Both calls target the same slow tool: overlap shows up as its
     // concurrent-execution high-water mark.
@@ -330,6 +333,7 @@ async fn parallel_tool_calls_execute_concurrently_and_emit_in_order() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn sequential_tool_calls_run_one_at_a_time() {
     let tool = EchoTool::with_options("echo_seq", 60, false);
     let (agent, provider, _events) =
@@ -354,6 +358,7 @@ async fn sequential_tool_calls_run_one_at_a_time() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tool_error_produces_error_tool_result_and_loop_continues() {
     let failing = EchoTool::with_options("bad_tool", 0, true);
     let (agent, provider, _events) = scripted_agent(vec![failing.clone()]).await;
@@ -379,6 +384,7 @@ async fn tool_error_produces_error_tool_result_and_loop_continues() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn unknown_tool_name_yields_error_tool_result() {
     let echo = EchoTool::new("echo");
     let (agent, provider, _events) = scripted_agent(vec![echo.clone()]).await;
@@ -399,6 +405,7 @@ async fn unknown_tool_name_yields_error_tool_result() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn provider_stream_failure_mid_turn_ends_run_and_retry_continues() {
     let (agent, provider, _events) = scripted_agent(vec![]).await;
     provider.push_stream_failure_turn("partial answer", "connection reset by peer");
@@ -472,6 +479,7 @@ async fn provider_stream_failure_mid_turn_ends_run_and_retry_continues() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn user_abort_mid_stream_finalizes_aborted_assistant_message() {
     let (agent, provider, _events) = scripted_agent(vec![]).await;
     // The provider streams partial text and then stalls; only an abort ends it.
@@ -505,6 +513,7 @@ async fn user_abort_mid_stream_finalizes_aborted_assistant_message() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn abort_during_tool_execution_produces_aborted_tool_result() {
     let slow = EchoTool::with_options("slow_tool", 60_000, false);
     let (agent, provider, _events) = scripted_agent(vec![slow.clone()]).await;
@@ -535,6 +544,7 @@ async fn abort_during_tool_execution_produces_aborted_tool_result() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn max_iterations_stops_after_configured_turn_count() {
     let echo = EchoTool::new("echo");
     let (_agent, provider, _events) = scripted_agent(vec![echo.clone()]).await;
@@ -586,6 +596,7 @@ async fn max_iterations_stops_after_configured_turn_count() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn steering_message_injects_before_next_turn() {
     // Slow enough that the mid-run steer (50ms in) lands while turn 1 is
     // still executing its tool call.
@@ -633,6 +644,7 @@ async fn steering_message_injects_before_next_turn() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn terminate_tool_result_stops_the_run() {
     let (agent, provider, _events) = scripted_agent(vec![Arc::new(TerminatingTool)]).await;
     provider.push_tool_call_turn(None, vec![("call-1", "stop_tool", serde_json::json!({}))]);
@@ -647,6 +659,7 @@ async fn terminate_tool_result_stops_the_run() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn prompt_while_processing_is_rejected_with_ts_message() {
     let (agent, provider, _events) = scripted_agent(vec![]).await;
     provider.push_stalled_turn("streaming");
@@ -667,6 +680,7 @@ async fn prompt_while_processing_is_rejected_with_ts_message() {
     first.await.unwrap().unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn scripted_event_shapes_round_trip_through_the_event_enum() {
     // Terminal events must expose their message and deltas must not.

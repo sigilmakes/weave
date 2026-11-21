@@ -18,6 +18,7 @@ fn priority_test_item(message: &str, policy: TurnPolicy) -> QueuedItem {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn queue_priority_interleaves_lanes_fifo_and_preserves_explicit_order() {
     let mut core = SessionCore::test_core(None, "/tmp".to_string());
@@ -118,6 +119,7 @@ fn queue_priority_interleaves_lanes_fifo_and_preserves_explicit_order() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn queue_priority_drains_four_tiers_and_pinned_front() {
     let mut core = SessionCore::test_core(None, "/tmp".to_string());
@@ -159,6 +161,7 @@ fn queue_priority_drains_four_tiers_and_pinned_front() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rpc_custom_rows_do_not_gain_human_queue_priority() {
     let worker = created_dispatch_worker().await;
     let pause = worker.dispatch("acquire_session_input_pause", &json!({
@@ -216,6 +219,7 @@ async fn rpc_custom_rows_do_not_gain_human_queue_priority() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn waiting_rpc_prompt_overtakes_background_steer_and_settles() {
     let worker = created_dispatch_worker().await;
     let pause = worker.dispatch("acquire_session_input_pause", &json!({
@@ -272,6 +276,7 @@ async fn waiting_rpc_prompt_overtakes_background_steer_and_settles() {
     assert!(settled.success, "waiting prompt failed: {settled:?}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn legacy_queue_record_priority_defaults_by_row_and_keeps_order() {
     let dir = std::env::temp_dir().join(format!("pa-worker-{}", uuid::Uuid::new_v4()));
@@ -308,6 +313,7 @@ fn legacy_queue_record_priority_defaults_by_row_and_keeps_order() {
     std::fs::remove_dir_all(dir).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn queue_snapshot_round_trips_through_the_recovery_journal() {
     let dir = std::env::temp_dir().join(format!("pa-worker-{}", uuid::Uuid::new_v4()));
@@ -382,6 +388,7 @@ fn queue_snapshot_round_trips_through_the_recovery_journal() {
 }
 
 /// A version-1 queue snapshot (pre-item text lanes a prior binary wrote).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_version_one_queue_snapshot_restores_as_plain_rows() {
     let dir = std::env::temp_dir().join(format!("pa-worker-{}", uuid::Uuid::new_v4()));
@@ -408,6 +415,7 @@ fn a_version_one_queue_snapshot_restores_as_plain_rows() {
 /// Only the visible plain-user steering items arm; agent-message deliveries
 /// and injected custom rows never join, and an empty lane arms nothing.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn forced_batch_arming_classifies_the_visible_plain_rows() {
     let worker = created_dispatch_worker().await;
     {

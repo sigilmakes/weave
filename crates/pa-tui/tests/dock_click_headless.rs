@@ -390,6 +390,7 @@ fn visible_col(line: &str, needle: &str) -> Option<usize> {
 }
 
 /// The focused Enter's dispatch, arrived at by the mouse.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_on_the_heartbeats_group_opens_the_heartbeats_view() {
     let frames = settled_frames("1 heartbeat");
@@ -418,6 +419,7 @@ fn a_click_on_the_heartbeats_group_opens_the_heartbeats_view() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_on_the_shells_group_opens_the_bash_view() {
     let frames = settled_frames("1 shell");
@@ -443,6 +445,7 @@ fn a_click_on_the_shells_group_opens_the_bash_view() {
 }
 
 /// The handoff carries this session's scope.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_on_the_subagents_group_hands_off_to_the_scoped_agents_view() {
     let frames = settled_frames("1 heartbeat");
@@ -468,6 +471,7 @@ fn a_click_on_the_subagents_group_hands_off_to_the_scoped_agents_view() {
 }
 
 /// The left arrow's agents-back handoff — the GLOBAL agents view, no scope.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_on_the_manage_hint_hands_off_to_the_agents_view() {
     let frames = settled_frames("1 heartbeat");
@@ -492,6 +496,7 @@ fn a_click_on_the_manage_hint_hands_off_to_the_agents_view() {
 }
 
 /// The dock's Enter route for the goal row.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_on_the_goal_group_opens_the_goal_panel() {
     let frames = settled_frames("Pursuing goal");
@@ -518,6 +523,7 @@ fn a_click_on_the_goal_group_opens_the_goal_panel() {
 
 /// The hint's click keeps the key's gate: with a draft the left arrow is the caret motion, not
 /// the agents-back handoff (Macroscope: the unconditional dispatch stashed a draft).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_on_the_manage_hint_with_a_draft_opens_nothing() {
     let frames = settled_frames("manage");
@@ -552,6 +558,7 @@ fn a_click_on_the_manage_hint_with_a_draft_opens_nothing() {
 }
 
 /// The gap between segments is inert — the cells the click surface never recorded.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_click_on_the_separator_between_groups_opens_nothing() {
     let frames = settled_frames("1 heartbeat");
@@ -588,6 +595,7 @@ fn a_click_on_the_separator_between_groups_opens_nothing() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn hover_motions_across_the_dock_never_disturb_the_click() {
     let frames = settled_frames("1 heartbeat");

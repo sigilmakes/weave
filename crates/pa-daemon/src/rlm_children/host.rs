@@ -713,6 +713,7 @@ mod kickoff_tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn kickoff_presence_requires_valid_durable_envelopes() {
         let dir = tempfile::tempdir().unwrap();

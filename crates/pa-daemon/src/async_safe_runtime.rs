@@ -49,6 +49,7 @@ impl Drop for AsyncSafeRuntime {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn dropping_from_an_async_context_does_not_panic() {
         // The exact production crash: an engine teardown drops the runtime

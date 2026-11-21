@@ -518,6 +518,7 @@ fn warning_settings() -> Arc<StubSettings> {
 /// The genuinely-new session (the daemon reports the gate closed): the
 /// startup detection arm draws the warning once and marks the gate with
 /// the daemon — exactly one mark leaves the client.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_new_session_warns_once_and_marks_the_gate() {
     let (frames, commands) = run_plan(
@@ -546,6 +547,7 @@ fn a_new_session_warns_once_and_marks_the_gate() {
 /// The reattach/resume read (a fresh TUI instance over a session whose
 /// gate the daemon reports OPEN): no warning renders, and the client never
 /// re-marks. This is the every-open re-warn the directive fixes.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_marked_session_reattach_never_rewarns() {
     let (frames, commands) = run_plan(
@@ -572,6 +574,7 @@ fn a_marked_session_reattach_never_rewarns() {
 /// The settings toggle stays FIRST: with `warnings.anthropicExtraUsage`
 /// off, a genuinely new session on a subscription credential never warns
 /// and never marks (the daemon-side gate is never asked).
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_settings_toggle_off_never_warns() {
     let settings = Arc::new(StubSettings {
@@ -600,6 +603,7 @@ fn the_settings_toggle_off_never_warns() {
 /// draws the product warning — the login-completed arm is not gated by
 /// the lifecycle marker, each landing is its own event — and it marks the
 /// gate too.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_fresh_login_rewarns_on_a_marked_session() {
     let (frames, commands) = run_plan(
@@ -643,6 +647,7 @@ fn a_fresh_login_rewarns_on_a_marked_session() {
 /// `anthropicWarningShown` field (the pre-fix build) keeps the warning
 /// working — the gate fails OPEN, so an unreadable lifecycle state shows
 /// the warning rather than suppressing it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_daemon_without_the_gate_field_fails_open_and_warns() {
     let (frames, commands) = run_plan(

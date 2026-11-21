@@ -44,6 +44,7 @@ fn latest_record(worker: &Worker) -> crate::journal::WorkerRecoveryRecord {
 
 /// The admission (not the pickup) proves the work, so a plain boot revives the worker.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn idle_time_injected_admission_is_busy_evidence() {
     let worker = created_worker_with_journal().await;
     // Settle first: the create record's busy=true must not mask the
@@ -91,6 +92,7 @@ async fn idle_time_injected_admission_is_busy_evidence() {
 
 /// An idle session wakes on an invisible injected row; the admission is journal busy evidence.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_bash_completion_notice_admits_the_steering_lane_with_busy_evidence() {
     let worker = created_worker_with_journal().await;
     worker.dispatch("clear_queue", &json!({})).await;
@@ -156,6 +158,7 @@ async fn a_bash_completion_notice_admits_the_steering_lane_with_busy_evidence() 
 
 /// A busy session queues the notice as a visible steer row (TS `queueIfBusy`).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_bash_completion_notice_on_a_busy_session_queues_a_visible_steer_row() {
     let worker = created_worker_with_journal().await;
     worker.core.lock().unwrap().busy = true;
@@ -181,6 +184,7 @@ async fn a_bash_completion_notice_on_a_busy_session_queues_a_visible_steer_row()
 
 /// The withdrawal settles the busy evidence so the journal never promises a replay.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn bash_consumed_withdraws_the_undelivered_notice_and_settles() {
     let worker = created_worker_with_journal().await;
     worker.dispatch("clear_queue", &json!({})).await;
@@ -248,6 +252,7 @@ async fn bash_consumed_withdraws_the_undelivered_notice_and_settles() {
 /// Cancelling an owned queued admission settles the verdict: removed rows
 /// leave no busy evidence and no replayable snapshot.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn cancelled_admission_drop_settles_the_verdict() {
     let worker = created_worker_with_journal().await;
     worker.dispatch("clear_queue", &json!({})).await;
@@ -287,6 +292,7 @@ async fn cancelled_admission_drop_settles_the_verdict() {
 
 /// The in-flight turn is live work: only its own `turn_end` (after the idle flip) settles it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn mid_turn_withdrawal_keeps_the_in_flight_turn_busy() {
     let worker = created_worker_with_journal().await;
     // Mid-turn: the runner is streaming, and the withdrawal leaves

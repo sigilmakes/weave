@@ -435,6 +435,7 @@ impl Harness {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn interactive_thinking_max_clamps_to_effective_high_end_to_end() {
     let mut harness = setup("thinking-max", Some("max"));
@@ -470,6 +471,7 @@ fn interactive_thinking_max_clamps_to_effective_high_end_to_end() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn interactive_sessions_without_a_flag_default_to_medium() {
     let mut harness = setup("thinking-default", None);
@@ -485,6 +487,7 @@ fn interactive_sessions_without_a_flag_default_to_medium() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn invalid_thinking_level_fails_the_create() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -544,6 +547,7 @@ fn invalid_thinking_level_fails_the_create() {
 /// After their workers stop, the durable-row-backed surfaces (`list --all`
 /// saved rows and the ledger-seeded roster rows) keep rendering
 /// "model:level".
+#[pa_test_scratch::pa_test]
 #[test]
 fn session_summaries_carry_the_thinking_level_for_both_session_kinds() {
     let mut harness = setup("summary-levels", None);

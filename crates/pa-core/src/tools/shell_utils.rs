@@ -109,6 +109,7 @@ pub fn kill_process_tree(pid: i32) -> bool {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn shell_config_prefers_bin_bash_with_portable_fallback() {
         let cfg = get_shell_config(None).unwrap();
@@ -125,6 +126,7 @@ mod tests {
         assert_eq!(output.stdout, b"shell-ready");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn shell_env_disables_prompts() {
         let env = get_shell_env();
@@ -133,6 +135,7 @@ mod tests {
         assert!(env.get("PATH").unwrap().contains("/bin"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn sanitize_removes_control_chars() {
         assert_eq!(sanitize_binary_output("a\u{0}b\u{7}c"), "abc");

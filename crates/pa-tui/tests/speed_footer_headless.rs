@@ -305,6 +305,7 @@ fn run_plan(steps: Vec<HeadlessStep>) -> Vec<String> {
 
 /// `/speed` toggles the footer readout over completed responses: the status note carries the TS
 /// wording, and the first completed response renders the dim `tok/s` row (the dock's last row).
+#[pa_test_scratch::pa_test]
 #[test]
 fn speed_command_toggles_the_footer_readout() {
     let steps = vec![
@@ -354,6 +355,7 @@ fn speed_command_toggles_the_footer_readout() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn speed_command_rejects_bad_args() {
     let steps = vec![

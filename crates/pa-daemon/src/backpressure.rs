@@ -112,6 +112,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_saturated_worker_answers_client_requests_with_the_typed_overload_refusal() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let supervisor = supervisor(dir.path());
@@ -189,6 +190,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_saturated_internal_route_admits_once_a_slot_frees() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let supervisor = supervisor(dir.path());
@@ -235,6 +237,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_full_queue_answers_client_requests_with_the_same_refusal() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let supervisor = supervisor(dir.path());
@@ -292,6 +295,7 @@ mod tests {
     /// retired worker refuses the client route after admission, before
     /// anything is enqueued behind the stop.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_retired_worker_admits_no_client_request() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let supervisor = supervisor(dir.path());

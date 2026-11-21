@@ -175,6 +175,7 @@ fn worker_stderr_logs(agent_dir: &Path) -> Vec<String> {
         .collect()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn worker_stderr_lands_in_the_per_worker_log_and_prunes_retention() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -231,6 +232,7 @@ fn worker_stderr_lands_in_the_per_worker_log_and_prunes_retention() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn never_ready_worker_failure_carries_the_captured_stderr_tail() {
     // The injected `TMPDIR` below must stay short enough that the worker's socket probe still

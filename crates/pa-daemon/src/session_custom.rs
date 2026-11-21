@@ -346,6 +346,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn append_custom_message_records_the_row() {
         let worker = created_worker().await;
         let response = worker
@@ -383,6 +384,7 @@ mod tests {
     /// ` by parent` suffix when the rename is parent-directed); a first
     /// name, or a rename that keeps the name, leaves none.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn rename_leaves_a_displayed_notice_only_when_a_name_changed() {
         let worker = created_worker_named(None).await;
         // A first name leaves no notice (there was no previous name).
@@ -432,6 +434,7 @@ mod tests {
     /// `restore_next_turn` parks the rows and the next delivered turn
     /// replays them first (TS `prefixMessages` order).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn restore_next_turn_replays_before_the_next_prompt() {
         let worker = created_worker().await;
         let response = worker
@@ -475,6 +478,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn restore_actions_restores_and_validates() {
         let worker = created_worker().await;
         let snapshot = |actions: Value| {
@@ -592,6 +596,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn restore_actions_keeps_priority_tags_and_source_fallback() {
         let worker = created_worker().await;
         let pause = worker.dispatch("acquire_session_input_pause", &json!({
@@ -680,6 +685,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn restore_actions_refuses_the_reserved_child_status_kinds() {
         let worker = created_worker().await;
         let notice_row = json!({
@@ -738,6 +744,7 @@ mod tests {
     /// A restored queued heartbeat still reads `Heartbeat prompt: <text>` and delivers as the
     /// `heartbeat_prompt` component.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn restore_actions_restores_the_labeled_preview() {
         let worker = created_worker().await;
         let content = "[heartbeat: every 10m run#0]\n\nnudge the mission";
@@ -868,6 +875,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn reload_answers_success() {
         let worker = created_worker().await;
         let response = worker
@@ -884,6 +892,7 @@ mod tests {
     /// back onto the executor.
     #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn reload_parks_the_engine_reload_off_the_runtime() {
         let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
             .lock()

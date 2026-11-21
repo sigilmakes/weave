@@ -33,6 +33,7 @@ fn write_session_log(path: &Path, rows: &[Value]) {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn legacy_registry_probe_reads_the_header_line_bounded() {
     let dir = temp_dir("legacy-bounded");
@@ -65,6 +66,7 @@ fn legacy_registry_probe_reads_the_header_line_bounded() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn legacy_registry_probe_resolves_a_readable_header_over_a_corrupt_tail() {
     let dir = temp_dir("legacy-corrupt-tail");
@@ -90,6 +92,7 @@ fn legacy_registry_probe_resolves_a_readable_header_over_a_corrupt_tail() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn legacy_registry_probe_rejects_uncommitted_or_corrupt_log_headers() {
     let dir = temp_dir("legacy-header-invalid");
@@ -116,6 +119,7 @@ fn legacy_registry_probe_rejects_uncommitted_or_corrupt_log_headers() {
     assert_eq!(legacy_registry_path(&parent), None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn ledger_path_hashes_the_canonical_sessions_dir() {
     let dir = temp_dir("path");
@@ -127,6 +131,7 @@ fn ledger_path_hashes_the_canonical_sessions_dir() {
     assert_ne!(a, c);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn spawn_rename_delete_replay_in_order() {
     let dir = temp_dir("replay");
@@ -167,6 +172,7 @@ fn spawn_rename_delete_replay_in_order() {
     assert_eq!(ledger.edges(true).unwrap(), tombstones);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn edge_is_live_reflects_tombstones_and_files() {
     let dir = temp_dir("liveness");
@@ -227,6 +233,7 @@ fn edge_is_live_reflects_tombstones_and_files() {
 // canonical path recorded at spawn can later become a symlink, so the
 // replay index alone cannot establish that no live edge matches a path.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn edge_is_live_revalidates_paths_without_a_ledger_append() {
     use std::os::unix::fs::symlink;
@@ -292,6 +299,7 @@ fn edge_is_live_revalidates_paths_without_a_ledger_append() {
 /// A respawned child id: the tombstoned edge at the old path stays dead,
 /// the new path's edge is live, and a later respawn on the old path's key
 /// re-lives that edge in place (the fold keeps one edge per key).
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_respawned_child_id_on_a_new_path_is_live_and_the_old_one_is_not() {
     let dir = temp_dir("respawn");
@@ -325,6 +333,7 @@ fn a_respawned_child_id_on_a_new_path_is_live_and_the_old_one_is_not() {
     assert!(ledger.edge_is_live("sub-1", &b.to_string_lossy()));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn dead_child_or_parent_drops_from_live_edges() {
     let dir = temp_dir("live");
@@ -350,6 +359,7 @@ fn dead_child_or_parent_drops_from_live_edges() {
 
 /// A recorded edge path whose file moved resolves through its durable session id, and the returned
 /// edge carries the resolved path; a session with no file anywhere stays dead.
+#[pa_test_scratch::pa_test]
 #[test]
 fn moved_edge_paths_resolve_through_the_session_id() {
     let agent_dir = temp_dir("agent");
@@ -408,6 +418,7 @@ fn moved_edge_paths_resolve_through_the_session_id() {
     assert_eq!(raw[0].child, recorded_child);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_artifact_index_updates_after_a_new_partition() {
     let agent_dir = temp_dir("index-partition");
@@ -471,6 +482,7 @@ fn the_artifact_index_updates_after_a_new_partition() {
 /// resolve (no per-edge stats, no artifacts-tree walk), while the own
 /// edges resolve - a moved child through its session id - and a
 /// tombstoned own child is skipped before any resolution.
+#[pa_test_scratch::pa_test]
 #[test]
 fn live_edges_of_parent_bounds_the_liveness_work() {
     let agent_dir = temp_dir("scoped");
@@ -568,6 +580,7 @@ fn live_edges_of_parent_bounds_the_liveness_work() {
     assert_eq!(unscoped.resolved.len(), 103);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_dead_endpoint_under_an_archived_parent_resolves_without_a_tree_walk() {
     let agent_dir = temp_dir("archive-dead");
@@ -608,6 +621,7 @@ fn a_dead_endpoint_under_an_archived_parent_resolves_without_a_tree_walk() {
 /// dir) still lists its children through the scoped read; an edge whose
 /// recorded parent merely shares the opened file's stem but resolves to
 /// another live file is not the opened parent's.
+#[pa_test_scratch::pa_test]
 #[test]
 fn live_edges_of_parent_follows_a_moved_parent() {
     let agent_dir = temp_dir("scoped-moved");
@@ -663,6 +677,7 @@ fn live_edges_of_parent_follows_a_moved_parent() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn duplicate_child_path_and_bad_spawn_inputs_fail_but_bad_lines_skip() {
     let dir = temp_dir("dup");
@@ -715,6 +730,7 @@ fn duplicate_child_path_and_bad_spawn_inputs_fail_but_bad_lines_skip() {
     assert_eq!(ids, ["sub-1", "sub-4"]);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn unknown_op_records_are_skipped_forward_compatible() {
     let dir = temp_dir("fwd");
@@ -739,6 +755,7 @@ fn unknown_op_records_are_skipped_forward_compatible() {
     assert_eq!(edges[0].child_id, "sub-1");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn seeds_from_legacy_registries_once_and_atomically() {
     let dir = temp_dir("seed");
@@ -779,6 +796,7 @@ fn seeds_from_legacy_registries_once_and_atomically() {
     assert!(first.contains("\"op\":\"meta\""));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn display_entries_round_trip_and_tombstones_stick() {
     let dir = temp_dir("display");
@@ -807,6 +825,7 @@ fn display_entries_round_trip_and_tombstones_stick() {
     assert!(!write_rlm_subagent_display(&entry).unwrap());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn display_entry_file_is_owner_only() {
     let dir = temp_dir("display-mode");
@@ -870,6 +889,7 @@ fn assistant_usage_row(id: &str, cost: f64) -> String {
 
 /// The deletion amendment's snapshot rides the delete record, merges into the same tombstoned edge,
 /// and survives an idempotent re-tombstone until a fresh capture replaces it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn delete_amendment_carries_the_usage_snapshot() {
     let dir = temp_dir("amendment");
@@ -940,6 +960,7 @@ fn delete_amendment_carries_the_usage_snapshot() {
 
 /// The writer never records what the reader refuses: a negative or NaN
 /// usage cost rides as absent (a bare delete record), so the ledger stays readable.
+#[pa_test_scratch::pa_test]
 #[test]
 fn append_delete_with_usage_sanitizes_a_rejectable_cost() {
     let dir = temp_dir("usage-neg");
@@ -986,6 +1007,7 @@ fn append_delete_with_usage_sanitizes_a_rejectable_cost() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn tombstone_child_path_with_usage_snapshots_every_edge() {
     let dir = temp_dir("path-usage");
@@ -1029,6 +1051,7 @@ fn tombstone_child_path_with_usage_snapshots_every_edge() {
 /// child $0.40 + its deleted grandchild $0.10 => the parent's bucket
 /// $0.50). The snapshots are OWN-ONLY: one carrying the child's
 /// aggregate would double count the grandchild.
+#[pa_test_scratch::pa_test]
 #[test]
 fn bucket_folds_own_snapshots_post_order_without_double_counting() {
     let dir = temp_dir("bucket-fixture");
@@ -1133,6 +1156,7 @@ fn bucket_folds_own_snapshots_post_order_without_double_counting() {
 
 /// Legacy tombstones (pre-capture): a live transcript rides its own row
 /// (billing both would double the spend); once it is gone the documented historical gap bills zero.
+#[pa_test_scratch::pa_test]
 #[test]
 fn bucket_legacy_tombstones_fall_back_then_gap_to_zero() {
     let dir = temp_dir("bucket-legacy");
@@ -1188,6 +1212,7 @@ fn bucket_legacy_tombstones_fall_back_then_gap_to_zero() {
 /// falls back to the transcript's own-usage fold. A transcript directly
 /// in the sessions dir keeps its catalog row and stays skipped (the
 /// flat-dir tests above pin that half).
+#[pa_test_scratch::pa_test]
 #[test]
 fn bucket_bills_tombstoned_children_without_catalog_rows() {
     let dir = temp_dir("bucket-no-row");
@@ -1296,6 +1321,7 @@ fn bucket_bills_tombstoned_children_without_catalog_rows() {
 
 /// A raced ledger claims each tombstoned path once (first writer wins):
 /// one child path billed to two parents would double the spend.
+#[pa_test_scratch::pa_test]
 #[test]
 fn bucket_claims_each_tombstoned_path_once() {
     let dir = temp_dir("bucket-claim");
@@ -1370,6 +1396,7 @@ fn bucket_claims_each_tombstoned_path_once() {
 
 /// A recreated path is live: its old tombstone never bills spend that
 /// the new live child's own row carries.
+#[pa_test_scratch::pa_test]
 #[test]
 fn bucket_skips_recreated_live_paths() {
     let dir = temp_dir("bucket-live");
@@ -1410,6 +1437,7 @@ fn bucket_skips_recreated_live_paths() {
     assert!(bucket.is_empty(), "a live path never bills the bucket");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_bucket_updates_after_an_append_on_the_same_ledger() {
     let dir = temp_dir("bucket-append");
@@ -1468,6 +1496,7 @@ fn the_bucket_updates_after_an_append_on_the_same_ledger() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_restored_tombstoned_child_stops_billing_the_parent_without_an_append() {
     let dir = temp_dir("bucket-restore");
@@ -1513,6 +1542,7 @@ fn a_restored_tombstoned_child_stops_billing_the_parent_without_an_append() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_artifact_index_rechecks_deleted_and_relocated_transcripts_without_an_append() {
     let dir = temp_dir("index-disk-change");
@@ -1547,6 +1577,7 @@ fn the_artifact_index_rechecks_deleted_and_relocated_transcripts_without_an_appe
     assert_eq!(ledger.live_edges().unwrap(), expected);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn artifact_misses_stay_cached_until_a_directory_changes() {
     let dir = temp_dir("index-negative-cache");

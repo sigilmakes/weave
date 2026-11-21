@@ -302,6 +302,7 @@ const ALL_ZERO_DOCK: &str =
 /// Bug 1: with zero subagents (every count zero), the prompt's Down
 /// enters the dock on its subagents group, and Enter opens the scoped
 /// agents view — whose empty roster is the view's own empty state.
+#[pa_test_scratch::pa_test]
 #[test]
 fn prompt_down_enters_the_all_zero_dock_and_enter_opens_subagents() {
     let steps = vec![
@@ -324,6 +325,7 @@ fn prompt_down_enters_the_all_zero_dock_and_enter_opens_subagents() {
 /// Every empty group stays reachable from the prompt's Down: Right walks
 /// to the empty heartbeats and shells groups, and Enter opens each view's
 /// empty state.
+#[pa_test_scratch::pa_test]
 #[test]
 fn prompt_down_reaches_every_empty_group() {
     let steps = vec![
@@ -362,6 +364,7 @@ fn prompt_down_reaches_every_empty_group() {
 /// Bug 2: with a shell running and zero subagents, the prompt's Down
 /// enters the dock and two Right presses reach the shells group, whose
 /// Enter opens the bash view listing the running shell.
+#[pa_test_scratch::pa_test]
 #[test]
 fn prompt_down_reaches_the_shells_group_with_zero_subagents() {
     let steps = vec![
@@ -392,6 +395,7 @@ fn prompt_down_reaches_the_shells_group_with_zero_subagents() {
 /// follows reaches the empty prompt, never the dock's heartbeats group
 /// (whose view would render its empty state), and the typed text after it
 /// lands in the prompt — the barrier proves the Enter was handled.
+#[pa_test_scratch::pa_test]
 #[test]
 fn up_and_esc_return_from_the_dock_to_the_prompt() {
     for back in [up(), escape()] {

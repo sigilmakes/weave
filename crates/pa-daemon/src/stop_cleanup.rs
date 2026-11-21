@@ -597,6 +597,7 @@ mod tests {
         serde_json::from_value(raw["jobs"][0].clone()).unwrap()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn finalize_cancels_the_tree_and_archives_the_root() {
         let root = temp_dir();
@@ -639,6 +640,7 @@ mod tests {
         assert_eq!(info.state.as_deref(), Some("archived"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn finalize_skips_a_tree_a_live_worker_covers() {
         let root = temp_dir();
@@ -663,6 +665,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn capture_reads_the_frozen_transcript_before_any_sweep() {
         let root = temp_dir();
@@ -744,6 +747,7 @@ mod tests {
 
     /// The snapshot is OWN usage: the bucket's post-order fold re-adds the grandchild's
     /// own snapshot, and an aggregate would double count it.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn capture_is_own_only_never_the_attribution_aggregate() {
         let root = temp_dir();
@@ -811,6 +815,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn capture_skips_live_children_and_plain_kills() {
         let root = temp_dir();
@@ -842,6 +847,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn capture_with_no_child_id_amends_every_tombstoned_edge() {
         let root = temp_dir();

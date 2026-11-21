@@ -115,6 +115,7 @@ impl Route {
 
 /// The child half: re-executed with the route env, it runs the REAL surface
 /// like the CLI composition (a plain `cargo test` run passes trivially).
+#[pa_test_scratch::pa_test]
 #[test]
 fn kitty_exit_child_mode() {
     let (Ok(route), Ok(socket)) = (
@@ -126,6 +127,7 @@ fn kitty_exit_child_mode() {
     child_run(&route, PathBuf::from(socket));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn every_exit_route_restores_the_kitty_mode() {
     let _lock = match HARNESS_LOCK.lock() {

@@ -131,6 +131,7 @@ async fn exact_bound_history(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[allow(clippy::await_holding_lock)] // Faux's process-global registry owns the whole flow.
 async fn abort_before_first_engine_event_keeps_the_accepted_turn_and_settles_idle() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
@@ -337,6 +338,7 @@ async fn abort_before_first_engine_event_keeps_the_accepted_turn_and_settles_idl
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn plain_abort_keeps_only_the_initial_delivery_not_a_queued_continuation() {
     let user = json!({ "role": "user", "content": [{ "type": "text", "text": "accepted" }] });
     let queued = json!({ "role": "user", "content": [{ "type": "text", "text": "not accepted" }] });
@@ -358,6 +360,7 @@ async fn plain_abort_keeps_only_the_initial_delivery_not_a_queued_continuation()
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_suppression_still_drops_the_initial_delivery() {
     let events = gate_sighting_events(
         vec![EngineEvent::UserMessage(json!({

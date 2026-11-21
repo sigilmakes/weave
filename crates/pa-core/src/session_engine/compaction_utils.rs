@@ -349,6 +349,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn file_ops_from_edit_tool_call() {
         let mut ops = FileOperations::default();
@@ -361,6 +362,7 @@ mod tests {
         assert!(format_file_operations(&read, &modified).contains("<modified-files>"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn file_ops_from_kernel_diffs() {
         let mut ops = FileOperations::default();
@@ -382,6 +384,7 @@ mod tests {
         assert!(read.iter().all(|path| !modified.contains(path)));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn serialization_format() {
         let messages = vec![user("do the thing"), assistant_with_tool_call()];
@@ -445,6 +448,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tool_result_labels_carry_the_tool_name_and_error_marker() {
         assert_eq!(
@@ -467,6 +471,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn repeated_same_tool_calls_pair_by_index() {
         let messages = vec![
@@ -483,6 +488,7 @@ mod tests {
         assert_eq!(serialize_conversation(&messages), expected);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn orphan_tool_result_falls_back_to_the_name_only_label() {
         let messages = vec![
@@ -497,6 +503,7 @@ mod tests {
         assert_eq!(serialize_conversation(&messages), expected);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn file_lists_cap_combined_chars_dropping_read_only_first() {
         // 37-char entries: each contributes 38 chars, so the cap keeps
@@ -539,6 +546,7 @@ mod tests {
         assert!(modified_files.is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn strip_file_list_blocks_removes_read_and_modified_blocks() {
         assert_eq!(
@@ -581,6 +589,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn tool_result_truncated() {
         let long = "x".repeat(10_000);

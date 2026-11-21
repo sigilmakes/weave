@@ -300,6 +300,7 @@ fn run_plan(steps: Vec<HeadlessStep>) -> Vec<String> {
     outcome.frames
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn tier_command_shows_applies_and_rejects() {
     // The leading settle (the sibling harnesses' pattern): the attach must land its model +

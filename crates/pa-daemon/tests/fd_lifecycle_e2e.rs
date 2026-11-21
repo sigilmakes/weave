@@ -223,6 +223,7 @@ const CYCLES: usize = 20;
 /// fds that may legitimately sit open on top of the steady state.
 const FD_SLACK: usize = 6;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn supervisor_fd_count_stable_across_session_cycles() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -345,6 +346,7 @@ fn supervisor_fd_count_stable_across_session_cycles() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn worker_fd_count_stable_across_prompts() {
     const PROMPTS: usize = 30;
@@ -519,6 +521,7 @@ fn worker_socket_path(agent_dir: &Path, socket: &Path, worker_id: &str) -> PathB
     PathBuf::from(value["socketPath"].as_str().expect("socket path"))
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn worker_fd_table_stable_across_client_connection_churn() {
     const PROBES: usize = 15;
@@ -628,6 +631,7 @@ fn worker_fd_table_stable_across_client_connection_churn() {
 /// The supervisor's restart loop must not leak worker processes when the create replay
 /// keeps failing (a corrupt session store): each failed relaunch kills the worker it
 /// spawned (the "failure 4/5 restart loop" shape from the EMFILE report).
+#[pa_test_scratch::pa_test]
 #[test]
 fn supervisor_restart_loop_leaves_no_orphan_workers() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -719,6 +723,7 @@ fn supervisor_restart_loop_leaves_no_orphan_workers() {
 /// A supervisor started under a low soft fd limit raises it to the hard
 /// limit before it binds its socket (macOS starts every process at 256).
 #[cfg(target_os = "linux")]
+#[pa_test_scratch::pa_test]
 #[test]
 fn supervisor_raises_a_low_soft_fd_limit_to_the_hard_limit() {
     let dir = tempfile::TempDir::new().expect("temp dir");

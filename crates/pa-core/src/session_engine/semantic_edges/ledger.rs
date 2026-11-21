@@ -153,6 +153,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn short_append_fails_without_a_second_write() {
         let mut writer = ShortWriter { writes: 0 };

@@ -165,6 +165,7 @@ mod tests {
         dir
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn fresh_busy_evidence_passes_the_gate() {
         let file = session_file(Some("active"));
@@ -179,6 +180,7 @@ mod tests {
         .is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stale_busy_evidence_vetoes_the_revival() {
         let file = session_file(Some("active"));
@@ -195,6 +197,7 @@ mod tests {
         assert!(matches!(veto, RevivalVeto::StaleBusyEvidence { .. }));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_unparsable_evidence_timestamp_vetoes_the_revival() {
         let file = session_file(Some("active"));
@@ -204,6 +207,7 @@ mod tests {
         assert!(matches!(veto, RevivalVeto::StaleBusyEvidence { .. }));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_future_dated_evidence_timestamp_vetoes_the_revival() {
         let file = session_file(Some("active"));
@@ -221,6 +225,7 @@ mod tests {
         assert!(matches!(veto, RevivalVeto::StaleBusyEvidence { .. }));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn evidence_within_the_clock_skew_bound_still_passes() {
         let file = session_file(Some("active"));
@@ -240,6 +245,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_kept_update_row_skips_the_freshness_bound() {
         let file = session_file(Some("active"));
@@ -250,6 +256,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_give_up_verdict_vetoes_even_fresh_busy_evidence() {
         let file = session_file(Some("active"));
@@ -262,6 +269,7 @@ mod tests {
         assert!(matches!(veto, RevivalVeto::GaveUp));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_archived_belt_vetoes_even_fresh_busy_evidence() {
         // The zombie shape: a stopped session whose journal still holds a busy record.
@@ -278,6 +286,7 @@ mod tests {
         assert!(matches!(veto, RevivalVeto::SessionArchived));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_archived_belt_vetoes_a_kept_update_row() {
         // A stop that landed during the update window is durable intent:
@@ -289,6 +298,7 @@ mod tests {
         assert!(matches!(veto, RevivalVeto::SessionArchived));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_live_foreign_lease_vetoes_the_revival() {
         let file = session_file(Some("active"));
@@ -308,6 +318,7 @@ mod tests {
         assert!(matches!(veto, RevivalVeto::LiveLeaseHeld { .. }));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_released_lease_does_not_veto() {
         let file = session_file(Some("active"));

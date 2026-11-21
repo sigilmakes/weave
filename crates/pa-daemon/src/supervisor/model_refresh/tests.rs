@@ -75,6 +75,7 @@ fn report(status: &str) -> Value {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn zero_workers_never_opens_saved_sessions_or_launches_processes() {
     let h = Harness::new();
     let sessions = h.dir.path().join("agent/sessions/saved");
@@ -87,6 +88,7 @@ async fn zero_workers_never_opens_saved_sessions_or_launches_processes() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn coalesces_clients_and_only_fetches_missing_sibling_sources() {
     let mut h = Harness::new();
     let (leader, mut leader_rx) = h.worker("01-leader").await;
@@ -149,6 +151,7 @@ async fn coalesces_clients_and_only_fetches_missing_sibling_sources() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn leader_election_skips_invalid_reports_and_does_not_leak_errors() {
     let mut h = Harness::new();
     let (bad, bad_rx) = h.worker("01-invalid").await;
@@ -181,6 +184,7 @@ async fn leader_election_skips_invalid_reports_and_does_not_leak_errors() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn never_restarts_or_wakes_unready_dead_retired_or_old_workers() {
     let mut h = Harness::new();
     let mut channels = Vec::new();
@@ -222,6 +226,7 @@ async fn never_restarts_or_wakes_unready_dead_retired_or_old_workers() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reports_worst_per_source_without_credential_scoped_counts() {
     for (first, second, expected) in [
         ("skipped", "updated", "updated"),
@@ -249,6 +254,7 @@ async fn reports_worst_per_source_without_credential_scoped_counts() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn sweep_survives_requester_cancellation() {
     let mut h = Harness::new();
     let (leader, mut rx) = h.worker("01").await;
@@ -283,6 +289,7 @@ async fn sweep_survives_requester_cancellation() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn whole_sweep_deadline_marks_unvisited_workers_unavailable() {
     let mut h = Harness::new();
     let mut workers = Vec::new();
@@ -320,6 +327,7 @@ async fn whole_sweep_deadline_marks_unvisited_workers_unavailable() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn snapshot_fanout_never_exceeds_four_workers() {
     let mut h = Harness::new();
     let (leader, rx) = h.worker("00").await;
@@ -372,6 +380,7 @@ async fn snapshot_fanout_never_exceeds_four_workers() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reports_preserve_leader_source_order_and_snapshot_followers_do_not_fetch() {
     let mut h = Harness::new();
     let (leader, rx) = h.worker("01").await;
@@ -405,6 +414,7 @@ async fn reports_preserve_leader_source_order_and_snapshot_followers_do_not_fetc
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn client_refresh_has_a_two_minute_route_budget_and_rejects_old_workers() {
     let mut h = Harness::new();
     let (worker, mut requests) = h.worker("refresh-route").await;

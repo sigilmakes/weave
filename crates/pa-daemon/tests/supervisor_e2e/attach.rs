@@ -6,6 +6,7 @@ use super::*;
 /// Chunked snapshot streaming on the attach path (live TS goldens in
 /// `tests/goldens/chunked-attach-live-ts.json`): begin/chunk/end records
 /// whose reassembly equals the full snapshot legacy clients receive.
+#[pa_test_scratch::pa_test]
 #[test]
 fn chunked_snapshot_attach_streams_begin_chunk_end() {
     let dir = tempfile::TempDir::new().expect("temp dir");

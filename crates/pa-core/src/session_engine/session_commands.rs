@@ -440,6 +440,7 @@ mod tests {
         message.content.text()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn echo_row_shape_matches_ts() {
         let echo = session_command_echo_row(&command("compact", "focus on tests"));
@@ -457,6 +458,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn result_row_shape_matches_ts() {
         let result = slash_command_result(
@@ -484,6 +486,7 @@ mod tests {
         assert_eq!(failed.details.unwrap()["error"], serde_json::json!("boom"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn goal_status_text_matches_ts() {
         let mut state = empty_goal_state();
@@ -508,6 +511,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn plugin_executor_needs_no_provider_inputs_and_reload_is_history_free() {
         let dir = tempfile::tempdir().unwrap();
         let cwd = dir.path().join("project");
@@ -586,6 +590,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn goal_state_slugs() {
         let state = GoalState {

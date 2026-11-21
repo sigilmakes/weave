@@ -151,6 +151,7 @@ fn run_print(args: &[&str], env: &[(String, String)]) -> (String, String, i32) {
 
 /// `-c` refuses an active session with the exact TS error; a fresh daemon
 /// still continues the most recent session.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_continue_refuses_an_active_daemon_session() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -274,6 +275,7 @@ fn print_continue_refuses_an_active_daemon_session() {
 /// A session file held by a live process outside the daemon roster refuses
 /// `--resume`. This test process holds the execution lock; the print process
 /// must discover that ownership before opening the session file.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_resume_refuses_a_foreign_lease_holder() {
     let dir = tempfile::TempDir::new().expect("temp dir");

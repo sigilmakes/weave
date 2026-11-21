@@ -31,6 +31,7 @@ fn echo_definition() -> ToolDefinition {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn engine_runs_tool_loop_and_persists() {
     let model = pa_agent::types::Model {
         id: "m".into(),
@@ -144,6 +145,7 @@ async fn engine_runs_tool_loop_and_persists() {
 /// A spawned child's prompt stamps its recursion depth: `create_session`
 /// at depth N reads "depth: N (not root)", never the root identity.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn spawned_child_prompt_stamps_its_depth() {
     let model = pa_agent::types::Model {
         id: "m".into(),
@@ -215,6 +217,7 @@ async fn spawned_child_prompt_stamps_its_depth() {
 /// server stays gated, an endpoint-bound credential unlocks it in the NEXT
 /// session, and one bound to another endpoint does not.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn oauth_creds_unlock_generic_mcp_gating_in_new_sessions() {
     fn model() -> pa_agent::types::Model {
         pa_agent::types::Model {
@@ -345,6 +348,7 @@ async fn oauth_creds_unlock_generic_mcp_gating_in_new_sessions() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn create_session_registers_goal_and_heartbeat_handlers() {
     let dir = tempfile::TempDir::new().unwrap();
     let registration =
@@ -400,6 +404,7 @@ async fn create_session_registers_goal_and_heartbeat_handlers() {
 /// `conversation_log_path`, still auto-appends the missing
 /// thinking-level and service-tier rows (#3350's gate regression).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn create_session_appends_missing_resume_settings_rows() {
     let model = pa_agent::types::Model {
         id: "m".into(),
@@ -492,6 +497,7 @@ async fn create_session_appends_missing_resume_settings_rows() {
 /// `history.index` reports the figure the engine actually sends: the same
 /// assembled view, measured with the drift the engine publishes.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn history_index_matches_the_request_the_engine_sends() {
     let model = pa_agent::types::Model {
         id: "m".into(),
@@ -581,6 +587,7 @@ async fn history_index_matches_the_request_the_engine_sends() {
 /// The engine's live view is the send path, not a build-time snapshot: an edit
 /// appended to the session changes both, and the compact figure follows.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_live_view_tracks_the_session_and_the_send_path() {
     let model = pa_agent::types::Model {
         id: "m".into(),
@@ -757,6 +764,7 @@ impl pa_agent::types::AgentTool for EngineEditTool {
 /// An edit inside a real run: request two must lack the dropped turn, and
 /// `history.index` must report the usage the provider returned after it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_edit_lands_in_the_second_request_and_index_reports_the_post_edit_usage() {
     let model = pa_agent::types::Model {
         id: "m".into(),

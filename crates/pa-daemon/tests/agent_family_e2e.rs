@@ -421,6 +421,7 @@ async fn send_agent_message(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn parent_child_agent_message_round_trip_end_to_end() {
     let Some(kernel_python) = kernel_python() else {
         return;
@@ -682,6 +683,7 @@ fn cell_turn(code: &str) -> Value {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn family_edges_never_cross_families_end_to_end() {
     let Some(kernel_python) = kernel_python() else {
         return;
@@ -1227,6 +1229,7 @@ async fn family_edges_never_cross_families_end_to_end() {
 /// the new name, and the parent-side selectors stop matching the old
 /// name (`rlm.collect` by the old name fails, the new name hits).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn parent_renames_a_child_end_to_end() {
     let Some(kernel_python) = kernel_python() else {
         return;

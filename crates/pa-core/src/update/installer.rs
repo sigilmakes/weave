@@ -797,6 +797,7 @@ mod tests {
     /// supported platform pair (the same set install-rust.sh's uname case
     /// resolves): the Windows pair ships the MSVC target, and the refusal
     /// covers every other pair with the full matrix in the message.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn target_for_covers_the_published_matrix() {
         assert_eq!(target_for("macos", "aarch64"), Some("aarch64-apple-darwin"));
@@ -828,6 +829,7 @@ mod tests {
     /// followed $`PSDefaultParameterValues`) keeps the installer-ownership
     /// gate working instead of sending a ps1-updated machine down the
     /// managed path.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn installed_channel_reads_the_ps1_encoded_marker() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -897,6 +899,7 @@ mod tests {
     /// stay on beta (the marker the installer writes at publish carries
     /// the channel), a stable or pre-marker install rides the script's
     /// own default, and a foreign marker is never treated as a channel.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn installed_channel_reads_the_publish_marker() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -931,6 +934,7 @@ mod tests {
     /// Only the payload binary of a marked installer tree is
     /// installer-owned; the marker's version line is the installed
     /// version.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn installer_prefix_of_needs_the_payload_path_and_the_marker() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -958,6 +962,7 @@ mod tests {
     /// running image, so the local operations always wait for the
     /// installer — even a fully staged, marker-bearing payload prefix
     /// stays closed (the platform alone decides).
+    #[pa_test_scratch::pa_test]
     #[test]
     #[cfg(not(windows))]
     fn caller_owns_payload_stays_false_for_a_staged_prefix_on_unix() {
@@ -981,6 +986,7 @@ mod tests {
     /// payload dir, so even a fully staged prefix stays closed on
     /// Windows — the true arm needs a real self-installed run (the e2e
     /// covers the wait path).
+    #[pa_test_scratch::pa_test]
     #[test]
     #[cfg(windows)]
     fn caller_owns_payload_needs_the_running_image_on_windows() {
@@ -1109,6 +1115,7 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
     /// domain's install endpoint, nightly (beta) fetches `install-beta.sh`
     /// from the download base (the domain forwards only `install.sh`), and
     /// the override pins both.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_installer_url_follows_the_channel() {
         // The knobs are SAVED and RESTORED around the probe: the env is
@@ -1153,6 +1160,7 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_target_matrix_covers_the_published_builds() {
         assert_eq!(target_for("macos", "aarch64"), Some("aarch64-apple-darwin"));
@@ -1180,6 +1188,7 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn running_commit_reads_the_continuous_stamp() {
         assert_eq!(
@@ -1205,6 +1214,7 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
     /// The requested channel (an explicit flag or the saved setting) wins
     /// over the install marker; without one the marker's channel rides.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     #[cfg(unix)]
     async fn the_requested_channel_wins_over_the_install_marker() {
         let (root, _preserve, prefix) = sandbox();
@@ -1235,6 +1245,7 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     #[cfg(unix)]
     async fn the_funnel_runs_the_downloaded_installer_and_preserves_the_session_store() {
         let (root, preserve, prefix) = sandbox();
@@ -1260,6 +1271,7 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     #[cfg(unix)]
     async fn the_probe_still_reads_a_pre_takeover_launchers_version() {
         let (root, _preserve, prefix) = sandbox();
@@ -1280,6 +1292,7 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     #[cfg(unix)]
     async fn a_failed_installer_keeps_the_previous_install_and_reports_the_error() {
         let (root, preserve, prefix) = sandbox();
@@ -1310,6 +1323,7 @@ echo "installed: 9.9.8-continuous.fedcba9876543210"
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_unfetchable_script_fails_without_installing() {
         let (_root, _preserve, prefix) = sandbox();
         let failure = run_installer_from(

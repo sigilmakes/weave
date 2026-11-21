@@ -428,6 +428,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_documented_source_forms() {
         assert_eq!(kind("npm:@scope/pkg@1.2.3"), "npm");
@@ -441,6 +442,7 @@ mod tests {
         assert_eq!(kind("../relative/path"), "local");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn never_parses_dot_relative_paths_as_git() {
         let ParsedSource::Local(local) = parse_source("./packages/agent-timers") else {
@@ -453,6 +455,7 @@ mod tests {
         assert_eq!(local.path, "../packages/agent-timers");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_https_github_urls() {
         let ParsedSource::Git(git) = parse_source("https://github.com/user/repo") else {
@@ -464,6 +467,7 @@ mod tests {
         assert!(!git.pinned);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_https_urls_with_git_prefix() {
         let ParsedSource::Git(git) = parse_source("git:https://github.com/user/repo") else {
@@ -473,6 +477,7 @@ mod tests {
         assert_eq!(git.path, "user/repo");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_https_urls_with_ref() {
         let ParsedSource::Git(git) = parse_source("https://github.com/user/repo@v1.2.3") else {
@@ -489,6 +494,7 @@ mod tests {
         assert_eq!(git.r#ref.as_deref(), Some("feature/branch"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_host_path_shorthand_only_with_git_prefix() {
         let ParsedSource::Git(git) = parse_source("git:github.com/user/repo") else {
@@ -501,6 +507,7 @@ mod tests {
         assert_eq!(kind("github.com/user/repo"), "local");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_https_urls_with_git_suffix() {
         let ParsedSource::Git(git) = parse_source("https://github.com/user/repo.git") else {
@@ -509,6 +516,7 @@ mod tests {
         assert_eq!(git.path, "user/repo");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_other_hosted_domains() {
         for url in [
@@ -523,6 +531,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn keeps_scp_clone_urls_for_scp_like_sources() {
         let ParsedSource::Git(git) = parse_source("git:git@github.com:user/repo") else {
@@ -533,6 +542,7 @@ mod tests {
         assert_eq!(git.path, "user/repo");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_ssh_protocol_urls() {
         let ParsedSource::Git(git) = parse_source("git:ssh://git@github.com/user/repo") else {
@@ -543,6 +553,7 @@ mod tests {
         assert_eq!(git.path, "user/repo");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn treats_protocol_git_urls_with_git_prefix_as_local() {
         // The `git:` prefix is stripped before parsing, so `git://host/path`
@@ -550,6 +561,7 @@ mod tests {
         assert_eq!(kind("git://localhost/fixtures/repo.git"), "local");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_npm_specs() {
         let (name, version) = parse_npm_spec("@scope/pkg@1.2.3");
@@ -563,6 +575,7 @@ mod tests {
         assert_eq!(version, None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn resolves_paths_lexically() {
         let base = Path::new("/work/project");

@@ -167,6 +167,7 @@ mod tests {
     /// a later user row is a direct user prompt, and an aborted
     /// completion folds nowhere. The captured numbers verify the
     /// `spawn_task` batch: 50,208 input + 2,929 output, $0.0089957.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn origin_walk_and_cursor_over_a_child_file() {
         let entries = vec![
@@ -230,6 +231,7 @@ mod tests {
 
     /// The usage fold itself: rows accumulate per origin across the walk
     /// (two `spawn_task` completions sum their fields).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn batches_sum_across_completions_of_one_origin() {
         let entries = vec![

@@ -254,6 +254,7 @@ pub fn resolve_kernel_bash_shell(custom: Option<&str>) -> anyhow::Result<Option<
 mod windows_tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn system32_candidates_are_demoted_last() {
         let candidates = [
@@ -275,6 +276,7 @@ mod windows_tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn without_system_root_the_order_stands() {
         let candidates =
@@ -285,6 +287,7 @@ mod windows_tests {
     /// An explicit path is validated (it must exist) and wins over the
     /// hardcoded Git Bash candidates; without one the resolution is the
     /// platform default.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn kernel_shell_prefers_explicit_then_hardcoded_git_bash() {
         let dir = tempfile::tempdir().unwrap();
@@ -309,6 +312,7 @@ mod tests {
 
     /// A rejected explicit shell: the error names the path and the
     /// `shellPath` setting, whatever the validation failure was.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn explicit_shell_paths_are_validated() {
         for path in ["relative/bash", "/no/such/shell"] {
@@ -329,6 +333,7 @@ mod tests {
         assert!(message.contains(&path), "not executable: {message}");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn padded_executable_shell_resolves_trimmed() {
         let dir = tempfile::tempdir().unwrap();

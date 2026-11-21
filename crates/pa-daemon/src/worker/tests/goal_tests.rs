@@ -31,6 +31,7 @@ async fn goal_dispatch_worker(goal: serde_json::Value) -> std::sync::Arc<Worker>
 
 /// TS `compact()`'s active-goal branch: a successful compact mints the owed continuation.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_with_active_goal_schedules_the_continue() {
     let worker = goal_dispatch_worker(json!({
         "status": "active",
@@ -86,6 +87,7 @@ async fn compact_with_active_goal_schedules_the_continue() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_with_active_goal_and_parked_work_skips_the_mint() {
     let worker = goal_dispatch_worker(json!({
         "status": "active",
@@ -144,6 +146,7 @@ async fn compact_with_active_goal_and_parked_work_skips_the_mint() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_with_paused_goal_never_continues() {
     let worker = goal_dispatch_worker(json!({
         "status": "paused",
@@ -193,6 +196,7 @@ async fn compact_with_paused_goal_never_continues() {
 /// the faux script into a misleading count mismatch).
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn goal_turn_end_loop_runs_to_completion() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()
@@ -322,6 +326,7 @@ async fn goal_turn_end_loop_runs_to_completion() {
 
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn goal_pause_withdraws_the_queued_continuation() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK
         .lock()
@@ -451,6 +456,7 @@ fn thread_goal_state_rows(path: &std::path::Path) -> Vec<Value> {
 
 /// The mirror row is what a recovery rebuild replays.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn goal_update_events_mirror_the_durable_goal_row() {
     let (worker, file) = goal_dispatch_worker_with_store(json!({
         "emitUpdateOnPrompt": true,
@@ -483,6 +489,7 @@ async fn goal_update_events_mirror_the_durable_goal_row() {
 
 /// The mint persists its row before the `goal_update`, so the count survives a crash.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn compact_mint_persists_the_goal_state_row() {
     let (worker, file) = goal_dispatch_worker_with_store(json!({
         "status": "active",

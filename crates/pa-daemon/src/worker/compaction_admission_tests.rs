@@ -98,6 +98,7 @@ async fn wait_for_state(readiness: impl Fn() -> bool) {
 /// A steer whose resume site fires MID-COMPACTION must DEFER: it delivers after
 /// the window (the tail wake), `compaction_end` preceding the racing row.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn steer_mid_compaction_defers_and_delivers_after_the_window() {
     let worker = compaction_admission_worker(json!({
         "responses": [ { "summary": "racing window summary", "delayMs": 1500 } ],
@@ -206,6 +207,7 @@ async fn steer_mid_compaction_defers_and_delivers_after_the_window() {
 
 /// With no compaction in flight the same steer and a plain prompt admit as before.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn idle_sessions_admit_the_steering_and_plain_prompt_classes() {
     let worker = compaction_admission_worker(json!({})).await;
     let mut subscription = worker.events.subscribe();

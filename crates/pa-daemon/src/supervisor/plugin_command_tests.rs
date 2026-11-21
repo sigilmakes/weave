@@ -2,6 +2,7 @@
 use super::*;
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn plugin_commands_never_reach_old_or_reconnected_workers() {
     let dir = tempfile::tempdir().unwrap();
     let supervisor = Arc::new(

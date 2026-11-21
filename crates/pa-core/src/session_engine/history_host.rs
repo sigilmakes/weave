@@ -578,6 +578,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn index_totals_match_the_request_built_at_send() {
         let (_dir, session) = session_with(40);
         let (requests, handlers, _session, _tmp) = registered(session);
@@ -598,6 +599,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn get_reports_the_remainder_of_an_over_limit_region() {
         let (_dir, session) = session_with(50);
         let (_requests, handlers, _session, _tmp) = registered(session);
@@ -623,6 +625,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn rejected_edit_names_the_target_and_leaves_the_file_unchanged() {
         let (_dir, session) = session_with(6);
         let file = session.get_session_file().unwrap().to_owned();
@@ -652,6 +655,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn edit_writes_one_row_and_the_next_request_drops_the_region() {
         let (_dir, session) = session_with(10);
         let file = session.get_session_file().unwrap().to_owned();
@@ -758,6 +762,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_edit_reaches_the_next_request_of_the_same_run() {
         let (_dir, session) = session_with(6);
         let (requests, handlers, session, _tmp) = registered(session);
@@ -823,6 +828,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn get_by_id_and_by_slice_return_the_same_entry() {
         let (_dir, session) = session_with(8);
         let (_requests, handlers, session, _tmp) = registered(session);
@@ -856,6 +862,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_bounded_path_reports_its_remainder_and_previews() {
         let (_dir, session) = session_with(4);
         let (requests, handlers, _session, _tmp) = registered(session);
@@ -879,6 +886,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_inserted_note_carries_no_id_and_addresses_by_position() {
         let (_dir, session) = session_with(3);
         let (_requests, handlers, _session, _tmp) = registered(session);
@@ -912,6 +920,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_refresh_sends_a_message_that_arrived_while_the_view_was_assembled() {
         let (_dir, session) = session_with(4);
         let (requests, _handlers, session, _tmp) = registered(session);
@@ -991,6 +1000,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_inserted_user_row_is_sent_once_and_its_drop_sticks() {
         let (_dir, session) = session_with(3);
         let (requests, handlers, session, _tmp) = registered(session);
@@ -1039,6 +1049,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn compact_status_reports_the_figure_history_index_reports_after_an_edit() {
         let (_dir, session) = session_with(12);
         let (requests, mut handlers, _session, _tmp) = registered(session);
@@ -1063,6 +1074,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_failed_assembly_keeps_the_refresh_pending() {
         let (_dir, session) = session_with(2);
         let (requests, _handlers, _session, _tmp) = registered(session);
@@ -1089,6 +1101,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_refresh_hook_does_not_keep_its_agent_alive() {
         let (_dir, session) = session_with(1);
         let requests = Arc::new(TurnBoundaryRequests::new());

@@ -902,6 +902,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn a_wedged_resident_does_not_hold_the_all_true_list_past_the_client_deadline() {
         let dir = tempfile::TempDir::new().expect("temp dir");
         let supervisor = Arc::new(supervisor(dir.path()));
@@ -951,6 +952,7 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn a_named_create_name_check_does_not_wait_out_the_client_deadline_behind_a_wedged_resident(
     ) {
         let dir = tempfile::TempDir::new().expect("temp dir");

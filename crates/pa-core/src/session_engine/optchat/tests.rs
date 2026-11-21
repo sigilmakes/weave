@@ -29,6 +29,7 @@ fn summarize(tree: &mut Tree) -> usize {
     count
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn complete_bounded_view_balanced_merges_and_exact_recall() {
     let original = history(128);
@@ -52,6 +53,7 @@ fn complete_bounded_view_balanced_merges_and_exact_recall() {
     assert_eq!(summarize(&mut t), 0);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn descendants_reuse_nodes_and_siblings_cannot_recall_each_other() {
     let original = history(64);
@@ -82,6 +84,7 @@ fn descendants_reuse_nodes_and_siblings_cannot_recall_each_other() {
     assert!(sibling.recall(&foreign_id, 0, 256).is_err());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn source_hash_child_hash_summary_and_budget_are_validated() {
     let original = history(8);
@@ -120,6 +123,7 @@ fn source_hash_child_hash_summary_and_budget_are_validated() {
     assert!(Tree::new("session", history(8), Some("e7".into()), cache, 128).is_err());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn canonical_tool_custom_date_search_and_fresh_session_isolation() {
     let mut source = history(3);
@@ -153,6 +157,7 @@ fn canonical_tool_custom_date_search_and_fresh_session_isolation() {
         .is_err());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn missing_source_and_cycles_fail_instead_of_partial_coverage() {
     let mut missing = history(3);
@@ -172,6 +177,7 @@ fn missing_source_and_cycles_fail_instead_of_partial_coverage() {
     assert!(t.view(10).is_err());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn typed_multimodal_projection_rejects_without_disabling_exact_recall() {
     let image = json!({"type":"image","data":"AA==","mimeType":"image/png"});
@@ -253,6 +259,7 @@ pub(super) fn signed_source_messages() -> Vec<(pa_types::session::AgentMessage, 
     cases
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn typed_opaque_signatures_and_route_ids_reject_projection_but_preserve_exact_index() {
     for (message, marker) in signed_source_messages() {
@@ -281,6 +288,7 @@ fn typed_opaque_signatures_and_route_ids_reject_projection_but_preserve_exact_in
     assert!(tree(vec![original], Cache::default()).view(4096).is_ok());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn serialized_plan_bound_counts_metadata_and_defers_an_ordered_prefix() {
     use super::tree::{MAX_MERGE_INPUT_BYTES, MAX_PLAN_REPLY_BYTES};
@@ -331,6 +339,7 @@ fn serialized_plan_bound_counts_metadata_and_defers_an_ordered_prefix() {
         .contains("serialized single merge"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn oversized_single_plan_input_fails_explicitly_before_any_reply() {
     let source=(0..2).map(|index|serde_json::from_value(json!({"type":"message","id":format!("large-{index}"),"parentId":if index==0 {None}else{Some("large-0")},"timestamp":"2026-10-20T10:00:00Z","message":{"role":"user","content":"x".repeat(300*1024),"timestamp":0}})).unwrap()).collect::<Vec<FileEntry>>();

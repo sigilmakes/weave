@@ -72,6 +72,7 @@ const CHILD_TERM: &str = "xterm-256color";
 /// then the agents view when the exit came through agents-back
 /// (`return_to_agents_view`). A roster-link failure returns quietly: the
 /// error path's restore still ran.
+#[pa_test_scratch::pa_test]
 #[test]
 fn diff_chat_child_mode() {
     let Some(socket) = std::env::var(CHILD_SOCKET_ENV).ok() else {
@@ -104,6 +105,7 @@ fn diff_chat_child_mode() {
 
 /// The agents-view child: a fresh roster-surface run. A roster-link failure
 /// returns quietly (the error-route restore still ran).
+#[pa_test_scratch::pa_test]
 #[test]
 fn diff_view_child_mode() {
     let Some(socket) = std::env::var(CHILD_SOCKET_ENV).ok() else {
@@ -129,6 +131,7 @@ fn diff_view_child_mode() {
 
 /// The picker child: the config-selector surface over a fixed row set; the
 /// flags arm the error and exit variants.
+#[pa_test_scratch::pa_test]
 #[test]
 fn diff_selector_child_mode() {
     if std::env::var(CHILD_MODE_ENV).ok().as_deref() != Some("selector") {
@@ -170,6 +173,7 @@ fn diff_selector_child_mode() {
 
 /// The replay child: the replay surface over a harness-written fixture; the
 /// `panic` flag runs the panic driver (a real unwind).
+#[pa_test_scratch::pa_test]
 #[test]
 fn diff_replay_child_mode() {
     let Some(fixture) = std::env::var(CHILD_FIXTURE_ENV).ok() else {
@@ -223,6 +227,7 @@ fn write_replay_fixture() -> String {
 }
 
 /// Route: the parity exit through the `/exit` slash command.
+#[pa_test_scratch::pa_test]
 #[test]
 fn parity_exit_through_slash_command_restores_every_mode() {
     let _lock = harness_lock();
@@ -247,6 +252,7 @@ fn parity_exit_through_slash_command_restores_every_mode() {
     harness.assert_terminal_state_restored("the parity exit (/exit)");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn parity_exit_through_the_ctrl_c_pair_restores_every_mode() {
     let _lock = harness_lock();
@@ -272,6 +278,7 @@ fn parity_exit_through_the_ctrl_c_pair_restores_every_mode() {
 /// Route: the detach handoff to the agents view — the pane hands to a second
 /// surface of the same process (alt screen and raw mode stay by design), and
 /// the VIEW's exit then releases everything.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_detach_handoff_then_the_view_exit_restores_every_mode() {
     let _lock = harness_lock();
@@ -305,6 +312,7 @@ fn the_detach_handoff_then_the_view_exit_restores_every_mode() {
 /// Route: the force-quit watchdog from a wedged loop: the mock stalls the
 /// `/list` request, the loop wedges, the Ctrl+C pair arms the watchdog, and
 /// its own byte order must hand the terminal back whole.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_force_quit_watchdog_restores_every_mode() {
     let _lock = harness_lock();
@@ -330,6 +338,7 @@ fn the_force_quit_watchdog_restores_every_mode() {
     harness.assert_terminal_state_restored("the force-quit watchdog");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_agents_view_fresh_exit_restores_every_mode() {
     let _lock = harness_lock();
@@ -358,6 +367,7 @@ fn the_agents_view_fresh_exit_restores_every_mode() {
 /// roster link fails while the pane is in TUI state, so the surface's own
 /// release must hand the terminal back before the error escapes (TS
 /// `returnToAgentsView`'s `finally`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_agents_view_roster_failure_behind_a_handoff_restores_every_mode() {
     let _lock = harness_lock();
@@ -380,6 +390,7 @@ fn the_agents_view_roster_failure_behind_a_handoff_restores_every_mode() {
     harness.assert_terminal_state_restored("the agents view's roster failure behind a handoff");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_config_selector_esc_close_restores_every_mode() {
     let _lock = harness_lock();
@@ -400,6 +411,7 @@ fn the_config_selector_esc_close_restores_every_mode() {
     harness.assert_terminal_state_restored("the config selector's Esc close");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_config_selector_remapped_exit_action_restores_every_mode() {
     let _lock = harness_lock();
@@ -426,6 +438,7 @@ fn the_config_selector_remapped_exit_action_restores_every_mode() {
     harness.assert_terminal_state_restored("the config selector's remapped exit action");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_config_selector_toggle_error_restores_every_mode() {
     let _lock = harness_lock();
@@ -448,6 +461,7 @@ fn the_config_selector_toggle_error_restores_every_mode() {
     harness.assert_terminal_state_restored("the config selector's toggle error");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_replay_surface_clean_exit_restores_every_mode() {
     let _lock = harness_lock();
@@ -473,6 +487,7 @@ fn the_replay_surface_clean_exit_restores_every_mode() {
 /// Route: the panic unwind: the panic driver panics mid-loop after the first
 /// paint; the unwind crosses the guard, the exit restore runs, and the
 /// process dies with the terminal whole.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_panic_unwind_restores_every_mode() {
     let _lock = harness_lock();
@@ -503,6 +518,7 @@ fn the_panic_unwind_restores_every_mode() {
 
 /// Route: the pre-mount daemon refusal: the run errors BEFORE any
 /// terminal state is armed, so the error path must restore NOTHING.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_pre_mount_daemon_refusal_arms_nothing() {
     let _lock = harness_lock();
@@ -624,6 +640,7 @@ fn wait_for_stopped(pid: u32, what: &str) {
 /// Route: the suspend cycle (ctrl+z). The shell gets the terminal
 /// MID-PROCESS, so the differential asserts twice: at the stop point and
 /// at the resumed session's final exit.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_suspend_cycle_hands_a_whole_terminal_to_the_shell_and_back() {
     if !sigtstp_session_runner() || !sigtstp_stops_processes() {
@@ -689,6 +706,7 @@ fn the_suspend_cycle_hands_a_whole_terminal_to_the_shell_and_back() {
 /// Route: the late kitty answer: the probe's query goes unanswered
 /// through the mount, and the answer bytes land INSIDE the exit window.
 /// Whatever path takes the answer, the stream must carry NO kitty flags push after the exit began.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_late_kitty_answer_inside_the_exit_window_is_stood_down() {
     let _lock = harness_lock();

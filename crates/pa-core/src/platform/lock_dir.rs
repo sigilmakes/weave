@@ -529,6 +529,7 @@ mod tests {
         LockDir::path_for(file)
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn lock_is_an_empty_directory_and_cleans_up() {
         let dir = tempfile::tempdir().unwrap();
@@ -544,6 +545,7 @@ mod tests {
         assert!(!lock_of(&file).exists(), "release removes the directory");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn mtime_matches_the_proper_lockfile_probe_shape() {
         let dir = tempfile::tempdir().unwrap();
@@ -567,6 +569,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn second_acquire_reports_contention() {
         let dir = tempfile::tempdir().unwrap();
@@ -577,6 +580,7 @@ mod tests {
         assert_eq!(error.kind(), std::io::ErrorKind::WouldBlock);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stale_lock_is_taken_over() {
         let dir = tempfile::tempdir().unwrap();
@@ -594,6 +598,7 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn live_owned_lock_cannot_be_stolen_after_stale_age() {
         let dir = tempfile::tempdir().unwrap();
@@ -608,6 +613,7 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn dead_owned_lock_is_reclaimed_and_old_guard_cannot_remove_successor() {
         let dir = tempfile::tempdir().unwrap();
@@ -629,6 +635,7 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unparseable_owned_lock_is_reclaimed_by_age() {
         let dir = tempfile::tempdir().unwrap();
@@ -642,6 +649,7 @@ mod tests {
         next.ensure_owned().unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn legacy_lock_file_is_removed_not_choked_on() {
         // A pre-compat Rust build left flock FILES at the lock path (the TS

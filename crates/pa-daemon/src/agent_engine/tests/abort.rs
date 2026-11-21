@@ -4,6 +4,7 @@ use super::*;
 /// The eager turn abort: an abort landing mid-provider-wait cancels the
 /// in-flight fetch immediately; the aborted row carries `EMPTY_USAGE`,
 /// never the goal accounting.
+#[pa_test_scratch::pa_test]
 #[test]
 fn abort_in_flight_turn_cancels_a_mid_provider_wait() {
     let _faux = FAUX_TEST_LOCK
@@ -168,6 +169,7 @@ fn abort_in_flight_turn_cancels_a_mid_provider_wait() {
 /// Latch cancellation at actual run registration, not before a run exists.
 /// The lifecycle owns both history rows and the aborted settle; no provider
 /// request starts and the next delivery still serves the first script step.
+#[pa_test_scratch::pa_test]
 #[test]
 fn abort_at_registered_run_start_preserves_the_accepted_turn_without_a_provider_call() {
     let _faux = FAUX_TEST_LOCK
@@ -259,6 +261,7 @@ fn abort_at_registered_run_start_preserves_the_accepted_turn_without_a_provider_
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn settled_turn_emits_the_terminal_turn_end_payload() {
     let _faux = FAUX_TEST_LOCK
@@ -302,6 +305,7 @@ fn settled_turn_emits_the_terminal_turn_end_payload() {
     assert!(tool_results.is_empty(), "the text-only turn ran no tools");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn settled_turn_emits_the_run_agent_end_payload() {
     let _faux = FAUX_TEST_LOCK
@@ -362,6 +366,7 @@ fn settled_turn_emits_the_run_agent_end_payload() {
 /// One `agent_end` per agent run: a retried run restarts with its own
 /// frames; the retry's `agent_end` carries only the retry's messages (the
 /// failed row left the loop context first), and its opening frames forward.
+#[pa_test_scratch::pa_test]
 #[test]
 fn retried_run_restarts_with_its_own_agent_frames() {
     let _faux = FAUX_TEST_LOCK
@@ -572,6 +577,7 @@ fn kernel_start_failure(
 /// force-abort path settles the tool race) - not keep the turn alive while
 /// the cell runs out. Red: the run thread wedged past the cell's sleep
 /// (the daemon worker's `run_turn_once` awaits the admission forever).
+#[pa_test_scratch::pa_test]
 #[test]
 fn abort_in_flight_turn_cancels_a_running_kernel_cell() {
     let Some(kernel_python) = live_kernel_python() else {

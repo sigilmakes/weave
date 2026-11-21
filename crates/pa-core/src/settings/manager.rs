@@ -984,6 +984,7 @@ mod tests {
     use super::*;
     use crate::settings::types::MarkdownSettings;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn in_memory_loads_merges_and_saves() {
         let mut manager = SettingsManager::in_memory(&Settings::default());
@@ -1000,6 +1001,7 @@ mod tests {
         assert_eq!(manager.get_default_model(), Some("z-ai/glm-5.3"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn reopen_keeps_the_runtime_overrides_in_the_merged_settings() {
         let mut manager = SettingsManager::in_memory(&Settings::default());
@@ -1013,6 +1015,7 @@ mod tests {
         assert_eq!(manager.reopen().get_code_block_indent(), "    ");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn code_block_indent_reads_markdown_settings_with_ts_default() {
         let manager = SettingsManager::in_memory(&Settings::default());
@@ -1029,6 +1032,7 @@ mod tests {
         assert_eq!(manager.get_code_block_indent(), "    ");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn chat_detail_persists_the_chosen_level_with_the_startup_fallback() {
         let mut manager = SettingsManager::in_memory(&Settings::default());
@@ -1055,6 +1059,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn steering_mode_defaults_to_all_follow_ups_stay_one_at_a_time() {
         let mut manager = SettingsManager::in_memory(&Settings::default());
@@ -1070,6 +1075,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn migrations_apply_on_load() {
         let storage: Arc<dyn SettingsStorage> =
@@ -1083,6 +1089,7 @@ mod tests {
         assert_eq!(manager.get_steering_mode(), QueueModeSetting::All);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn wrong_typed_fields_never_fail_load() {
         let storage: Arc<dyn SettingsStorage> =
@@ -1097,6 +1104,7 @@ mod tests {
         assert_eq!(manager.get_theme(), Some("prime"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn idle_eviction_semantics() {
         let mut manager = SettingsManager::in_memory(&Settings::default());
@@ -1115,6 +1123,7 @@ mod tests {
         assert_eq!(manager.get_idle_eviction(), IdleEviction::Minutes(45));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn compaction_toggle_defaults_on_and_persists() {
         let mut manager = SettingsManager::in_memory(&Settings::default());
@@ -1125,6 +1134,7 @@ mod tests {
         assert!(!manager.get_compaction_enabled());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn session_archive_policy_semantics() {
         let mut manager = SettingsManager::in_memory(&Settings::default());
@@ -1152,6 +1162,7 @@ mod tests {
         assert_eq!(manager.get_session_archive_policy().max_sessions, Some(50));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn image_model_reads_trimmed_or_unset() {
         let manager = SettingsManager::in_memory(&Settings {

@@ -157,6 +157,7 @@ impl Sandbox {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn npm_install_list_remove_flow() {
     let _guard = super::test_support::ENV_MUTEX.lock().unwrap();
@@ -187,6 +188,7 @@ fn npm_install_list_remove_flow() {
     assert!(log.contains("npm uninstall -g fake-pkg\n"), "{log}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn npm_update_skips_matching_versions() {
     let _guard = super::test_support::ENV_MUTEX.lock().unwrap();
@@ -204,6 +206,7 @@ fn npm_update_skips_matching_versions() {
     assert!(!log.contains("npm install -g fake-pkg@latest"), "{log}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn npm_update_reinstalls_moved_versions() {
     let _guard = super::test_support::ENV_MUTEX.lock().unwrap();
@@ -226,6 +229,7 @@ fn npm_update_reinstalls_moved_versions() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn update_unknown_source_is_an_error_with_suggestion() {
     let _guard = super::test_support::ENV_MUTEX.lock().unwrap();
@@ -241,6 +245,7 @@ fn update_unknown_source_is_an_error_with_suggestion() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn git_clone_update_remove_flow() {
     let _guard = super::test_support::ENV_MUTEX.lock().unwrap();
@@ -302,6 +307,7 @@ fn git_clone_update_remove_flow() {
     assert!(sandbox.agent_dir.join("git").join(".gitignore").exists());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn git_ref_checkout_installs_the_pinned_revision() {
     let _guard = super::test_support::ENV_MUTEX.lock().unwrap();
@@ -344,6 +350,7 @@ fn git_ref_checkout_installs_the_pinned_revision() {
 /// Homebrew formula's `bin` link): the shipped payload sits beside the
 /// real file, and a plain path stays untouched.
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn exe_dir_of_resolves_a_launcher_symlink() {
     let root = tempfile::tempdir().unwrap();

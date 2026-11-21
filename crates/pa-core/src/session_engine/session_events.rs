@@ -220,6 +220,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn message_update_event_json_wraps_the_partial_and_delta() {
         let message = partial(vec![AssistantContent::Text(TextContent {
@@ -245,6 +246,7 @@ mod tests {
             serde_json::json!({"type": "text_delta", "contentIndex": 0, "delta": "first reply"})
         );
     }
+    #[pa_test_scratch::pa_test]
     #[test]
     fn assistant_message_event_wire_shapes_match_ts() {
         let message = partial(Vec::new());

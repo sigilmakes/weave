@@ -317,6 +317,7 @@ fn top_layout() -> (usize, usize, usize, usize, usize, usize) {
     (row0, col0, answer_row, answer_col, ctx_row, ctx_col)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn press_drag_release_copies_the_spanned_transcript_text() {
     let (row0, col0, ..) = top_layout();
@@ -338,6 +339,7 @@ fn press_drag_release_copies_the_spanned_transcript_text() {
 
 /// A drag spanning rows copies each row's slice — the anchor's row from the anchor column, the
 /// spacer rows as empty lines, the head's row up to the head column (TS `extractSelectionText`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn multi_row_drag_copies_each_line() {
     let (row0, col0, answer_row, answer_col, ..) = top_layout();
@@ -364,6 +366,7 @@ fn multi_row_drag_copies_each_line() {
 }
 
 /// TS: the anchor and head coincide, so the release takes the clear branch.
+#[pa_test_scratch::pa_test]
 #[test]
 fn click_without_drag_copies_nothing() {
     let (row0, col0, ..) = top_layout();
@@ -379,6 +382,7 @@ fn click_without_drag_copies_nothing() {
 
 /// A press on the dock starts a frame selection over the row's visible span (TS
 /// `beginFrameSelection`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn dock_press_drag_copies_the_frame_region() {
     let (_, _, _, _, ctx_row, ctx_col) = top_layout();
@@ -400,6 +404,7 @@ fn dock_press_drag_copies_the_frame_region() {
     assert_eq!(copies, vec!["Collap".to_string()], "the dock span copied");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn selection_reports_are_consumed_when_tracking_is_disabled() {
     let (row0, col0, ..) = top_layout();

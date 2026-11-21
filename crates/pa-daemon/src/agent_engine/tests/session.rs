@@ -2,6 +2,7 @@
 use super::*;
 use crate::engine::PromptBatchRow;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn lazy_replacement_keeps_canonical_rows_committed_after_the_pending_branch() {
     use crate::engine::SessionEngine as _;
@@ -79,6 +80,7 @@ fn lazy_replacement_keeps_canonical_rows_committed_after_the_pending_branch() {
 /// the core session). The faux provider registers under `FAUX_TEST_LOCK`
 /// on a blocking thread (the lock is std, so it never rides an await).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_commands_enumerates_skills_before_the_first_prompt() {
     use crate::engine::SessionEngine as _;
     let (engine, _dir) = tokio::task::spawn_blocking(|| {
@@ -159,6 +161,7 @@ async fn get_commands_enumerates_skills_before_the_first_prompt() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn refused_completed_retirement_keeps_cached_runtime_and_accepted_queue() {
     let (engine, _events) = tokio::task::spawn_blocking(|| {
         run_prompts(
@@ -189,6 +192,7 @@ async fn refused_completed_retirement_keeps_cached_runtime_and_accepted_queue() 
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn replacement_discard_seals_retained_runtime_without_claiming_empty_queue() {
     let (engine, _events) = tokio::task::spawn_blocking(|| {
         run_prompts(
@@ -219,6 +223,7 @@ async fn replacement_discard_seals_retained_runtime_without_claiming_empty_queue
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn replacement_teardown_retires_the_session_and_the_funnel_adopts_the_branch() {
     let engine = {
         let (engine, _events) = tokio::task::spawn_blocking(|| {
@@ -313,6 +318,7 @@ async fn replacement_teardown_retires_the_session_and_the_funnel_adopts_the_bran
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn live_branch_rebuild_reloads_the_goal_state_from_the_moved_branch() {
     let engine = {
         let (engine, _events) = tokio::task::spawn_blocking(|| {
@@ -508,6 +514,7 @@ fn run_skill_prompt(prompt: &str) -> Vec<EngineEvent> {
     run_skill_prompt_body("Run the demo protocol.", prompt, &[]).1
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_bare_skill_invocation_admits_the_expanded_block() {
     let events = run_skill_prompt("/skill:demo-skill");
@@ -540,6 +547,7 @@ fn a_bare_skill_invocation_admits_the_expanded_block() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_skill_invocation_with_args_persists_the_block_and_the_args() {
     let events = run_skill_prompt("/skill:demo-skill fix the flake");
@@ -559,6 +567,7 @@ fn a_skill_invocation_with_args_persists_the_block_and_the_args() {
     assert_eq!(assistant_texts(&events), vec!["ok"]);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_batched_bare_skill_row_admits_on_the_expanded_block() {
     let (engine, events) =
@@ -591,6 +600,7 @@ fn a_batched_bare_skill_row_admits_on_the_expanded_block() {
     assert_eq!(assistant_texts(&events), vec!["ok"]);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_bare_invocation_of_a_close_tagged_body_expands() {
     let (_engine, events) = run_skill_prompt_body(

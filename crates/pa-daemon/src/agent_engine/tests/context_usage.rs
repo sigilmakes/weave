@@ -1,5 +1,6 @@
 use super::*;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn stats_and_attach_follow_history_index_before_and_after_an_edit() {
     let _faux = FAUX_TEST_LOCK

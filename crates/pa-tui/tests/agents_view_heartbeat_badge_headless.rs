@@ -251,6 +251,7 @@ fn view_options(socket: &std::path::Path) -> AgentsViewOptions {
 /// row renders the dock's `◷ N` vocabulary between its status icon and
 /// its title.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_row_renders_its_heartbeat_count_after_a_heartbeats_changed() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");

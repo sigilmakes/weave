@@ -831,6 +831,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn sse_frames_hand_lua_parsed_json_instead_of_wire_text() {
         let backend = InferenceCapabilities::new("session".into());
         let value = json!({"delta":"wire ✓","nested":[1,true,null]});
@@ -875,6 +876,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn explicit_native_open_streams_real_faux_provider() {
         let registration =
             pa_ai::faux::register_faux_provider(pa_ai::faux::RegisterFauxProviderOptions {
@@ -924,6 +926,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn raw_delegate_allows_current_instructions_but_not_portable_messages_or_model_changes() {
         use pa_ai::compaction::{
             CompactionLimits, CompactionRoute, ResponsesCompactor, ResponsesWindow,
@@ -995,6 +998,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn typed_delegate_is_single_use_and_pull_based() {
         let backend = InferenceCapabilities::new("session".into());
         let pulls = Arc::new(AtomicUsize::new(0));
@@ -1062,6 +1066,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn dropping_a_read_future_cancels_its_open_transport() {
         let backend = InferenceCapabilities::new("session".into());
         let pulls = Arc::new(AtomicUsize::new(0));
@@ -1094,6 +1099,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn close_interrupts_an_active_reader_and_session_drop_closes_idle_streams() {
         let backend = InferenceCapabilities::new("session".into());
         let closed = CancellationToken::new();
@@ -1152,6 +1158,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn invocation_cancellation_closes_idle_inference() {
         let backend = InferenceCapabilities::new("session".into());
         let closed = CancellationToken::new();
@@ -1208,6 +1215,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn explicit_http_json_and_sse_cross_host_capabilities() {
         let backend = InferenceCapabilities::new("session".into());
         for (format, content_type, body, expected) in [
@@ -1263,6 +1271,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn oversized_sse_frame_errors_and_revokes_handle() {
         let backend = InferenceCapabilities::new("session".into());
         let mut body = b"data: ".to_vec();
@@ -1296,6 +1305,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn bounded_native_explicit_and_delegated_result_only_drain_more_than_sixteen_events() {
         let registration =
             pa_ai::faux::register_faux_provider(pa_ai::faux::RegisterFauxProviderOptions {
@@ -1398,6 +1408,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn bounded_native_result_only_drains_a_real_http_stream_larger_than_both_queues() {
         let mut body = String::new();
         for _ in 0..96 {

@@ -156,6 +156,7 @@ const TUI_CAPABILITIES: &[&str] = &[
 ];
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_windowed_attach_serves_a_tool_result_safe_tail() {
     let dir = session_dir();
     let path = dir.join("windowed-tail.jsonl");
@@ -279,6 +280,7 @@ async fn a_windowed_attach_serves_a_tool_result_safe_tail() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_windowed_attach_never_cuts_inside_the_compaction_retained_segment() {
     let dir = session_dir();
     let path = dir.join("windowed-compacted.jsonl");
@@ -328,6 +330,7 @@ async fn a_windowed_attach_never_cuts_inside_the_compaction_retained_segment() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_windowed_attach_preserves_iso_and_fractional_prompt_times() {
     for timestamp in [
         json!(2000.75),
@@ -369,6 +372,7 @@ async fn a_windowed_attach_preserves_iso_and_fractional_prompt_times() {
 /// a windowed attach streams the tail alone, and the summary keeps the
 /// session total the backfill cursor (`historyBefore`) completes.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_chunked_windowed_attach_streams_the_count_it_carries() {
     let dir = session_dir();
     let path = dir.join("windowed-chunked.jsonl");
@@ -439,6 +443,7 @@ async fn a_chunked_windowed_attach_streams_the_count_it_carries() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_windowed_attach_keeps_interleaved_tool_pairs_together() {
     for scenario in [0, 1, 2] {
         let crossing = scenario != 0;
@@ -538,6 +543,7 @@ async fn branched_worker() -> (tempfile::TempDir, std::sync::Arc<Worker>) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn anchored_backfill_rejects_other_client_branch_navigation() {
     for target in ["sibling", "m0000300"] {
         let (_dir, worker) = branched_worker().await;
@@ -580,6 +586,7 @@ async fn anchored_backfill_rejects_other_client_branch_navigation() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn anchored_backfill_accepts_descendant_appends_and_restored_branch() {
     let (_dir, worker) = branched_worker().await;
     let original = full_messages(&worker).await;
@@ -623,6 +630,7 @@ async fn anchored_backfill_accepts_descendant_appends_and_restored_branch() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn display_transcript_restores_precompaction_history_without_sibling_leakage() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("display-history.jsonl");
@@ -741,6 +749,7 @@ async fn display_transcript_restores_precompaction_history_without_sibling_leaka
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn display_transcript_fences_full_replacements_and_prefixes() {
     let (_dir, worker) = branched_worker().await;
     let mut caps = TUI_CAPABILITIES.to_vec();
@@ -825,6 +834,7 @@ async fn display_transcript_fences_full_replacements_and_prefixes() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn display_transcript_attach_uses_original_client_capabilities() {
     let (_dir, worker) = branched_worker().await;
     for (outer, client, expected) in [
@@ -848,6 +858,7 @@ async fn display_transcript_attach_uses_original_client_capabilities() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn display_transcript_corrupt_branch_attach_falls_back_without_sibling_leakage() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("incomplete.jsonl");

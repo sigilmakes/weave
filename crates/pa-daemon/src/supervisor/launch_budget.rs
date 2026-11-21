@@ -48,6 +48,7 @@ pub(super) const WORKER_PROBE_BACKOFF_MAX_MS: u64 = 2_000;
 mod windows_tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn windows_budgets_match_the_ts_values() {
         assert_eq!(DEFAULT_WORKER_CONNECT_TIMEOUT_MS, 90_000);

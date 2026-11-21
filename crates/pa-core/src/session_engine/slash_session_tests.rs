@@ -13,6 +13,7 @@ fn test_model() -> pa_agent::types::Model {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn session_commands_never_reach_the_model() {
     let provider = Arc::new(ScriptedProvider::new(test_model()));
     provider.push_text_turn("unused");

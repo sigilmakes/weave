@@ -124,6 +124,7 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn iso_matches_known_dates() {
         assert_eq!(iso_from_unix_ms(0), "1970-01-01T00:00:00.000Z");
@@ -139,6 +140,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn iso_rejects_impossible_calendar_dates() {
         assert_eq!(iso_to_unix_ms("2026-02-31T00:00:00Z"), None);

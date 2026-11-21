@@ -215,6 +215,7 @@ fn chat_options(socket: PathBuf, cwd: PathBuf) -> InteractiveOptions {
 /// The real round trip over one daemon: chat (agents-back) -> view -> the re-entry adopts
 /// the held handoff and renders the same rows.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_roundtrip_reentry_renders_the_same_transcript() {
     let _handoff_guard = HANDOFF_E2E_LOCK.lock().await;
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -362,6 +363,7 @@ async fn the_roundtrip_reentry_renders_the_same_transcript() {
 /// under the worker's final sequence (the settle update after
 /// `agent_end`).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_post_turn_sojourn_reentry_still_serves_the_held_packs() {
     let _handoff_guard = HANDOFF_E2E_LOCK.lock().await;
     let dir = tempfile::TempDir::new().expect("temp dir");

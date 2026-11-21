@@ -189,6 +189,7 @@ fn write_fixture(
 /// The FIRST `session_list_item` frame must arrive well before the final
 /// response (the grown file's fold is the scan's tail); the ratio catches
 /// the batched form without a wall-clock budget (self-calibrating).
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_saved_catalog_streams_per_file_during_the_scan() {
     // The scan's head: small newest-first rows, stamped in increasing
@@ -312,6 +313,7 @@ fn the_saved_catalog_streams_per_file_during_the_scan() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 #[ignore = "expensive old durable path; run explicitly for fixture byte equivalence"]
 fn static_catalog_fixtures_match_the_durable_writer() {

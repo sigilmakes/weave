@@ -17,6 +17,7 @@ fn captured_attribution_fixture() -> PathBuf {
     super::log_reader_tests::captured_attribution_log()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bounded_header_matches_the_line_read() {
     let dir = temp_dir();
@@ -32,6 +33,7 @@ fn bounded_header_matches_the_line_read() {
     assert!(is_valid_session_file(&path));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bounded_header_rejects_a_non_json_first_line() {
     let dir = temp_dir();
@@ -41,6 +43,7 @@ fn bounded_header_rejects_a_non_json_first_line() {
     assert!(!is_valid_session_file(&path));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bounded_header_refuses_an_over_long_first_line() {
     let dir = temp_dir();
@@ -54,6 +57,7 @@ fn bounded_header_refuses_an_over_long_first_line() {
     assert!(read_session_header(&path).is_some());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bounded_header_refuses_an_unterminated_first_line() {
     let dir = temp_dir();
@@ -67,6 +71,7 @@ fn bounded_header_refuses_an_unterminated_first_line() {
     assert!(read_session_header(&path).is_none());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bounded_header_strips_a_crlf_line_return() {
     let dir = temp_dir();
@@ -82,6 +87,7 @@ fn bounded_header_strips_a_crlf_line_return() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bounded_header_treats_an_empty_file_as_headerless() {
     let dir = temp_dir();
@@ -91,6 +97,7 @@ fn bounded_header_treats_an_empty_file_as_headerless() {
     assert!(!is_valid_session_file(&path));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn open_folds_captured_child_usage_attributions() {
     let store = SessionFile::open(&captured_attribution_fixture()).unwrap();
@@ -107,6 +114,7 @@ fn open_folds_captured_child_usage_attributions() {
     assert_eq!(usage["cost"]["total"].as_f64(), Some(0.008_995_7));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn append_entry_folds_a_live_child_usage_attribution() {
     let mut store = SessionFile::create("/tmp", None, 0);
@@ -142,6 +150,7 @@ fn append_entry_folds_a_live_child_usage_attribution() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_malformed_aggregate_does_not_zero_the_target_row() {
     let mut store = SessionFile::create("/tmp", None, 0);
@@ -169,6 +178,7 @@ fn a_malformed_aggregate_does_not_zero_the_target_row() {
 }
 
 /// The end-of-load fold installs the newest cumulative aggregate (TS in-process fold parity).
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_depth_two_chain_reports_the_folded_aggregate() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -256,6 +266,7 @@ fn the_depth_two_chain_reports_the_folded_aggregate() {
 /// [`SessionFile::open_windowed`]) hydrate the gate from the file — the
 /// reattach/resume contract: a session that warned once never warns again
 /// however it reopens. A fresh session serves the gate closed.
+#[pa_test_scratch::pa_test]
 #[test]
 fn marking_the_warning_persists_and_both_reopens_hydrate_it() {
     let dir = temp_dir();
@@ -309,6 +320,7 @@ fn marking_the_warning_persists_and_both_reopens_hydrate_it() {
 /// disagreed, so the two reopen paths answered differently on the same
 /// file (and `install_full_history` could overwrite the windowed
 /// answer with the full scan's).
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_off_branch_marker_never_hydrates_the_full_open_gate() {
     let dir = temp_dir();
@@ -386,6 +398,7 @@ fn an_off_branch_marker_never_hydrates_the_full_open_gate() {
         .anthropic_warning_shown());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn creates_and_loads_a_session() {
     let dir = temp_dir();
@@ -416,6 +429,7 @@ fn creates_and_loads_a_session() {
 }
 
 /// A cyclic file would otherwise hang the create's blocking task.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_cyclic_parent_chain_terminates_the_branch_walk() {
     let mut session = SessionFile::create("/tmp", None, 0);
@@ -440,6 +454,7 @@ fn a_cyclic_parent_chain_terminates_the_branch_walk() {
 }
 
 /// A malformed or empty level never replaces a prior good one.
+#[pa_test_scratch::pa_test]
 #[test]
 fn scan_keeps_the_latest_persisted_thinking_level() {
     let dir = temp_dir();
@@ -455,6 +470,7 @@ fn scan_keeps_the_latest_persisted_thinking_level() {
 }
 
 /// The in-memory index only adopts entries the file accepted.
+#[pa_test_scratch::pa_test]
 #[test]
 fn failed_persist_keeps_the_store_walkable() {
     let dir = temp_dir();
@@ -506,6 +522,7 @@ fn failed_persist_keeps_the_store_walkable() {
 
 /// The replay's dedup predicate is the disclosure row's fields: the exact
 /// row is recognized wherever it came from; a different disclosure stays distinct.
+#[pa_test_scratch::pa_test]
 #[test]
 fn declaration_stamped_entry_survives_reload_as_the_same_identity() {
     let dir = temp_dir();
@@ -553,6 +570,7 @@ fn declaration_stamped_entry_survives_reload_as_the_same_identity() {
 
 /// The missing id was minted but never persisted, so the walk continues from the gap entry's
 /// file predecessor (the writer's leaf at the time).
+#[pa_test_scratch::pa_test]
 #[test]
 fn branch_bridged_bridges_ghost_parent_gaps() {
     let dir = temp_dir();
@@ -589,6 +607,7 @@ fn branch_bridged_bridges_ghost_parent_gaps() {
     let _ = fs::remove_dir_all(&dir);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn branch_bridged_skips_abandoned_chains_after_a_persisted_branch_move() {
     let dir = temp_dir();
@@ -617,6 +636,7 @@ fn branch_bridged_skips_abandoned_chains_after_a_persisted_branch_move() {
 }
 
 /// Forked-off entries stay excluded; only a MISSING parent bridges.
+#[pa_test_scratch::pa_test]
 #[test]
 fn branch_bridged_matches_the_strict_walk_on_clean_files() {
     let dir = temp_dir();
@@ -648,6 +668,7 @@ fn branch_bridged_matches_the_strict_walk_on_clean_files() {
     let _ = fs::remove_dir_all(&dir);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn scan_builds_transcript_search_text() {
     let dir = temp_dir();
@@ -674,6 +695,7 @@ fn scan_builds_transcript_search_text() {
 
 /// Raw usage keyed by id, aggregates replacing raw blocks, child spend
 /// subtracted — `session_usage`'s tests pin the fold, this pins the scan's wiring.
+#[pa_test_scratch::pa_test]
 #[test]
 fn scan_folds_the_saved_row_usage_summary() {
     let dir = temp_dir();
@@ -734,6 +756,7 @@ fn scan_folds_the_saved_row_usage_summary() {
 }
 
 /// TS `JSON.parse` keeps the row, so every present field survives the partial block.
+#[pa_test_scratch::pa_test]
 #[test]
 fn scan_keeps_messages_with_partial_usage_objects() {
     let dir = temp_dir();
@@ -764,6 +787,7 @@ fn scan_keeps_messages_with_partial_usage_objects() {
     let _ = fs::remove_dir_all(&dir);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn scan_omits_usage_without_billable_work() {
     let dir = temp_dir();
@@ -778,6 +802,7 @@ fn scan_omits_usage_without_billable_work() {
     let _ = fs::remove_dir_all(&dir);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn transcript_search_text_caps_at_the_ts_limit() {
     let dir = temp_dir();
@@ -803,6 +828,7 @@ fn transcript_search_text_caps_at_the_ts_limit() {
     let _ = fs::remove_dir_all(&dir);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn search_text_char_counter_stays_in_lockstep_with_the_corpus() {
     // The O(1) running counter must equal `chars().count()` of the corpus at
@@ -836,6 +862,7 @@ fn search_text_char_counter_stays_in_lockstep_with_the_corpus() {
     assert_eq!(acc.search_text_chars, SESSION_LIST_SEARCH_TEXT_MAX_CHARS);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn search_text_char_counter_matches_the_legacy_append() {
     // The reference append (the pre-counter shape: count, then extend) must produce the same
@@ -867,6 +894,7 @@ fn search_text_char_counter_matches_the_legacy_append() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn search_text_counter_lockstep_names_every_corpus_mutation_path() {
     // Every corpus-mutating path at the accumulator level: (1) a fresh fold's
@@ -974,6 +1002,7 @@ fn search_text_counter_lockstep_names_every_corpus_mutation_path() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn durable_first_kept_entry_id_pins_the_boundary_the_read_retains() {
     // The parity scenario the frame diff caught: the engine reports an id that
@@ -1023,6 +1052,7 @@ fn durable_first_kept_entry_id_pins_the_boundary_the_read_retains() {
     assert_eq!(crate::types::message_text(&messages[2]), "second turn done");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn entry_chain_links_parents() {
     let mut session = SessionFile::create("/tmp", None, 0);
@@ -1036,6 +1066,7 @@ fn entry_chain_links_parents() {
 }
 
 /// The id mint checks collisions against the maintained `by_id` index, not a rebuilt map.
+#[pa_test_scratch::pa_test]
 #[test]
 fn append_cost_does_not_grow_with_the_store() {
     let mut small = SessionFile::create("/tmp", None, 0);
@@ -1069,6 +1100,7 @@ fn append_cost_does_not_grow_with_the_store() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn malformed_complete_rows_are_refused_without_repair() {
     let dir = temp_dir();
@@ -1090,6 +1122,7 @@ fn malformed_complete_rows_are_refused_without_repair() {
 
 /// Scalar settings restoration must not consume or clear an accepted context
 /// archive. The real core model-context builders still recover it afterwards.
+#[pa_test_scratch::pa_test]
 #[test]
 fn windowed_settings_projection_preserves_the_accepted_context_archive() {
     let dir = tempfile::tempdir().unwrap();
@@ -1185,6 +1218,7 @@ fn windowed_settings_projection_preserves_the_accepted_context_archive() {
 /// (verified against the TS binary's session file, battery run
 /// 20260921T140248Z): type, id, parentId, timestamp, summary, firstKeptEntryId,
 /// tokensBefore, details, fromHook, customInstructions?, usage.
+#[pa_test_scratch::pa_test]
 #[test]
 fn durable_compaction_row_serializes_in_the_ts_key_order() {
     let entry = pa_types::session::CompactionEntry {
@@ -1265,6 +1299,7 @@ fn durable_compaction_row_serializes_in_the_ts_key_order() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn resume_tail_window_matches_the_rolling_reference() {
     let mut state = SessionScanState::fresh(SessionInfoGeneration {
@@ -1315,6 +1350,7 @@ fn resume_tail_window_matches_the_rolling_reference() {
     assert_eq!(state.tail, reference);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn session_header_line_leads_with_the_type_tag() {
     let header = SessionHeader {
@@ -1331,6 +1367,7 @@ fn session_header_line_leads_with_the_type_tag() {
     assert!(line.starts_with("{\"type\":\"session\",\"version\":3,\"id\":\"abc\""));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn listing_and_frozen_usage_agree_on_duplicate_attribution_ids() {
     let dir = temp_dir();
@@ -1379,6 +1416,7 @@ fn listing_and_frozen_usage_agree_on_duplicate_attribution_ids() {
     fs::remove_dir_all(dir).unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn real_reopen_preserves_exact_typed_header_and_unknown_fields_for_live_owner() {
     let dir = tempfile::tempdir().unwrap();

@@ -5,6 +5,7 @@ use super::*;
 
 // Response and event shapes captured read-only from the live TS daemon
 // (`tests/goldens/compaction-live-ts.json`).
+#[pa_test_scratch::pa_test]
 #[test]
 fn compaction_commands_scripted_session() {
     let dir = tempfile::TempDir::new().expect("temp dir");

@@ -271,6 +271,7 @@ fn chat_options(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn agents_view_round_trip_reattaches_under_the_ceiling() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

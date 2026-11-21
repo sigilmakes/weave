@@ -128,6 +128,7 @@ fn assert_settings_has_server(sandbox: &Path, name: &str) {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn ts_binary_fails_on_stale_lock_file_artifact() {
     // The regression that wedged a real TS install: a pre-compat Rust flock
@@ -165,6 +166,7 @@ fn ts_binary_fails_on_stale_lock_file_artifact() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn ts_binary_reclaims_stale_lock_directory_artifact() {
     // A crashed TS (or Rust) holder leaves an empty lock directory. The TS
@@ -195,6 +197,7 @@ fn ts_binary_reclaims_stale_lock_directory_artifact() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn ts_binary_sees_a_rust_held_lock_as_contention() {
     // A Rust-held lock must be indistinguishable from a TS-held lock: an
@@ -249,6 +252,7 @@ fn ts_binary_sees_a_rust_held_lock_as_contention() {
     assert_settings_has_server(&sandbox, "http-three");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rust_binary_reclaims_stale_lock_directory_artifact() {
     let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
@@ -274,6 +278,7 @@ fn rust_binary_reclaims_stale_lock_directory_artifact() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rust_binary_heals_stale_lock_file_artifact() {
     // Pre-compat Rust builds left flock FILEs at the lock path. The Rust

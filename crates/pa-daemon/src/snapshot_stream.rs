@@ -362,6 +362,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn elision_empties_image_payloads_and_keeps_their_metadata() {
         let payload = format!("{}{}", tiny_png(64, 32), "A".repeat(500_000));
@@ -393,6 +394,7 @@ mod tests {
         assert_eq!(messages[2]["content"][0]["text"], json!("done"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn elision_marks_unparseable_headers_with_the_size_only() {
         // A payload whose dimensions do not parse from the bounded prefix carries the byte
@@ -406,6 +408,7 @@ mod tests {
         assert!(block.get("widthPx").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn elision_skips_empty_payloads_and_non_tool_results() {
         // A user message carrying an image block (the pasted-image wire) stays verbatim:
@@ -429,6 +432,7 @@ mod tests {
         assert!(elided[0]["content"][1].get("elidedBytes").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_image_elision_capability_is_the_gate() {
         assert!(wants_image_elision(&[
@@ -442,6 +446,7 @@ mod tests {
         assert!(!wants_image_elision(&[]));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn streamed_result_strips_the_transcript_and_adds_the_stream() {
         let data = attach_result(&[message(0), message(1)]);
@@ -465,6 +470,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn legacy_top_level_transcript_leaves_an_empty_copy() {
         let mut data = attach_result(&[message(0)]);
@@ -476,6 +482,7 @@ mod tests {
         assert_eq!(streamed["messages"], json!([]));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn headerless_worker_result_fails_the_attach() {
         let error = stream_attach(
@@ -504,6 +511,7 @@ mod tests {
             .contains("event cursor"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn event_lines_begin_chunk_end_reassemble_the_transcript() {
         let messages: Vec<Value> = (0..5).map(message).collect();
@@ -538,6 +546,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn chunking_respects_the_byte_budget_and_never_splits_a_message() {
         let big = json!({ "role": "user", "content": "x".repeat(SNAPSHOT_TARGET_CHUNK_BYTES + 1) });
@@ -572,6 +581,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn malformed_transcript_fails_the_transfer_after_the_response() {
         let mut data = attach_result(&[message(0)]);
@@ -603,6 +613,7 @@ mod tests {
         assert_eq!(line["snapshotId"], streamed["snapshotStream"]["id"]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn capabilities_normalize_like_the_supervisor() {
         let normalized =

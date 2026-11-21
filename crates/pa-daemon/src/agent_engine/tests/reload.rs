@@ -92,6 +92,7 @@ fn credential_backed_engine(dir: &std::path::Path) -> AgentSessionEngine {
 
 /// A credential another process wrote (the `/login` scenario) reaches the
 /// running session through the reload: the provider target rebinds.
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_rebinds_the_request_auth_from_the_credential_store() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -129,6 +130,7 @@ fn reload_rebinds_the_request_auth_from_the_credential_store() {
 /// With nothing stored for the live model the reload keeps the slot
 /// untouched (a models.json lost mid-session loses nothing) — the MCP
 /// re-read alone still runs.
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_with_nothing_stored_keeps_the_target() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -216,6 +218,7 @@ fn write_two_model_provider(agent_dir: &std::path::Path) {
 /// The live model never retargets through a reload: a routed image
 /// episode serves on its own target and an unflagged session must not
 /// follow a changed settings default — only the request auth rebinds.
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_keeps_the_live_model_and_rebinds_its_auth() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -271,6 +274,7 @@ fn reload_keeps_the_live_model_and_rebinds_its_auth() {
 /// Before the session's first build there is no live target to refresh:
 /// the reload installs nothing (the build binds its own target) — the MCP
 /// re-read alone runs.
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_without_a_live_target_installs_nothing() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -293,6 +297,7 @@ fn reload_without_a_live_target_installs_nothing() {
 /// attempt (overflow retries, failover restores): the reload must refresh
 /// the armed route's auth too, or the next attempt reinstalls the stale
 /// credentials a re-login just replaced.
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_refreshes_the_armed_image_route_target_auth() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -373,6 +378,7 @@ fn reload_refreshes_the_armed_image_route_target_auth() {
 /// store: a credential rotated (and reloaded) during the failover serves
 /// from the store, never the pre-failover capture; the capture only backs
 /// a resolution that yields nothing.
+#[pa_test_scratch::pa_test]
 #[test]
 fn restored_primary_target_serves_the_store_auth() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -508,6 +514,7 @@ fn prime_inference_backed_engine(dir: &std::path::Path) -> AgentSessionEngine {
 /// A rotated credential REPLACES the request headers: a fresh key that
 /// carries no team header must clear the previous credential's
 /// `X-Prime-Team-ID`, never serve the stale team context on the new key.
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_clears_headers_when_the_fresh_credential_carries_none() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -552,6 +559,7 @@ fn reload_clears_headers_when_the_fresh_credential_carries_none() {
 /// resolved key paired with the captured headers: a credential rotated
 /// during the failover carries its own (empty) headers, clearing the
 /// captured `X-Prime-Team-ID` the pre-failover credential pinned.
+#[pa_test_scratch::pa_test]
 #[test]
 fn restored_primary_target_serves_the_resolved_header_pair() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -582,6 +590,7 @@ fn restored_primary_target_serves_the_resolved_header_pair() {
 /// cannot be parsed, so the MCP manager keeps its previous credentials
 /// and the reload answers with the storage error instead of a success
 /// the session did not apply.
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_reports_the_auth_store_failure() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -639,6 +648,7 @@ fn reload_reports_the_auth_store_failure() {
 /// when the store read fails, the restore keeps the override key and the
 /// captured headers (the last-good team context), never the header-less
 /// resolution the broken store produced.
+#[pa_test_scratch::pa_test]
 #[test]
 fn restored_primary_target_keeps_the_override_key_and_captured_headers_off_a_failed_store() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -679,6 +689,7 @@ fn restored_primary_target_keeps_the_override_key_and_captured_headers_off_a_fai
 /// leaves the target untouched: the resolution would serve the
 /// configured models.json fallback key, which is not a stored
 /// credential — the same never-clears contract a broken store keeps.
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_keeps_the_target_when_the_credential_leaves_the_store() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -725,6 +736,7 @@ fn reload_keeps_the_target_when_the_credential_leaves_the_store() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn reload_ollama_caps_restores_targets_routes_and_loop_budgets_without_auth() {
     let dir = tempfile::tempdir().unwrap();

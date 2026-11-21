@@ -8,3 +8,5 @@ description = "Test-only: a private TMPDIR per test binary, removed when the bin
 
 [dependencies]
 libc = "0.2"
+serde_json.workspace = true
+pa-test-macros = { path = "../pa-test-macros" }

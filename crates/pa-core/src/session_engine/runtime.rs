@@ -206,6 +206,7 @@ mod tests {
 
     /// The purge seam fires only for `goal.complete`, never on the way in.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn goal_complete_purge_runs_only_after_goal_complete() {
         let (_session_dir, session) = persisted_session();
         let session = Arc::new(Mutex::new(session));
@@ -249,6 +250,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn goal_handlers_round_trip_through_the_registry() {
         let (_session_dir, session) = persisted_session();
         let session = Arc::new(Mutex::new(session));
@@ -304,6 +306,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn heartbeat_handlers_round_trip_through_the_registry() {
         let (_session_dir, session) = persisted_session();
         let session = Arc::new(Mutex::new(session));
@@ -348,6 +351,7 @@ mod tests {
 
     /// Catalog reads announce nothing.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn rlm_heartbeat_mutations_invoke_the_cron_mutation_hook() {
         let (_session_dir, session) = persisted_session();
         let session = Arc::new(Mutex::new(session));

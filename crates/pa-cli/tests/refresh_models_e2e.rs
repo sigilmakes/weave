@@ -48,6 +48,7 @@ fn text(output: &Output) -> String {
     )
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn refresh_offline_without_a_daemon_does_not_create_a_socket_or_session() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -67,6 +68,7 @@ fn refresh_offline_without_a_daemon_does_not_create_a_socket_or_session() {
     assert!(!dir.path().join("agent/sessions").exists());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn explicit_offline_refresh_never_contacts_a_resident_daemon() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -90,6 +92,7 @@ fn explicit_offline_refresh_never_contacts_a_resident_daemon() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn refresh_rejects_session_prompt_and_command_options_before_any_launch() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -147,6 +150,7 @@ fn mock_refresh(revision: u64, capability: bool, response: Value) -> (Output, Ve
     (output, requests)
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn compatible_resident_daemon_refreshes_once_and_prints_sanitized_fields() {
     let (output, requests) = mock_refresh(
@@ -168,6 +172,7 @@ fn compatible_resident_daemon_refreshes_once_and_prints_sanitized_fields() {
     assert_eq!(requests[0]["type"], "refresh_all_models");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn old_or_unadvertised_daemons_fall_back_without_sending_a_refresh() {
     for (revision, capability) in [(31, true), (32, false)] {
@@ -178,6 +183,7 @@ fn old_or_unadvertised_daemons_fall_back_without_sending_a_refresh() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn remote_failure_does_not_fall_back_or_expose_daemon_error_text() {
     let (output, requests) = mock_refresh(
@@ -193,6 +199,7 @@ fn remote_failure_does_not_fall_back_or_expose_daemon_error_text() {
     assert_eq!(requests.len(), 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn zero_resident_workers_uses_the_standalone_registry() {
     let (output, requests) = mock_refresh(
@@ -209,6 +216,7 @@ fn zero_resident_workers_uses_the_standalone_registry() {
     assert_eq!(requests.len(), 1);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn stale_network_and_worker_failures_exit_nonzero_but_offline_stale_does_not() {
     for (status, reason, failed, exit) in [
@@ -231,6 +239,7 @@ fn stale_network_and_worker_failures_exit_nonzero_but_offline_stale_does_not() {
 }
 
 #[cfg(target_os = "linux")]
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_saturated_resident_backlog_cannot_hold_the_one_shot_open() {
     use std::os::fd::AsRawFd;

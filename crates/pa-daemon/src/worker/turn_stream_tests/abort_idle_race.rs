@@ -81,6 +81,7 @@ fn dump_hang_state(worker: &Worker) -> String {
 // whole async flow (every rep registers into the same registry).
 #[allow(clippy::await_holding_lock)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[ignore = "the rate harness: run with PA_RACE_* knobs (see the module docs)"]
 async fn abort_and_send_idle_race_rate_harness() {
     let _faux = crate::agent_engine::tests::FAUX_TEST_LOCK

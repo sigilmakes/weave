@@ -6,6 +6,7 @@ use std::path::Path;
 
 use super::*;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn supervisor_end_to_end_scripted_session_lifecycle() {
     let dir = tempfile::TempDir::new().expect("temp dir");

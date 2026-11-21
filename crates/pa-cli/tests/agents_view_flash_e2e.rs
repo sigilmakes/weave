@@ -354,6 +354,7 @@ fn view_options(socket: &Path, session_dir: &Path) -> AgentsViewOptions {
 const DEAD_CHILDREN: usize = 300;
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_first_agents_view_render_is_clean_behind_hundreds_of_dead_subagents() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -566,6 +567,7 @@ async fn the_first_agents_view_render_is_clean_behind_hundreds_of_dead_subagents
 /// A stopped session's row STAYS visible (TS `flipWorkerRosterEntriesInactive`; the Rust
 /// stop used to delete it — the operator's rows-disappear report).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_stopped_session_stays_visible_in_the_view() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

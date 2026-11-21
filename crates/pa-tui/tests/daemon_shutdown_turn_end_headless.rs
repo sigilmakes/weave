@@ -380,6 +380,7 @@ fn options_with_session(socket: PathBuf, session: SessionSelection) -> Interacti
 /// A turn settling as the daemon dies must not stall the recovery (the post-turn refresh on the
 /// dead socket): the announced shutdown arms the bounded recovery and the restarted daemon's
 /// reattach lands on the first fixed poll.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_turn_settling_with_the_shutdown_does_not_stall_the_recovery() {
     // The ambient TMUX variable adds a startup notice; scrub it so runs are the same inside tmux

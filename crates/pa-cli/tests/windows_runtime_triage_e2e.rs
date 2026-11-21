@@ -379,6 +379,7 @@ fn the_session_file(session_dir: &Path) -> (PathBuf, String) {
 /// path - no live worker holds the history); a fresh daemon boots against
 /// the same store; the reopened session must render the OLD messages.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_reopen_renders_the_old_history() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -487,6 +488,7 @@ async fn tui_reopen_renders_the_old_history() {
 /// view nests it under the parent instead of merging everything into one
 /// session row.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn subagent_session_stays_a_distinct_store_entry() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -646,6 +648,7 @@ async fn subagent_session_stays_a_distinct_store_entry() {
 /// Scenario (3): preserve non-ASCII user/assistant text in headless frames.
 /// This renderer regression does not exercise console, font or `ConPTY` I/O.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn agent_message_rows_dump_their_glyphs() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

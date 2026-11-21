@@ -2,6 +2,7 @@
 use super::*;
 use pa_core::session_engine::rlm_host::persisted_rlm_max_depth;
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn persisted_rlm_max_depth_reads_validated_log_and_rejects_damage() {
     use pa_core::session_log::{Outcome, SessionLog};
@@ -42,6 +43,7 @@ fn persisted_rlm_max_depth_reads_validated_log_and_rejects_damage() {
 /// The settled-child kernel release policy (TS #2483): with no registered
 /// jobs the release probe fires; a jobs probe reporting this session's jobs
 /// defers it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn release_settled_child_kernel_defers_to_scheduled_jobs_and_fires_the_release_probe() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -81,6 +83,7 @@ fn release_settled_child_kernel_defers_to_scheduled_jobs_and_fires_the_release_p
 /// (a revival rebuilds only settled ledger rows; the passivation stop
 /// closes every row) while the kernel release still fires — releasing
 /// a kernel keeps the worker and its registry resident.
+#[pa_test_scratch::pa_test]
 #[test]
 fn can_passivate_worker_mirrors_the_release_gates_and_adds_the_registry_rule() {
     let dir = tempfile::TempDir::new().unwrap();

@@ -194,6 +194,7 @@ impl TurnActivitySignal {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn guards_nest_and_clear_only_at_the_outer_drop() {
         let signal = TurnActivitySignal::new();
@@ -207,6 +208,7 @@ mod tests {
         assert!(!signal.activity().busy());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn compaction_and_retry_are_distinct_busy_classes() {
         let signal = TurnActivitySignal::new();
@@ -233,6 +235,7 @@ mod tests {
         assert!(!signal.activity().busy());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_host_probe_overrides_the_engine_state() {
         let signal = TurnActivitySignal::new();

@@ -1016,6 +1016,7 @@ mod proposed_summary_tests {
         serde_json::from_value(json!({"role":"compactionSummary","summary":"identical summary","tokensBefore":42,"timestamp":timestamp,"futureSummaryMetadata":{"nested":[1,2,3]}})).unwrap()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn identical_older_summary_is_unchanged_after_reordered_json_proposal_binding() {
         let old = summary(17);
@@ -1034,6 +1035,7 @@ mod proposed_summary_tests {
             .contains("__pa_proposed_summary_"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn same_key_with_unrelated_token_is_preserved() {
         let mut view = vec![summary(18), summary(17)];
@@ -1048,6 +1050,7 @@ mod proposed_summary_tests {
         assert_eq!(view[1], old);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn moving_provenance_to_another_role_is_rejected_before_write() {
         let mut view = vec![summary(18)];
@@ -1063,6 +1066,7 @@ mod proposed_summary_tests {
         assert!(proposal.resolve(&mut view).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn duplicate_provenance_is_rejected_before_write() {
         let mut view = vec![summary(18)];
@@ -1071,6 +1075,7 @@ mod proposed_summary_tests {
         assert!(proposal.resolve(&mut view).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn missing_provenance_never_falls_back_to_identical_body() {
         let mut view = vec![summary(18), summary(18)];
@@ -1079,6 +1084,7 @@ mod proposed_summary_tests {
         assert!(proposal.resolve(&mut view).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn native_archive_does_not_claim_a_retained_summary() {
         let old = summary(17);

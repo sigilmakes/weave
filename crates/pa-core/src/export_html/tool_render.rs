@@ -259,6 +259,7 @@ mod tests {
         })
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn renders_custom_call_and_result() {
         let entries = vec![
@@ -280,6 +281,7 @@ mod tests {
             .is_some_and(|html| html.contains("more detail")));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn template_tools_and_empty_map_omit_the_section() {
         let entries = vec![
@@ -297,6 +299,7 @@ mod tests {
 
     /// A tool result without a call still renders its sections (the
     /// entry has no `callHtml`).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn result_without_call() {
         let entries = vec![tool_result("tc9", "custom_tool")];
@@ -305,6 +308,7 @@ mod tests {
         assert!(rendered["tc9"]["resultHtmlExpanded"].is_string());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn blank_lines_trim() {
         let lines = vec![

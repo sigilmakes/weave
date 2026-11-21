@@ -77,6 +77,7 @@ fn map_row(output: &Output) -> String {
 /// The five published platforms resolve to their channel rows; the Windows
 /// uname family (Git Bash, MSYS2, Cygwin) lands on the MSVC build with the
 /// `.exe` binary name.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_uname_map_resolves_the_published_platforms() {
     let cases = [
@@ -130,6 +131,7 @@ fn the_uname_map_resolves_the_published_platforms() {
 /// An unsupported machine gets the honest refusal: the full matrix — the
 /// MSVC build named — plus the Windows entry points, so the die tells the
 /// user exactly what ships.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_uname_map_refuses_unsupported_machines_with_the_matrix() {
     for (os, arch) in [
@@ -159,6 +161,7 @@ fn the_uname_map_refuses_unsupported_machines_with_the_matrix() {
 /// `NATIVE_PLATFORMS` spelling the manifest reader keeps), the ARM64
 /// refusal, and the two render lines the release pipeline's publish step
 /// stamps (the sed + grep contract in release.yml's promote job).
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_carries_the_windows_contract() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -210,6 +213,7 @@ fn install_ps1_carries_the_windows_contract() {
 /// (the file name plus the size, install-rust.sh's discipline), and
 /// restores the caller's values after: the quiet zone is the download,
 /// never the session.
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_pins_the_download_preferences_around_the_downloads() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -284,6 +288,7 @@ fn install_ps1_pins_the_download_preferences_around_the_downloads() {
 /// string the installer EMITS - Write-Host, Write-Warning, and Fail's
 /// thrown message - must be plain ASCII. The script's comments and the
 /// launcher files it writes are out of scope: neither lands on the console.
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_emits_only_ascii_output() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -317,6 +322,7 @@ fn install_ps1_emits_only_ascii_output() {
 /// bootstrap that cannot fix a missing DLL. With the static-runtime build
 /// the class should not occur at all; if it does, the message must say
 /// what actually happened.
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_names_the_dll_not_found_failure_honestly() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -363,6 +369,7 @@ fn install_ps1_names_the_dll_not_found_failure_honestly() {
 /// in the same console immediately, and the printed hint says a NEW
 /// terminal gets it automatically instead of telling the user to go edit
 /// the registry by hand.
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_adds_bin_to_the_user_path_and_the_session_path() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -480,6 +487,7 @@ fn install_ps1_adds_bin_to_the_user_path_and_the_session_path() {
 /// operator-set dir wins, the Windows C:\ spelling normalizes through
 /// cygpath exactly like `PRIME_AGENT_RUST_PREFIX`, and the knob is
 /// documented in the header's Configuration block.
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_rust_sh_honors_the_uv_bin_dir_knob() {
     let text =
@@ -595,6 +603,7 @@ fn install_rust_sh_honors_the_uv_bin_dir_knob() {
 /// file's name, the landed bytes, the percent) with three attempts - the
 /// .NET transfer records stay silent the whole time (the download-block
 /// pins test covers the silencing).
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_runs_a_step_ledger_and_its_own_download_progress() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -681,6 +690,7 @@ fn install_ps1_runs_a_step_ledger_and_its_own_download_progress() {
 /// (install-rust.sh's pre-warm PATH fix), and a failure degrades to the
 /// honest note plus the exact manual command (the sh installer's
 /// note/todo shape).
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_installs_uv_like_the_linux_installer() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -773,6 +783,7 @@ fn install_ps1_installs_uv_like_the_linux_installer() {
 /// drive-based or UNC path - a rooted-only check accepts drive-relative
 /// spellings like C:uv-bin that resolve against the CURRENT directory in
 /// later shells.
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_validates_the_uv_knob_before_any_side_effect() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -813,6 +824,7 @@ fn install_ps1_validates_the_uv_knob_before_any_side_effect() {
 /// `crt-static` flag, rejects any vcruntime import in the built PE (the
 /// stock-box 0xC0000135 regression guard), gates on the uv install the
 /// ps1 route promises, and restores the User PATH it dirtied.
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_install_e2e_builds_the_shipped_link_mode() {
     let harness = std::fs::read_to_string(
@@ -848,6 +860,7 @@ fn windows_install_e2e_builds_the_shipped_link_mode() {
 /// drops only the entries under its own scratch dir, and writes back with
 /// the kind preserved - a Path the test created from nothing is deleted
 /// again; a Path untouched by the test is not rewritten at all.
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_e2e_harnesses_strip_only_their_own_path_entries() {
     for harness_name in [
@@ -901,6 +914,7 @@ fn windows_e2e_harnesses_strip_only_their_own_path_entries() {
 /// within the stall window throws and takes the retry path, while a
 /// slow-but-flowing body never trips it (a read returns as soon as data
 /// arrives, the window restarts per chunk).
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_download_survives_a_stalled_body() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -949,6 +963,7 @@ fn install_ps1_download_survives_a_stalled_body() {
 /// while a working PATH uv is never shadowed (a stale target file cannot
 /// displace it) and a uv at the canonical `~/.local/bin` needs no prepend
 /// (`ensure_uv` finds it by itself).
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_does_not_shadow_a_working_uv() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -985,6 +1000,7 @@ fn install_ps1_does_not_shadow_a_working_uv() {
 /// same handoff the block runs `UV_INSTALL_DIR` through, with the caller's
 /// value saved and restored) and the child reads the variable - no
 /// PowerShell parsing of the path happens at any version.
+#[pa_test_scratch::pa_test]
 #[test]
 fn install_ps1_passes_the_uv_installer_path_as_process_data() {
     let text = std::fs::read_to_string(repo_root().join("install.ps1")).expect("read install.ps1");
@@ -1038,6 +1054,7 @@ fn install_ps1_passes_the_uv_installer_path_as_process_data() {
 /// saved and restored. The cleanup has no uv work left to do, and the
 /// user's ~/.local/bin is referenced only by the read-only pre-state
 /// check.
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_e2e_harnesses_isolate_the_uv_install() {
     for harness_name in [
@@ -1083,6 +1100,7 @@ fn windows_e2e_harnesses_isolate_the_uv_install() {
 /// being wrong. The harness records the pre-state first, and the gate
 /// throws only for a box that had no uv in either place install.ps1
 /// looks.
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_install_e2e_gates_the_uv_install_on_a_fresh_runner() {
     let harness = std::fs::read_to_string(
@@ -1136,6 +1154,7 @@ fn windows_install_e2e_gates_the_uv_install_on_a_fresh_runner() {
 /// and clears them again in cleanup, so the e2e touches the real profile
 /// only through the User PATH registry value and the uv binaries (both
 /// snapshotted and restored).
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_e2e_harnesses_keep_the_kernel_prewarm_writes_in_scratch() {
     for harness_name in [

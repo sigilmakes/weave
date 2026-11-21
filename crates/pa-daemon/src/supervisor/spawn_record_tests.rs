@@ -32,6 +32,7 @@ fn spawn_record_witness(tag: &str) -> (Arc<Supervisor>, std::path::PathBuf) {
 /// state until the create-completion persist owns the next durable
 /// write.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_known_resident_registration_writes_nothing_to_disk() {
     let dir = std::env::temp_dir().join(format!("pa-regskip-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -124,6 +125,7 @@ async fn a_known_resident_registration_writes_nothing_to_disk() {
 /// worker probe (nothing listens on the per-test socket), after the
 /// spawn record served.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_relaunch_spawn_record_serves_the_durable_persist() {
     let (supervisor, dir) = spawn_record_witness("relaunch");
     let descriptor_path = dir.join("w-relaunch.json");
@@ -223,6 +225,7 @@ async fn a_relaunch_spawn_record_serves_the_durable_persist() {
 /// unfixed tree the persist failure is discarded and the launch only fails
 /// later, at the connect probe, with no spawn record behind it.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_spawn_record_persist_failure_kills_the_child_and_fails_the_launch() {
     let (supervisor, dir) = spawn_record_witness("persistfail");
     let descriptor_path = dir.join("w-persistfail.json");
@@ -276,6 +279,7 @@ async fn a_spawn_record_persist_failure_kills_the_child_and_fails_the_launch() {
 /// launch path; it fails at the worker probe (no live worker), after
 /// the spawn record served.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_fresh_create_spawn_record_keeps_the_unsynced_shape() {
     let (supervisor, dir) = spawn_record_witness("freshcreate");
     let create = DaemonCommand::Create {

@@ -194,6 +194,7 @@ mod tests {
     use std::sync::Arc;
     use tokio::sync::broadcast;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn direct_sends_flush_the_parked_update_first() {
         let (pump, mut rx) = subscribe();
@@ -215,6 +216,7 @@ mod tests {
         assert!(rx.try_recv().is_err(), "no further frames");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_newer_snapshot_merges_the_superseded_deltas() {
         let (pump, mut rx) = subscribe();
@@ -252,6 +254,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_kind_switch_replaces_the_run() {
         let (pump, mut rx) = subscribe();
@@ -283,6 +286,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn close_stops_parking_and_flushing() {
         let (pump, mut rx) = subscribe();
@@ -304,6 +308,7 @@ mod tests {
         assert!(rx.try_recv().is_err(), "a closed turn parks nothing");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn flush_without_parked_frames_is_a_kept_alive_noop() {
         let (pump, mut rx) = subscribe();

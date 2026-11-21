@@ -27,6 +27,13 @@ fn record_cleanup_failure() {
     CLEANUP_FAILED.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
+extern crate self as pa_test_scratch;
+
+pub mod timing;
+
+pub use pa_test_macros::pa_test;
+pub use timing::{TestTiming, TimingRecorder, TimingSpan};
+
 #[cfg(unix)]
 mod hook {
     use std::path::{Path, PathBuf};
@@ -126,6 +133,7 @@ mod hook {
     }
 
     extern "C" fn install() {
+        crate::timing::capture_config();
         let _ = root();
     }
 

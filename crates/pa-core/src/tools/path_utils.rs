@@ -500,6 +500,7 @@ pub fn resolve_read_path(file_path: &str, cwd: &str) -> String {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn expand_tilde() {
         assert_eq!(expand_path_platform("~", Some("/home/u")), "/home/u");
@@ -515,6 +516,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn strips_at_prefix() {
         assert_eq!(expand_path_platform("@~/f", Some("/h")), "/h/f");
@@ -522,6 +524,7 @@ mod tests {
 
     /// POSIX dispatcher semantics; the win32 sibling lives below (the dispatcher is
     /// platform-picked, so a POSIX expectation is a not-windows test).
+    #[pa_test_scratch::pa_test]
     #[test]
     #[cfg(not(windows))]
     fn resolve_relative() {
@@ -530,6 +533,7 @@ mod tests {
         assert_eq!(resolve_to_cwd("/abs/x", "/cwd"), "/abs/x");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     #[cfg(not(windows))]
     fn node_resolve_matches_node_semantics() {
@@ -545,6 +549,7 @@ mod tests {
     /// match exactly (the edit tool resolves user paths through this on Windows).
     /// Deterministic rows only - the device-relative fallback reads the process cwd
     /// when the `=<device>` convention is unset, which a parallel test cannot pin.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn win32_resolve_matches_node_outputs() {
         let cases = [
@@ -604,6 +609,7 @@ mod tests {
 
     /// Node's drive-specific cwd convention: a device-relative tail resolves against
     /// that drive's cwd, or the DRIVE ROOT when it sits on a different drive.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn win32_resolve_honors_the_drive_cwd_convention() {
         assert_eq!(

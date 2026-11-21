@@ -98,6 +98,7 @@ async fn wait_out_debounce(ms: u64) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn restored_functions_run_against_live_namespace_globals() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let Some(writer_options) = test_options(Some(dir.path()), None) else {
@@ -160,6 +161,7 @@ async fn restored_functions_run_against_live_namespace_globals() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn post_restore_auto_snapshot_skips_until_a_real_cell_changes_the_namespace() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let snapshot_path = snapshot_path_in(dir.path());
@@ -243,6 +245,7 @@ async fn post_restore_auto_snapshot_skips_until_a_real_cell_changes_the_namespac
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn failed_restore_keeps_the_on_disk_payload_through_the_debounced_snapshot() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let snapshot_path = snapshot_path_in(dir.path());
@@ -315,6 +318,7 @@ fn v2_record(name: &str, blob: &[u8]) -> Vec<u8> {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn partial_restore_keeps_the_fuller_on_disk_payload_through_the_dispose_flush() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let snapshot_path = snapshot_path_in(dir.path());
@@ -366,6 +370,7 @@ async fn partial_restore_keeps_the_fuller_on_disk_payload_through_the_dispose_fl
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn failed_restore_keeps_the_on_disk_payload_through_the_dispose_flush() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let snapshot_path = snapshot_path_in(dir.path());
@@ -406,6 +411,7 @@ async fn failed_restore_keeps_the_on_disk_payload_through_the_dispose_flush() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn zero_debounce_after_a_failed_restore_still_cannot_clobber_the_payload() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let snapshot_path = snapshot_path_in(dir.path());

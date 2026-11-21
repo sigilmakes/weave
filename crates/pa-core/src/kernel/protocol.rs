@@ -304,6 +304,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_ready() {
         let e = parse_event(r#"{"event":"ready","protocol":3,"python":"3.11.16"}"#).unwrap();
@@ -313,16 +314,19 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn done_without_id_is_invalid() {
         assert!(parse_event(r#"{"event":"done","status":"ok"}"#).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn host_request_requires_id() {
         assert!(parse_event(r#"{"event":"host_request","data":{}}"#).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn host_cancel_requires_exact_nonempty_id() {
         assert_eq!(
@@ -338,6 +342,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unknown_kind_is_invalid() {
         assert!(parse_event(r#"{"event":"mystery"}"#).is_err());
@@ -345,6 +350,7 @@ mod tests {
         assert!(parse_event("[1,2,3]").is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_done_with_fields() {
         let e =
@@ -359,6 +365,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn request_json_round_trip() {
         let req = Request::Snapshot {
@@ -372,6 +379,7 @@ mod tests {
         assert_eq!(v["max_variable_bytes"], 2);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn late_sent_agent_message_needs_id() {
         let data = json!({ crate::kernel::shared::AGENT_MESSAGE_DISPLAY_MIME: json!({
@@ -382,6 +390,7 @@ mod tests {
         assert!(late_sent_agent_message(None, &data).is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn parses_every_event_kind_verbatim() {
         assert_eq!(
@@ -466,6 +475,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn display_and_host_request_data_move_verbatim() {
         // Every `data` shape parses to the same event the deep-clone produced:
@@ -524,6 +534,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn moved_data_serializes_byte_identically() {
         // The payload is moved out of the parsed map, not rebuilt; key order
@@ -552,6 +563,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn invalid_frames_report_exact_reasons() {
         assert_eq!(
@@ -582,6 +594,7 @@ mod tests {
 
     /// TS wire parity (`invalidProtocolFrameReason`): `done` and `host_request` are the only kinds
     /// the TS manager rejects for id shape. Rust keeps its stricter rule for `result` ids.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn id_requirements_match_the_ts_manager() {
         // Rejected by both: done/host_request without a string id.
@@ -597,6 +610,7 @@ mod tests {
 
     /// Timed fixture for the bulk `data` payloads of `display`/`host_request` frames at 1 KiB / 1
     /// MiB / 10 MiB.
+    #[pa_test_scratch::pa_test]
     #[test]
     #[ignore = "timing fixture; run with --release --ignored --nocapture"]
     fn parse_event_data_frame_timing() {

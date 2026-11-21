@@ -237,6 +237,7 @@ pub struct AuthSourceToken {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn credential_wire_shapes() {
         let api_key: AuthCredential =

@@ -215,6 +215,7 @@ mod tests {
 
     /// The session fallback resolves its MERGED headers through the same
     /// registry the session's own requests use.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn the_session_fallback_keeps_the_merged_headers() {
         let (dir, context) = context_with_settings(&serde_json::json!({}));
@@ -242,6 +243,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_explicit_selector_is_distinct_from_the_top_level_auxiliary_setting() {
         let (_dir, context) = context_with_settings(&serde_json::json!({
@@ -286,6 +288,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unavailable_explicit_models_return_sanitized_errors_instead_of_falling_back() {
         let (_dir, context) = context_with_settings(&serde_json::json!({
@@ -310,6 +313,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unset_selector_keeps_the_session_model() {
         let (_dir, context) = context_with_settings(&serde_json::json!({}));
@@ -325,6 +329,7 @@ mod tests {
         assert_eq!(routed.api_key.as_deref(), Some("session-key"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn selector_equal_to_the_session_model_keeps_the_session_model() {
         let (_dir, context) =
@@ -341,6 +346,7 @@ mod tests {
         assert_eq!(routed.api_key.as_deref(), Some("session-key"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn configured_selector_routes_to_the_auxiliary_model() {
         let (_dir, context) =
@@ -358,6 +364,7 @@ mod tests {
         assert_eq!(routed.headers, None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn unknown_selector_falls_back_to_the_session_model() {
         let (_dir, context) =
@@ -374,6 +381,7 @@ mod tests {
         assert_eq!(routed.api_key.as_deref(), Some("session-key"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn too_small_window_falls_back_to_the_session_model() {
         let (_dir, context) =
@@ -397,6 +405,7 @@ mod tests {
         assert_eq!(routed.model.id, "aux-model");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn selector_outside_the_allowlist_falls_back() {
         let (_dir, context) = context_with_settings(&serde_json::json!({

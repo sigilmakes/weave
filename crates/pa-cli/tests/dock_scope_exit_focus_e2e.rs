@@ -411,11 +411,13 @@ async fn scope_exit_keeps_the_subagents_item(exit_key: &'static str) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn scoped_view_escape_returns_to_the_subagents_dock_item() {
     scope_exit_keeps_the_subagents_item("escape").await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn scoped_view_left_returns_to_the_subagents_dock_item() {
     scope_exit_keeps_the_subagents_item("left").await;
 }
@@ -483,6 +485,7 @@ fn assert_scoped_frame(frame: &str) {
 /// top-level agents view. Its dock entry opens the session's own scoped
 /// view, empty, and the new action starts a child bound to the session.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_session_without_subagents_opens_its_empty_scoped_view() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let session_dir = pa_daemon::paths::sessions_dir(&dir.path().join("agent"))
@@ -525,6 +528,7 @@ async fn a_session_without_subagents_opens_its_empty_scoped_view() {
 /// A child bound to the session while its empty scoped view is open pops in
 /// without reopening the view.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_child_created_under_the_open_empty_scope_appears_live() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let session_dir = pa_daemon::paths::sessions_dir(&dir.path().join("agent"))

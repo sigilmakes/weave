@@ -233,7 +233,10 @@ fn view_options(socket: &std::path::Path) -> AgentsViewOptions {
 /// Run one headless plan and return the outcome. Holds the run lock: the click dispatch gates on
 /// the process-global tracking state.
 async fn run_plan(steps: Vec<AgentsStep>) -> pa_tui::agents_view::AgentsViewOutcome {
+    let lock_wait = pa_test_scratch::timing::span("setup.lock_wait");
     let _guard = RUN_LOCK.lock().await;
+    drop(lock_wait);
+    let fixture = pa_test_scratch::timing::span("setup.fixture");
     let dir = tempfile::TempDir::new().expect("temp dir");
     let socket = dir.path().join("agents-view.sock");
     let mock = MockSupervisor::bind(&socket);
@@ -250,12 +253,16 @@ async fn run_plan(steps: Vec<AgentsStep>) -> pa_tui::agents_view::AgentsViewOutc
         width: 120,
         height: 36,
     };
+    drop(fixture);
+    let run_wait = pa_test_scratch::timing::span("run.wait_and_render");
     let run = run_agents_view(
         view_options(&socket),
         AgentsViewUiMode::Headless(plan),
         None,
     )
     .await;
+    drop(run_wait);
+    let _teardown = pa_test_scratch::timing::span("teardown.server_join");
     connected_rx
         .recv_timeout(Duration::from_millis(2500))
         .expect("mock accepted the view connection")
@@ -310,6 +317,7 @@ fn motion(col: usize, row: usize) -> String {
 /// A plain click on the INACTIVE saved row opens it: the resume selection — every row is clickable,
 /// the archived ones included.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_click_on_an_inactive_row_opens_it() {
     let frames = settled_frames("archived run").await;
     let row = locate_row(&frames, "archived run").expect("the inactive row renders");
@@ -334,6 +342,7 @@ async fn a_click_on_an_inactive_row_opens_it() {
 /// A plain click on the merged `N subagents (M running)` row EXPANDS the dropdown — the toggle, not
 /// an open: the frame renders the child rows and the run keeps running with no selection.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_click_on_the_merged_summary_expands_the_dropdown() {
     let frames = settled_frames("subagents (").await;
     let row = locate_row(&frames, "subagents (").expect("the merged line renders");
@@ -364,6 +373,7 @@ async fn a_click_on_the_merged_summary_expands_the_dropdown() {
 /// A plain click on the expanded CHILD row opens the subagent — the Enter action on the drilled-in
 /// row.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_click_on_the_expanded_child_opens_the_subagent() {
     let frames = settled_frames("subagents (").await;
     let summary = locate_row(&frames, "subagents (").expect("the merged line renders");
@@ -411,6 +421,7 @@ async fn a_click_on_the_expanded_child_opens_the_subagent() {
 /// The `?1003` hover motions ride the rows without disturbing the click grammar: motions across the
 /// merged line, the child rows, and the headings, then a plain click — the subagent still opens.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn hover_motions_never_disturb_the_agents_view_click() {
     let frames = settled_frames("subagents (").await;
     let summary = locate_row(&frames, "subagents (").expect("the merged line renders");

@@ -263,6 +263,7 @@ fn run_one_turn(client: &mut Client, id: &str, request_id: &str) {
     assert_eq!(done["success"], true, "scripted turn failed: {done}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_refused_registration_retires_the_worker() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -349,6 +350,7 @@ fn a_refused_registration_retires_the_worker() {
 }
 
 /// The box incident, end to end.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_descriptorless_leftover_dies_and_its_session_resumes() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -435,6 +437,7 @@ fn a_descriptorless_leftover_dies_and_its_session_resumes() {
     drop(daemon2);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_owned_stop_kills_a_worker_that_missed_the_shutdown() {
     let dir = tempfile::TempDir::new().expect("temp dir");

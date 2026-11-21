@@ -12,6 +12,7 @@ use pa_agent::types::{
 };
 use serde_json::{json, Value};
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn execution_status_is_internal_and_old_payloads_decode_as_success() {
     let mut result = AgentToolResult::text("reported failure");
@@ -206,6 +207,7 @@ async fn verify_status_case(case: StatusCase) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_reported_error_continues_with_its_payload() {
     verify_status_case(StatusCase {
         input_is_error: true,
@@ -216,6 +218,7 @@ async fn a_reported_error_continues_with_its_payload() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn success_does_not_infer_error_from_details() {
     verify_status_case(StatusCase {
         input_is_error: false,
@@ -226,6 +229,7 @@ async fn success_does_not_infer_error_from_details() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn after_tool_call_can_clear_a_reported_error() {
     verify_status_case(StatusCase {
         input_is_error: true,
@@ -236,6 +240,7 @@ async fn after_tool_call_can_clear_a_reported_error() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn after_tool_call_can_mark_a_success_as_error() {
     verify_status_case(StatusCase {
         input_is_error: false,
@@ -246,6 +251,7 @@ async fn after_tool_call_can_mark_a_success_as_error() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_reported_error_preserves_explicit_batch_termination() {
     verify_status_case(StatusCase {
         input_is_error: true,

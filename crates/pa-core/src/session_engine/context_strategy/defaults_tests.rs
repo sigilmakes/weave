@@ -18,6 +18,7 @@ async fn configure(f: &Fixture, model: &pa_types::ai::Model, plugins: Value) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn server_rejections_and_uncertain_outcomes_never_replay_or_mutate_history() {
     for (status, body) in [
         (401, r#"{"error":{"code":"invalid_api_key"}}"#),
@@ -53,6 +54,7 @@ async fn server_rejections_and_uncertain_outcomes_never_replay_or_mutate_history
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn explicit_chain_and_disabled_compactors_override_builtin_defaults() {
     for plugins in [
         json!({"default_context":{"config":{"compactors":["standard_compaction/standard"]}}}),
@@ -90,6 +92,7 @@ async fn explicit_chain_and_disabled_compactors_override_builtin_defaults() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn default_server_cancellation_and_retirement_close_pending_request_without_fallback() {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     for retire in [false, true] {
@@ -185,6 +188,7 @@ async fn default_server_cancellation_and_retirement_close_pending_request_withou
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn explicit_server_route_mismatch_is_terminal_and_null_disables_probe() {
     for disable in [false, true] {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
@@ -239,6 +243,7 @@ async fn explicit_server_route_mismatch_is_terminal_and_null_disables_probe() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn default_server_inherits_resolved_auth_headers_without_compaction_settings() {
     let (base, mut requests, server) =
         json_server(r#"{"error":{"code":"unsupported_operation"}}"#, 404).await;

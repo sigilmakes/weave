@@ -586,6 +586,7 @@ pub(crate) fn parse_redirect_input(input: &str, expected_state: &str) -> Result<
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn https_url_validation() {
         assert!(validated_https_url("https://mcp.example/mcp", ENDPOINT_LABEL).is_ok());
@@ -609,6 +610,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn canonical_resource_forms() {
         assert_eq!(
@@ -634,6 +636,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn authorization_server_metadata_urls_cover_both_locations() {
         let issuer = Url::parse("https://login.example/tenant").unwrap();
@@ -646,6 +649,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn metadata_validation_messages() {
         let issuer = "https://login.example/tenant";
@@ -710,6 +714,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn protected_resource_metadata_audience_policy() {
         let endpoint = Url::parse("https://mcp.example/mcp").unwrap();
@@ -787,6 +792,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn www_authenticate_resource_metadata_pointer() {
         assert_eq!(
@@ -799,6 +805,7 @@ mod tests {
         assert_eq!(header_resource_metadata(Some("Basic realm=\"x\"")), None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn redirect_input_parsing() {
         assert_eq!(
@@ -825,6 +832,7 @@ mod tests {
         assert_eq!(error, "Missing authorization code");
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn pkce_shapes() {
         let (verifier, challenge) = generate_pkce();

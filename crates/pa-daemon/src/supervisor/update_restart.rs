@@ -538,6 +538,7 @@ fn update_prepare_resident_refusal(worker_id: &str, state: &str, session: &str) 
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn update_prepare_refusal_names_the_blocking_session() {
         assert_eq!(

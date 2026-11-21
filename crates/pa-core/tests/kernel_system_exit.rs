@@ -101,6 +101,7 @@ fn busy_kernel_path() -> tempfile::TempPath {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_system_exit_cell_fails_that_cell_and_the_kernel_keeps_serving() {
     let Some(python) = kernel_python() else {
         return;
@@ -142,6 +143,7 @@ async fn a_system_exit_cell_fails_that_cell_and_the_kernel_keeps_serving() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_unsettled_cell_leaves_the_busy_refusal_typed() {
     let fixture = busy_kernel_path();
     let manager = ReplKernelManager::new(options(fixture.to_path_buf(), "busy-kernel"));

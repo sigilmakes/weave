@@ -522,6 +522,7 @@ mod tests {
         harness
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn backoff_schedule_starts_at_base_doubles_and_caps() {
         let failover = ProviderFailoverPolicy {
@@ -552,6 +553,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn provider_failure_switches_to_the_next_provider_then_succeeds() {
         let candidates = vec![model("backup-a"), model("backup-b")];
         // Two failures exhaust the primary's budget (max_retries 2).
@@ -633,6 +635,7 @@ mod tests {
     /// Operator ruling 2026-09-23: the chain gives up at
     /// [`MAX_TOTAL_PROVIDER_RETRIES`] retries.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_long_candidate_chain_gives_up_at_the_episode_cap() {
         // Six backup candidates: without the cap the walk would consume
         // (1 + candidates) * (1 + budget) attempts (the ~30 the operator ruled out).
@@ -672,6 +675,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn all_providers_failing_surfaces_the_final_error() {
         let candidates = vec![model("backup-a"), model("backup-b")];
         let script: Vec<AssistantMessage> = (0..9)
@@ -716,6 +720,7 @@ mod tests {
 
     /// The 402 diagnosis: no provider failure settles silently.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn permanent_failures_never_walk_the_chain_but_disclose() {
         let candidates = vec![model("backup-a")];
         let script = vec![error_message(
@@ -740,6 +745,7 @@ mod tests {
     /// The router's tool-use 404 is permanent even though a plain 404 is
     /// transient (the dogfood incident): every provider rejects tools identically.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn unsupported_tool_failures_never_walk_the_chain_but_disclose() {
         let candidates = vec![model("backup-a")];
         let script = vec![error_message(
@@ -765,6 +771,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn disabled_failover_or_no_candidates_is_the_plain_quick_loop() {
         let candidates = vec![model("backup-a")];
         // Disabled: the quick policy drives (3 retries at 2000ms base).
@@ -818,6 +825,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn success_without_retries_emits_no_events() {
         let candidates = vec![model("backup-a")];
         let harness = drive(&fast_failover(), &candidates, vec![ok_message("done")]).await;
@@ -829,6 +837,7 @@ mod tests {
 
     /// The compact-and-retry recovery owns it (TS `_isRetryableError`).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn context_overflow_never_walks_the_provider_chain() {
         let candidates = vec![model("backup-a"), model("backup-b")];
         let mut overflow = error_message(None, None, "prompt is too long");

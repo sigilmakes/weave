@@ -110,6 +110,7 @@ fn starts(count: &std::path::Path) -> u64 {
 /// leave that newer memo alone: the late joiner below must land on the
 /// newer boot, and exactly two interpreters may spawn.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stale_publisher_cannot_clear_a_newer_startup_memo() {
     let Some(python) = kernel_python() else {
         return;
@@ -191,6 +192,7 @@ async fn stale_publisher_cannot_clear_a_newer_startup_memo() {
 /// doomed boot's own settle kills its kernel instead of parking it, and
 /// the next `ensure()` boots fresh.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn kill_during_boot_leaves_no_resident_kernel() {
     let Some(python) = kernel_python() else {
         return;
@@ -263,6 +265,7 @@ async fn kill_during_boot_leaves_no_resident_kernel() {
 /// published between separate check and publish scopes could park a live
 /// kernel into a provisioner that had already reported itself torn down.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn dispose_during_boot_settles_it_without_parking() {
     let Some(python) = kernel_python() else {
         return;
@@ -343,6 +346,7 @@ async fn dispose_during_boot_settles_it_without_parking() {
 /// fresh generation, and `kill()` mid-re-armed-boot still leaves no
 /// resident kernel - the doomed re-armed boot is killed by its own settle.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn kill_during_the_re_armed_boot_leaves_no_resident_kernel() {
     let Some(python) = kernel_python() else {
         return;
@@ -431,6 +435,7 @@ async fn kill_during_the_re_armed_boot_leaves_no_resident_kernel() {
 /// newer boot replays that boot's last stage to its fresh progress
 /// handler; after the doomed settle the replay must still fire.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn doomed_settle_keeps_the_newer_boot_listener_state() {
     let Some(python) = kernel_python() else {
         return;
@@ -630,6 +635,7 @@ fn flaky_first_kernel(
 /// settle only kills its kernel - the absolute spawn count pins that the
 /// killed generation never consumed its retry after the backoff.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn kill_during_the_retry_backoff_pins_the_spawn_count() {
     let Some(python) = kernel_python() else {
         return;
@@ -701,6 +707,7 @@ async fn kill_during_the_retry_backoff_pins_the_spawn_count() {
 /// boot's report still must (the same bootstrap's broken import, the
 /// same callback, exactly one report).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn doomed_boot_does_not_report_unavailable_skills() {
     let Some(python) = kernel_python() else {
         return;
@@ -804,6 +811,7 @@ async fn doomed_boot_does_not_report_unavailable_skills() {
 /// resurrect a generation `kill()` doomed. The sentinel snapshot stays
 /// byte-identical.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_killed_then_disposed_boot_never_flushes_the_snapshot() {
     let Some(python) = kernel_python() else {
         return;
@@ -873,6 +881,7 @@ async fn a_killed_then_disposed_boot_never_flushes_the_snapshot() {
 /// completion - it cannot return while the doomed boot's interpreter is
 /// still held.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn dispose_after_a_kill_waits_the_doomed_boot() {
     let Some(python) = kernel_python() else {
         return;
@@ -933,6 +942,7 @@ async fn dispose_after_a_kill_waits_the_doomed_boot() {
 /// dispose signal. The observable is the spawn count: only the first
 /// boot's interpreter ever spawns.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_kill_while_the_boot_waits_the_stop_gate_spawns_no_interpreter() {
     let Some(python) = kernel_python() else {
         return;

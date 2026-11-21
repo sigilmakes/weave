@@ -51,6 +51,7 @@ impl Fixture {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn facts_load_from_relative_sources_and_keep_extra_data() {
     let fixture = Fixture::new();
@@ -85,6 +86,7 @@ fn facts_load_from_relative_sources_and_keep_extra_data() {
     assert!(!fixture.cwd.join("plugins/local.lua").exists());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn fact_pass_has_no_host_capability() {
     let fixture = Fixture::new();
@@ -114,6 +116,7 @@ fn fact_pass_has_no_host_capability() {
     assert!(error.to_string().contains("ctx"), "{error}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rejects_function_values_in_a_chunk() {
     let fixture = Fixture::new();
@@ -136,6 +139,7 @@ fn rejects_function_values_in_a_chunk() {
 struct Opaque;
 impl UserData for Opaque {}
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn rejects_thread_and_userdata_values() {
     let lua = mlua::Lua::new();
@@ -168,6 +172,7 @@ fn rejects_thread_and_userdata_values() {
     assert!(error.to_string().contains("userdata"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn bounds_depth_and_bytes() {
     let fixture = Fixture::new();
@@ -199,6 +204,7 @@ fn bounds_depth_and_bytes() {
     assert!(error.to_string().contains("provider fact budget"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn cache_invalidates_on_source_config_and_enabled_changes() {
     let fixture = Fixture::new();
@@ -239,6 +245,7 @@ fn cache_invalidates_on_source_config_and_enabled_changes() {
     assert_ne!(replaced.revision, disabled.revision);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn only_enabled_file_backed_entries_contribute_facts() {
     let fixture = Fixture::new();
@@ -270,6 +277,7 @@ fn only_enabled_file_backed_entries_contribute_facts() {
     assert_eq!(catalog.providers[0].name, "enabled");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn typed_provider_fields_and_missing_names_are_reported() {
     let fixture = Fixture::new();
@@ -295,6 +303,7 @@ fn typed_provider_fields_and_missing_names_are_reported() {
     assert!(error.to_string().contains("providers[1].name is required"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn non_data_tables_are_reported() {
     let fixture = Fixture::new();
@@ -309,6 +318,7 @@ fn non_data_tables_are_reported() {
     assert!(error.to_string().contains("must not mix"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn project_scope_plugin_entries_never_reach_the_fact_pass() {
     let fixture = Fixture::new();
@@ -348,6 +358,7 @@ fn project_scope_plugin_entries_never_reach_the_fact_pass() {
     assert_eq!(catalog.providers[0].name, "glob");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn malformed_plugin_map_is_rejected_instead_of_yielding_an_empty_catalog() {
     let fixture = Fixture::new();

@@ -179,6 +179,7 @@ fn options(socket: PathBuf) -> InteractiveOptions {
 
 /// The first frame paints without any input after the open: the open's rebuild leaves the surface
 /// dirty, so the only wake is the dirty frame's own deadline on the frame arm.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_first_frame_paints_on_a_fully_quiet_link() {
     let outcome = run_boot_plan(vec![]);
@@ -191,6 +192,7 @@ fn the_first_frame_paints_on_a_fully_quiet_link() {
 
 /// A `WaitRender` barrier whose needle never arrives pops on its deadline: the barrier's
 /// re-check runs at the loop top, so the deadline's wake is the only thing that observes it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_wait_render_barrier_times_out_on_a_quiet_surface() {
     let outcome = run_boot_plan(vec![HeadlessStep::WaitRender {

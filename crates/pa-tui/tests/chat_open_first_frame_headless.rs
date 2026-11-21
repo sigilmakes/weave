@@ -292,6 +292,7 @@ fn is_divider_row(line: &str, width: usize) -> bool {
 
 /// The dock's counts are first-frame state: every captured frame carries both rows with the final
 /// count, so the delayed dock data never repaints the row in late.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_activity_dock_is_in_every_frame_from_the_first() {
     let frames = run_open(&OpeningTranscript::Empty);
@@ -317,6 +318,7 @@ fn the_activity_dock_is_in_every_frame_from_the_first() {
 /// A chat that opens directly into content paints its first frame from the snapshot: the
 /// transcript, the pinned title row, and the dock all ride that same frame, and the brand splash
 /// (the new chat's header) never renders — no splash flash above the title, no one-row shift.
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_direct_open_into_content_never_renders_the_splash() {
     let frames = run_open(&OpeningTranscript::Content);
@@ -339,6 +341,7 @@ fn a_direct_open_into_content_never_renders_the_splash() {
 
 /// The counter-pin: an empty chat keeps its brand splash — TS `BrandSplashHeader` is the new chat's
 /// header, and the suppression is scoped to opens into content.
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_empty_open_keeps_the_brand_splash() {
     let frames = run_open(&OpeningTranscript::Empty);

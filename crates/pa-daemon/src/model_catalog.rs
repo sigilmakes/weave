@@ -652,6 +652,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn picker_open_returns_instantly_and_the_auth_change_refresh_lands() {
         let mut fixture = fixture(create_phase_answers()).await;
         // A login switched the account between the create path's warm-up
@@ -737,6 +738,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn concurrent_opens_coalesce_into_one_refresh() {
         let mut fixture = fixture(create_phase_answers()).await;
         write_auth_json(&fixture.agent_dir, "sk-account-b", "team-b");
@@ -814,6 +816,7 @@ mod tests {
     /// Repeat picker opens inside the hourly window stay gated: no new
     /// fetches, no event, so event -> re-fetch -> refresh terminates.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn repeat_opens_inside_the_gate_add_no_fetches_and_stay_silent() {
         let mut fixture = fixture(create_phase_answers()).await;
         let requests_before = fixture.server.request_count();
@@ -845,6 +848,7 @@ mod tests {
     /// model, a thinking session sends no `reasoning_effort`, and a route
     /// that only thinks when asked emits no thinking at all.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_private_route_with_declared_reasoning_serves_addressable_levels() {
         let answers = vec![
             Answer::Raw(ok_json(&catalog_aggregate(&["probe-v1"]))),
@@ -882,6 +886,7 @@ mod tests {
     /// success would wipe the authorized private models and rewrite the
     /// fingerprint cache with an empty set and a fresh TTL.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_malformed_entitlement_payload_keeps_the_authorized_private_models() {
         let fixture = fixture(create_phase_answers()).await;
         // Age the on-disk authorization past its TTL so the next refresh
@@ -949,6 +954,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn refresh_failure_keeps_the_last_good_catalog_and_stays_silent() {
         let mut fixture = fixture(create_phase_answers()).await;
         write_auth_json(&fixture.agent_dir, "sk-account-c", "team-c");

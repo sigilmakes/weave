@@ -266,6 +266,7 @@ fn pane_env(herdr_socket: &Path, pane_id: &str) -> Value {
 /// the pane its create payload carried — idle with the session file
 /// reference at the create, working at the turn start, idle at the
 /// settle, and the release as the kill's last write, with silence after.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_session_reports_its_payload_pane_across_the_lifecycle() {
     let Some(kernel_python) = kernel_python() else {
@@ -397,6 +398,7 @@ fn the_session_reports_its_payload_pane_across_the_lifecycle() {
 /// hostile ambient env never produces a boot-context report — until the
 /// pane that opens it attaches its identity, which the session ADOPTS
 /// (adopt-if-absent), reports for, and releases at its stop.
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_envless_session_stays_silent_until_its_attach_adopts_the_pane() {
     let Some(kernel_python) = kernel_python() else {

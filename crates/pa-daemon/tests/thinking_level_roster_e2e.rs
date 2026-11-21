@@ -342,6 +342,7 @@ impl Harness {
 }
 
 /// A model switch that clamps the level flushes the roster too.
+#[pa_test_scratch::pa_test]
 #[test]
 fn thinking_level_changes_reach_the_roster_push() {
     let mut harness = setup("thinking-roster");
@@ -516,6 +517,7 @@ fn thinking_level_changes_reach_the_roster_push() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn unchanged_thinking_level_answers_without_a_roster_push() {
     let mut harness = setup("thinking-roster-quiet");

@@ -46,6 +46,7 @@ fn environment(path: &Path, identity: &str) {
     std::fs::write(path.join("user-package"), "keep me").unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn archive_copy_and_rollback_preserve_original_bytes_and_symlinks() {
     let dir = tempfile::tempdir().unwrap();
@@ -91,6 +92,7 @@ fn archive_copy_and_rollback_preserve_original_bytes_and_symlinks() {
     assert!(!intent_path(&venv).exists());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn interrupted_intent_before_rename_leaves_active_environment_unchanged() {
     let dir = tempfile::tempdir().unwrap();
@@ -116,6 +118,7 @@ fn interrupted_intent_before_rename_leaves_active_environment_unchanged() {
     assert!(!intent_path(&venv).exists());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn interrupted_archive_before_copy_restores_predecessor() {
     let dir = tempfile::tempdir().unwrap();
@@ -131,6 +134,7 @@ fn interrupted_archive_before_copy_restores_predecessor() {
     assert!(!intent_path(&venv).exists());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn unsafe_intent_and_symlink_backup_root_never_move_active_environment() {
     let dir = tempfile::tempdir().unwrap();
@@ -166,6 +170,7 @@ fn unsafe_intent_and_symlink_backup_root_never_move_active_environment() {
 }
 
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn successful_upgrade_intent_and_offline_source_rollback_reuse_archives() {
     let dir = tempfile::tempdir().unwrap();
@@ -204,6 +209,7 @@ fn uv_fixture(root: &Path, sync_body: &str) -> PathBuf {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn failed_locked_upgrade_rolls_back_user_packages_and_marker() {
     let root = tempfile::tempdir().unwrap();
     let venv = root.path().join("kernel");
@@ -236,6 +242,7 @@ async fn failed_locked_upgrade_rolls_back_user_packages_and_marker() {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn successful_locked_upgrade_preserves_extra_packages_and_archive() {
     let root = tempfile::tempdir().unwrap();
     let venv = root.path().join("kernel");
@@ -268,6 +275,7 @@ async fn successful_locked_upgrade_preserves_extra_packages_and_archive() {
 }
 
 #[cfg(unix)]
+#[pa_test_scratch::pa_test]
 #[test]
 fn refused_archive_keeps_active_environment() {
     let root = tempfile::tempdir().unwrap();
@@ -298,6 +306,7 @@ impl Drop for KillGroup {
 // This is process dispatch, not an environment-gated optional test.
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn killed_upgrade_refuses_reacquisition_requires_offline_recovery() {
     use std::os::unix::process::CommandExt;
     use tokio::io::AsyncBufReadExt;
@@ -393,6 +402,7 @@ async fn killed_upgrade_refuses_reacquisition_requires_offline_recovery() {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn failed_post_sync_readiness_restores_the_working_predecessor() {
     let root = tempfile::tempdir().unwrap();
     let venv = root.path().join("kernel");
@@ -441,6 +451,7 @@ fn checkpoint_skills(root: &Path) -> Vec<super::super::BootstrapPythonSkill> {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn killed_skill_sync_refuses_reacquisition_requires_offline_recovery() {
     use std::os::unix::process::CommandExt;
     use tokio::io::AsyncBufReadExt;
@@ -569,6 +580,7 @@ async fn killed_skill_sync_refuses_reacquisition_requires_offline_recovery() {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn committed_replacement_finalizes_intent_even_with_a_legacy_corrupt_predecessor() {
     let root = tempfile::tempdir().unwrap();
     let venv = root.path().join("kernel");
@@ -604,6 +616,7 @@ async fn committed_replacement_finalizes_intent_even_with_a_legacy_corrupt_prede
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn fresh_kernel_syncs_locked_group_without_seed_or_inexact() {
     let root = tempfile::tempdir().unwrap();
     let venv = root.path().join("kernel");

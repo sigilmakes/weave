@@ -140,6 +140,7 @@ fn spawn_compact(
 /// to `retained_entries()` reads (what `register_spawn` walks), and the
 /// committed context survives a file reopen.
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[pa_test_scratch::pa_test]
 async fn mid_summarize_writes_are_durable_now_and_ride_the_retained_tail() {
     let (engine, tmp) = held_engine(true, 3).await;
     let session_file = engine
@@ -206,6 +207,7 @@ async fn mid_summarize_writes_are_durable_now_and_ride_the_retained_tail() {
 /// A branch move mid-window is a structural conflict: the compaction
 /// retries from PREPARE and commits against the moved-to tree.
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[pa_test_scratch::pa_test]
 async fn a_branch_move_mid_summarize_conflicts_and_commits_against_the_new_tree() {
     let (engine, _tmp) = held_engine(false, 6).await;
     let mut summarizer = held_summarizer(1, vec![follow_up("## Goal\nretry summary")]);
@@ -254,6 +256,7 @@ async fn a_branch_move_mid_summarize_conflicts_and_commits_against_the_new_tree(
 /// Overlapping compactions serialize: the second waits for the
 /// in-flight run instead of summarizing the same prefix again.
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[pa_test_scratch::pa_test]
 async fn a_second_compaction_waits_for_the_in_flight_one() {
     let (engine, _tmp) = held_engine(false, 3).await;
     // The follow-up response would let a racing second summarizer finish.
@@ -289,6 +292,7 @@ async fn a_second_compaction_waits_for_the_in_flight_one() {
 /// A branch rebuild during every attempt: the compaction fails with the
 /// retry-cap error after three summarizer calls, never committing.
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[pa_test_scratch::pa_test]
 async fn repeated_branch_conflicts_fail_the_compaction_after_three_attempts() {
     let (engine, _tmp) = held_engine(false, 6).await;
     let mut summarizer = held_summarizer(3, Vec::new());
@@ -334,6 +338,7 @@ async fn repeated_branch_conflicts_fail_the_compaction_after_three_attempts() {
 /// Public branch replacement waits for the pending transaction, rather than
 /// publishing a live view assembled against an unfinished compaction window.
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[pa_test_scratch::pa_test]
 async fn public_branch_replacement_waits_for_the_compaction_transaction() {
     let (engine, _tmp) = held_engine(false, 6).await;
     let entries = engine.entries().await;

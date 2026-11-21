@@ -715,6 +715,7 @@ mod tests {
     /// A row written while a reader scans the same session file: the lock is
     /// refused three times and then free, so the row must land instead of the
     /// turn being refused for a holder that was about to release.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_transient_lock_holder_is_ridden_out_instead_of_refusing_the_row() {
         let dir = temp_dir("busy-first");
@@ -867,6 +868,7 @@ mod tests {
             .success());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn fresh_publication_captures_git_without_changing_reopened_absent_git() {
         let dir = tempfile::tempdir().unwrap();
@@ -907,6 +909,7 @@ mod tests {
         assert_eq!(std::fs::read(&absent_path).unwrap(), bytes);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_fresh_wire_refuses_identical_and_different_rival_headers() {
         for same_header in [true, false] {
@@ -944,6 +947,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_fresh_wire_refuses_torn_bytes_without_repairing_them() {
         let dir = temp_dir("fresh-torn");
@@ -958,6 +962,7 @@ mod tests {
         assert_eq!(std::fs::read(path).unwrap(), bytes);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_unknown_first_header_keeps_its_recovery_and_retries_once() {
         let dir = temp_dir("unknown-first");
@@ -1017,6 +1022,7 @@ mod tests {
         assert_eq!(log.read_since(0).unwrap().len(), 2);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_undecided_row_retries_into_exactly_one_file_row() {
         let dir = temp_dir("undecided");
@@ -1077,6 +1083,7 @@ mod tests {
         assert_eq!(rows[1].body, body);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_exact_path_refuses_legacy_bytes_and_creates_fresh_log_rows() {
         let dir = temp_dir("exact-path");
@@ -1095,6 +1102,7 @@ mod tests {
         assert!(replay.entries().is_empty());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_fresh_wires_first_flush_writes_the_header_then_the_rows() {
         let dir = temp_dir("fresh-wire");
@@ -1127,6 +1135,7 @@ mod tests {
         let _ = (user, assistant);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_payload_pathed_fresh_session_rekeys_to_its_path_id() {
         let dir = temp_dir("rekey");
@@ -1157,6 +1166,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_reopen_replays_the_log_and_flows_new_appends_past_the_cursor() {
         let dir = temp_dir("reopen");
@@ -1198,6 +1208,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_refused_row_is_durable_nowhere_never_indexed() {
         let dir = temp_dir("refused");
@@ -1226,6 +1237,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_minimum_serving_path_runs_a_log_session_end_to_end() {
         let dir = temp_dir("e2e");
         let agent_dir = dir.join("agent");
@@ -1384,6 +1396,7 @@ mod tests {
             .expect("messages array")
             .clone()
     }
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_attribution_aggregates_the_same_way_through_the_log_funnel() {
         let dir = temp_dir("probe");
@@ -1457,6 +1470,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn review_foreign_rows_join_the_serving_fold_before_append() {
         let dir = temp_dir("review-follow");
@@ -1488,6 +1502,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn review_public_retry_does_not_duplicate_an_unknown_row() {
         let dir = temp_dir("review-public-retry");
@@ -1519,6 +1534,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_external_repair_of_a_damaged_bare_log_changes_nothing() {
         let dir = temp_dir("review-repair");
@@ -1570,6 +1586,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn review_selected_branch_survives_sessionfile_reopen() {
         let dir = temp_dir("review-selection");
@@ -1595,6 +1612,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn review_new_intent_resolves_the_previous_unknown_before_minting() {
         let dir = temp_dir("review-next-intent");
@@ -1633,6 +1651,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn review_cloned_folds_observe_independent_positions() {
         let dir = temp_dir("review-clone");

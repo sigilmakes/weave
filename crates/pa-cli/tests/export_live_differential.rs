@@ -100,6 +100,7 @@ fn process_stat_alive(stat: &str) -> bool {
     !rest.trim_start().starts_with('Z')
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn process_stat_parser_distinguishes_zombies_from_live_workers() {
     assert!(!process_stat_alive("123 (test worker) Z 1 2 3"));
@@ -440,6 +441,7 @@ fn live_export(binary: &Path, base: &Path, ts_side: bool) -> Value {
     data
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn differential_live_export_matches_ts_binary() {
     let Some(ts) = ts_binary() else {

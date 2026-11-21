@@ -177,6 +177,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn bridges_definition_into_the_loop_contract() {
         let tool = bridge_tool(echo_definition(false));
         assert_eq!(tool.name(), "echo");
@@ -205,6 +206,7 @@ mod tests {
     /// The interactive loader's kernel-boot note and live cell output
     /// ride this channel.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn streamed_updates_reach_the_loop_callback() {
         use std::sync::Mutex;
         let definition = ToolDefinition {
@@ -253,6 +255,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn errors_surface_as_err_like_a_throw() {
         let tool = bridge_tool(echo_definition(true));
         let error = tool

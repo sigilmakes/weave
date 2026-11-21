@@ -314,6 +314,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn set_model_refuses_models_outside_the_allowlist() {
         async fn dispatch_set_model(
             worker: &std::sync::Arc<crate::worker::Worker>,
@@ -380,6 +381,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn set_model_refuses_an_unsigned_in_provider_with_the_typed_sign_in_error() {
         let dir = std::env::temp_dir().join(format!("pa-worker-si-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -436,6 +438,7 @@ mod tests {
         assert_eq!(response.error_info, None);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn thinking_levels_wire_names_match_the_enum() {
         // Every wire name must parse; the list is the exact TS
@@ -449,6 +452,7 @@ mod tests {
         assert!(pa_ai::models::thinking_level_from_str("sideways").is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn resolution_classifies_the_sign_in_refusal() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -489,6 +493,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn an_unauthorized_private_model_keeps_the_ts_refusal() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -509,6 +514,7 @@ mod tests {
 
     /// A stale-auth provider keeps the switch (the TS daemon's
     /// full-catalog fallback; the lookup never mutates stale state).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn stale_auth_keeps_the_set_model_switch() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -546,6 +552,7 @@ mod tests {
         (model.provider.clone(), model.id.clone())
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn resolution_errors_carry_the_ts_message() {
         let dir = tempfile::tempdir().expect("tempdir");

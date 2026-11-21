@@ -461,6 +461,7 @@ mod tests {
     use super::*;
     use crate::cron::store::input;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn create_list_and_cancel() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -481,6 +482,7 @@ mod tests {
         assert!(store.create(&input("  ", "every 10m", now)).is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cancel_does_not_ack_when_state_lock_is_held() {
         let dir = tempfile::tempdir().unwrap();
@@ -498,6 +500,7 @@ mod tests {
         assert_eq!(store.list(), vec![job]);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn claim_dispatch_and_result_recording() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -538,6 +541,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn run_and_skip_results_roll_schedules() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -577,6 +581,7 @@ mod tests {
         assert!(store.list().iter().any(|job| job.last_skipped_at.is_some()));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn claim_due_skips_while_the_state_lock_is_held() {
         let dir = tempfile::tempdir().unwrap();
@@ -599,6 +604,7 @@ mod tests {
         assert_eq!(dispatches[0].job.id, job.id);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn defer_next_run_pushes_only_later() {
         let dir = tempfile::TempDir::new().unwrap();

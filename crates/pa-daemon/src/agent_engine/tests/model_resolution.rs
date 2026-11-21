@@ -68,6 +68,7 @@ fn write_thinking_pair_models_json(agent_dir: &std::path::Path, base_url: &str) 
     .unwrap();
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn create_config_flags_reach_the_engine_model_resolution() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -107,6 +108,7 @@ fn create_config_flags_reach_the_engine_model_resolution() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn settings_default_drives_unflagged_resolution() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -347,6 +349,7 @@ fn restore_test_engine(
     .expect("engine")
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_startup_chain_refuses_models_outside_the_allowlist() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -401,6 +404,7 @@ fn the_startup_chain_refuses_models_outside_the_allowlist() {
 /// merged headers (Macroscope PR #2755: `switch_model` dropped the
 /// stored provider headers whenever an override was configured).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_api_key_override_keeps_the_merged_team_headers() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -429,6 +433,7 @@ async fn an_api_key_override_keeps_the_merged_team_headers() {
 /// auth — with the provider-side fallback deleted, these merged
 /// headers keep the team on the wire.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn request_auth_carries_the_stored_team_header() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -451,6 +456,7 @@ async fn request_auth_carries_the_stored_team_header() {
 /// while the daemon boot's catalog fetch is still in flight; the
 /// create-time restore pins the saved model after the window instead.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn revived_session_restores_its_pinned_model_not_the_startup_default() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -490,6 +496,7 @@ async fn revived_session_restores_its_pinned_model_not_the_startup_default() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn revived_session_fallback_is_on_the_record() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -514,6 +521,7 @@ async fn revived_session_fallback_is_on_the_record() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn create_flags_beat_the_saved_session_model() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -530,6 +538,7 @@ async fn create_flags_beat_the_saved_session_model() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn fresh_session_without_a_saved_model_keeps_the_startup_chain() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -553,6 +562,7 @@ async fn fresh_session_without_a_saved_model_keeps_the_startup_chain() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_restore_decision_is_scoped_to_its_session_file() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -592,6 +602,7 @@ async fn a_restore_decision_is_scoped_to_its_session_file() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_model_switch_never_leaks_into_the_replacement_session() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -644,6 +655,7 @@ async fn a_model_switch_never_leaks_into_the_replacement_session() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_unpersisted_session_keeps_its_live_selection() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -680,6 +692,7 @@ async fn an_unpersisted_session_keeps_its_live_selection() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_replacement_restores_the_moved_to_sessions_saved_thinking_level() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -722,6 +735,7 @@ async fn a_replacement_restores_the_moved_to_sessions_saved_thinking_level() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_compacted_session_restores_its_post_compaction_model() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -771,6 +785,7 @@ async fn a_compacted_session_restores_its_post_compaction_model() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn create_flags_survive_a_session_replacement() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -814,6 +829,7 @@ async fn create_flags_survive_a_session_replacement() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_replacement_re_clamps_the_thinking_level_against_the_restored_model() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -845,6 +861,7 @@ async fn a_replacement_re_clamps_the_thinking_level_against_the_restored_model()
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn switch_model_never_poisons_the_selection_with_a_refused_candidate() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -892,6 +909,7 @@ fn switch_model_never_poisons_the_selection_with_a_refused_candidate() {
     assert_eq!(model.id, "mock-1");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn switch_model_propagates_the_new_model_to_the_child_identity() {
     let dir = tempfile::tempdir().unwrap();
@@ -936,6 +954,7 @@ fn switch_model_propagates_the_new_model_to_the_child_identity() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn configure_model_merges_only_present_fields() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -970,6 +989,7 @@ fn configure_model_merges_only_present_fields() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn agent_engine_reports_model_resolution_failures() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1035,6 +1055,7 @@ fn agent_engine_reports_model_resolution_failures() {
     assert!(error.contains("Unknown provider"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn configure_model_thinking_clamps_to_the_models_supported_levels() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1097,6 +1118,7 @@ fn configure_model_thinking_clamps_to_the_models_supported_levels() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_pre_read_saved_context_restores_like_the_file_read() {
     let dir = tempfile::TempDir::new().unwrap();
     let agent_dir = dir.path().join("agent");
@@ -1156,6 +1178,7 @@ async fn a_pre_read_saved_context_restores_like_the_file_read() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_model_switch_keeps_the_agent_slot_in_sync_with_the_reported_level() {
     let dir = tempfile::TempDir::new().unwrap();
@@ -1231,6 +1254,7 @@ fn a_model_switch_keeps_the_agent_slot_in_sync_with_the_reported_level() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_lazy_model_switch_roundtrip_preserves_the_requested_level() {
     let dir = tempfile::TempDir::new().unwrap();

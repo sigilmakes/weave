@@ -338,6 +338,7 @@ mod tests {
     /// the identity and the scan serves again — on the reconciled
     /// identity only.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_owned_session_scan_refuses_a_quarantined_identity() {
         let dir = std::env::temp_dir().join(format!("pa-own-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();

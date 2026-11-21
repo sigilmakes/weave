@@ -53,6 +53,7 @@ fn roundtrip_file(path: &std::path::Path) -> usize {
     lines
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn committed_fixture_roundtrips() {
     let mut lines = 0usize;
@@ -68,6 +69,7 @@ fn committed_fixture_roundtrips() {
 
 /// Live sessions are opt-in: real user data whose presence varies per machine. Set
 /// `PA_TYPES_LIVE_SESSIONS=1` (optionally `PA_TYPES_SESSIONS_DIR`) to sweep them.
+#[pa_test_scratch::pa_test]
 #[test]
 fn live_captured_sessions_roundtrip_losslessly() {
     if std::env::var_os("PA_TYPES_LIVE_SESSIONS").as_deref() != Some(std::ffi::OsStr::new("1")) {

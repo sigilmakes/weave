@@ -170,6 +170,7 @@ mod tests {
     use super::*;
     use crate::cron::store::{input, CancelJobsFilter, SessionBinding};
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn session_artifact_partitioning() {
         let dir = tempfile::TempDir::new().unwrap();

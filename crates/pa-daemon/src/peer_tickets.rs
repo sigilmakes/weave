@@ -270,6 +270,7 @@ fn mint_grant(
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn minted_grants_expire_in_ten_seconds_and_are_unique() {
         let first = mint_grant("inst-1", "abc123", PeerGrantPurpose::SessionClient);
@@ -300,6 +301,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn worker_peer_ticket_auth_and_self_target() {
         use crate::registry::ResidentWorker;
         use pa_types::daemon::{
@@ -392,6 +394,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_states_match_ts_names() {
         use DaemonWorkerLifecycle as L;

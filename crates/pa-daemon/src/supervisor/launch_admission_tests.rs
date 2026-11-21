@@ -25,6 +25,7 @@ async fn stopping(supervisor: &Supervisor) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn launch_admission_refuses_after_terminal_stop() {
     let (_dir, supervisor) = fixture();
     supervisor.begin_shutdown(/*force*/ true).await;
@@ -33,6 +34,7 @@ async fn launch_admission_refuses_after_terminal_stop() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn terminal_drain_waits_for_every_clone_of_the_owned_launch_permit() {
     let (_dir, supervisor) = fixture();
     let permit = supervisor
@@ -64,6 +66,7 @@ async fn terminal_drain_waits_for_every_clone_of_the_owned_launch_permit() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn stopped_launch_reentry_refuses_without_waiting_for_the_exclusive_fence() {
     let (_dir, supervisor) = fixture();
     supervisor.shutting_down.store(true, Ordering::SeqCst);
@@ -76,6 +79,7 @@ async fn stopped_launch_reentry_refuses_without_waiting_for_the_exclusive_fence(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn uncertain_launch_cleanup_never_certifies_terminal_exit() {
     let (_dir, supervisor) = fixture();
     supervisor
@@ -92,6 +96,7 @@ async fn uncertain_launch_cleanup_never_certifies_terminal_exit() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn known_worker_boot_callback_does_not_reenter_a_queued_fair_read_fence() {
     let (dir, supervisor) = fixture();
     let permit = supervisor
@@ -145,6 +150,7 @@ async fn known_worker_boot_callback_does_not_reenter_a_queued_fair_read_fence() 
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn queued_terminal_writer_does_not_invert_unknown_registration_and_boot_adoption_guards() {
     let (_dir, supervisor) = fixture();
     let worker_id = "admission-inversion";
@@ -214,6 +220,7 @@ async fn queued_terminal_writer_does_not_invert_unknown_registration_and_boot_ad
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn admission_fast_check_race_refuses_after_terminal_writer_queues() {
     let (_dir, supervisor) = fixture();
     let outer = supervisor

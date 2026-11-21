@@ -380,6 +380,7 @@ fn message_text(content: &Value) -> Option<String> {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn navigate_tree_moves_follow_the_branchs_goal_state() {
     let mut harness = setup("goal-branch-reload");
@@ -451,6 +452,7 @@ fn navigate_tree_moves_follow_the_branchs_goal_state() {
 
 /// The clear's reply reflects the action it took (the operator's 2026-09-25 bug report):
 /// clearing a held record answers "Goal cleared.", never the post-state read's text.
+#[pa_test_scratch::pa_test]
 #[test]
 fn goal_clear_answers_the_action_it_took() {
     let mut harness = setup("goal-clear-reply");

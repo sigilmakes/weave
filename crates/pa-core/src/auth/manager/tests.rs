@@ -41,6 +41,7 @@ fn storage_with_env(data: &serde_json::Value, env: ScriptedEnv) -> AuthStorage {
     AuthStorage::in_memory_with_env(&data, Arc::new(NoOAuth), Arc::new(env))
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn local_status_does_not_resolve_deferred_credentials() {
     struct ForbiddenOAuth;
@@ -112,6 +113,7 @@ fn local_status_does_not_resolve_deferred_credentials() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn local_api_key_preserves_precedence_and_stale_sources() {
     let mut auth = storage_with_env(
@@ -156,6 +158,7 @@ fn local_api_key_preserves_precedence_and_stale_sources() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn local_api_key_never_executes_commands_oauth_or_fallback() {
     struct ForbiddenOAuth;
@@ -205,6 +208,7 @@ fn local_api_key_never_executes_commands_oauth_or_fallback() {
     assert_eq!(auth.get_api_key_local("openai-codex"), None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn local_codex_key_respects_existing_stale_source_tokens() {
     let oauth = Arc::new(CountingOAuth {
@@ -224,6 +228,7 @@ fn local_codex_key_respects_existing_stale_source_tokens() {
     assert_eq!(auth.get_api_key_local("openai-codex"), None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn runtime_override_wins() {
     // Non-prime provider: runtime beats stored; stored outranks env,
@@ -241,6 +246,7 @@ fn runtime_override_wins() {
     assert_eq!(auth.get_api_key("anthropic").as_deref(), Some("stored-key"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn stale_marking_skips_source_and_clears() {
     let mut auth = storage_with(&serde_json::json!({
@@ -257,6 +263,7 @@ fn stale_marking_skips_source_and_clears() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn candidate_memos_supersede_exactly_when_material_changes() {
     // The memo is keyed by the hashed material: a changed env value re-resolves to
@@ -312,6 +319,7 @@ fn candidate_memos_supersede_exactly_when_material_changes() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn set_and_remove_credentials() {
     let mut auth = storage_with(&serde_json::json!({}));
@@ -339,6 +347,7 @@ fn set_and_remove_credentials() {
     assert_eq!(auth.get_api_key("anthropic"), None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn command_keys_resolve() {
     let mut auth = storage_with(&serde_json::json!({
@@ -347,6 +356,7 @@ fn command_keys_resolve() {
     assert_eq!(auth.get_api_key("anthropic").as_deref(), Some("cmd-key"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn env_key_priority_for_prime_inference() {
     let mut auth = storage_with_env(
@@ -364,6 +374,7 @@ fn env_key_priority_for_prime_inference() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn fallback_resolver_last_resort() {
     let mut auth = storage_with(&serde_json::json!({}));
@@ -373,6 +384,7 @@ fn fallback_resolver_last_resort() {
     assert_eq!(auth.get_api_key("custom").as_deref(), Some("fb-key"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn provider_headers_team_selection() {
     let auth = storage_with(&serde_json::json!({
@@ -469,6 +481,7 @@ fn team(id: &str, name: &str) -> PrimeTeamCredential {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn prime_inference_key_writes_follow_the_ts_assignment_rules() {
     let mut auth = storage_with(&serde_json::json!({}));
@@ -526,6 +539,7 @@ fn prime_inference_key_writes_follow_the_ts_assignment_rules() {
     assert_eq!(credential.get("primeTeam"), Some(&serde_json::Value::Null));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn prime_inference_team_selection_rebinds_only_the_stored_key() {
     let mut auth = storage_with(&serde_json::json!({}));
@@ -581,6 +595,7 @@ impl AuthStorageBackend for WriteFailingBackend {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_failed_prime_inference_key_write_keeps_the_stale_marking() {
     // TS: `setPrimeInferenceApiKey` throws before `clearStaleAuthSource`,
@@ -607,6 +622,7 @@ fn a_failed_prime_inference_key_write_keeps_the_stale_marking() {
     assert_eq!(auth.get_api_key(PRIME_INFERENCE_PROVIDER_ID), None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn prime_inference_team_selection_reads_follow_the_ts_tri_state() {
     let auth = storage_with(&serde_json::json!({}));
@@ -766,6 +782,7 @@ fn storage_over_backend_with(
     )
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn an_unexpired_oauth_credential_serves_without_a_fetch() {
     let oauth = Arc::new(CountingOAuth {
@@ -785,6 +802,7 @@ fn an_unexpired_oauth_credential_serves_without_a_fetch() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_token_fetch_holds_the_document_lock_through_commit() {
     struct HeldOAuth {
@@ -868,6 +886,7 @@ fn the_token_fetch_holds_the_document_lock_through_commit() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_second_refresh_joins_the_first_flight_instead_of_fetching_again() {
     // Two resolutions race: the document lock serializes them, and the

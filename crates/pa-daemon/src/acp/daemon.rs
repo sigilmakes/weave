@@ -1936,6 +1936,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn eof_waits_for_a_reserved_close_before_taking_the_session() {
         let state = Arc::new(Mutex::new(state(Some(hosted_session()))));
         let order = frame_order_prefix(
@@ -1983,6 +1984,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn lost_replace_and_clear_ack_retries_clear_before_an_empty_session() {
         let (writer, mut commands) = mpsc::unbounded_channel::<String>();
         let (_frames_tx, frames) = mpsc::unbounded_channel();
@@ -2085,6 +2087,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn admit_prompt_matches_the_ts_refusal_order() {
         let none = Arc::new(Mutex::new(state(None)));
         assert_eq!(
@@ -2144,6 +2147,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn arm_cancel_arms_a_running_turn_a_stop_retry_or_nothing() {
         let mut running = state(Some(hosted_session()));
@@ -2178,6 +2182,7 @@ mod tests {
         assert!(failed.session.as_ref().unwrap().cancel_task.is_some());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_cancel_while_a_stop_runs_never_arms_a_second_stop() {
         let mut stopping = state(Some(hosted_session()));

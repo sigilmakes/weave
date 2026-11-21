@@ -83,16 +83,19 @@ fn persistent_roundtrip(fixture: &str) {
     assert_eq!(std::fs::read(original).unwrap(), original_bytes);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn persistent_open_append_reopen_preserves_nested_metadata() {
     persistent_roundtrip(FIXTURE);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn persistent_open_preserves_all_audited_nested_metadata() {
     persistent_roundtrip(include_str!("fixtures/session_nested_metadata_all.jsonl"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn empty_unknown_maps_keep_existing_wire_bytes() {
     for line in include_str!("fixtures/session_nested_empty_extras.jsonl").lines() {
@@ -102,6 +105,7 @@ fn empty_unknown_maps_keep_existing_wire_bytes() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn git_identity_ignores_preserved_metadata_but_records_known_changes() {
     let dir = tempfile::tempdir().unwrap();

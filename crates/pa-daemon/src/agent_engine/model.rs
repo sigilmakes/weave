@@ -701,6 +701,7 @@ mod refresh_tests {
         }).to_string()).unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refresh_metadata_defers_then_adopts_same_id_without_replacing_credentials() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -758,6 +759,7 @@ mod refresh_tests {
             .load(std::sync::atomic::Ordering::SeqCst));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refresh_metadata_serializes_with_the_public_model_switch_gate() {
         use std::cell::Cell;
@@ -845,6 +847,7 @@ mod refresh_tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refresh_metadata_lazy_anchor_survives_removal_and_default_change_at_build() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -898,6 +901,7 @@ mod refresh_tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refresh_metadata_lazy_anchor_yields_to_explicit_switch_and_replacement() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -920,6 +924,7 @@ mod refresh_tests {
         assert!(engine.session.blocking_lock().is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refresh_metadata_keeps_a_removed_selected_model() {
         let dir = tempfile::TempDir::new().unwrap();
@@ -942,6 +947,7 @@ mod refresh_tests {
         engine.apply_scheduled_model_metadata_refresh().unwrap();
         assert_eq!(engine.session_model().unwrap(), original);
     }
+    #[pa_test_scratch::pa_test]
     #[test]
     fn lazy_refresh_retains_selected_identity_on_the_first_public_prompt() {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};

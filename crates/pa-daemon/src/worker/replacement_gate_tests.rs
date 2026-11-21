@@ -100,6 +100,7 @@ fn recording_worker(dir: &Path, events: std::sync::Arc<std::sync::Mutex<Vec<Stri
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn create_owns_actual_custom_path_until_worker_close() {
     for explicit_path in [true, false] {
         let dir = tempfile::tempdir().unwrap();
@@ -156,6 +157,7 @@ async fn create_owns_actual_custom_path_until_worker_close() {
 /// replacement critical sections — an overlap would leave the store, the
 /// branch context, and the model from different sessions.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn concurrent_replacements_never_interleave_their_critical_sections() {
     let dir = std::env::temp_dir().join(format!(
         "pa-replacement-gate-{}-{}",
@@ -208,6 +210,7 @@ async fn concurrent_replacements_never_interleave_their_critical_sections() {
 /// failed path: a later create on a different session never resolves against
 /// the failed path's model.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_failed_existing_session_create_never_binds_the_engine() {
     let dir =
         std::env::temp_dir().join(format!("pa-create-bind-{}-{}", std::process::id(), line!()));
@@ -238,6 +241,7 @@ async fn a_failed_existing_session_create_never_binds_the_engine() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_switched_session_repairs_a_torn_tail_before_its_first_append() {
     let dir = tempfile::tempdir().unwrap();
     let events = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -299,6 +303,7 @@ async fn a_switched_session_repairs_a_torn_tail_before_its_first_append() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_switched_non_session_file_is_never_rewritten() {
     let dir = tempfile::tempdir().unwrap();
     let events = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -330,6 +335,7 @@ async fn a_switched_non_session_file_is_never_rewritten() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_resumed_session_repairs_a_non_utf8_torn_tail_before_its_first_append() {
     let dir = tempfile::tempdir().unwrap();
     let events = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -383,6 +389,7 @@ async fn a_resumed_session_repairs_a_non_utf8_torn_tail_before_its_first_append(
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_symlinked_session_repairs_its_target_and_keeps_the_append_lease() {
     let dir = tempfile::tempdir().unwrap();
     let events = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -445,6 +452,7 @@ async fn a_symlinked_session_repairs_its_target_and_keeps_the_append_lease() {
     drop(worker);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn a_large_valid_last_row_stays_intact_during_tail_repair() {
     let dir = tempfile::tempdir().unwrap();
@@ -478,6 +486,7 @@ fn a_large_valid_last_row_stays_intact_during_tail_repair() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_unleased_switch_never_rewrites_another_workers_damaged_file() {
     let dir = tempfile::tempdir().unwrap();
     let target = written_session_file(dir.path(), "owned.jsonl");

@@ -273,6 +273,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn a_labeled_preview_row_is_addressed_and_edited_by_its_preview() {
         let worker = created_worker().await;
         {
@@ -327,6 +328,7 @@ mod tests {
     /// replace so an edit can never report `applied` while the turn
     /// still delivers the old injected content; delete still applies.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn an_injected_heartbeat_row_rejects_replace_but_deletes() {
         let worker = created_worker().await;
         {
@@ -394,6 +396,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn mutate_delete_moves_and_replaces_match_ts_status_wire() {
         let worker = created_worker().await;
         worker
@@ -520,6 +523,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn resume_queue_matches_the_ts_wire_shapes() {
         let worker = created_worker().await;
         let response = worker.dispatch("resume_queue", &json!({})).await;
@@ -540,6 +544,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn delete_rejects_the_waiting_caller() {
         let worker = created_worker().await;
         let (done_tx, done_rx) = tokio::sync::oneshot::channel();
@@ -585,6 +590,7 @@ mod tests {
     /// A `replace` on an accepted agent-message delivery is rejected: its content must stay
     /// byte-identical to the prompt the turn runs on. Move and delete stay applicable.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn replace_rejects_a_queued_agent_message_delivery() {
         let worker = created_worker().await;
         let delivered = worker
@@ -680,6 +686,7 @@ mod tests {
     /// A cross-lane replace is an arrival in the target lane: the edited user
     /// item lands after earlier user items and before parked agent messages.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn cross_lane_replace_lands_before_parked_agent_messages() {
         for (source, target, source_command, target_command, delivery_mode) in [
             ("followUp", "steering", "follow_up", "steer", "steer"),

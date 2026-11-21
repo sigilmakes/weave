@@ -66,6 +66,7 @@ fn process_stat_alive(stat: &str) -> bool {
     !rest.trim_start().starts_with('Z')
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn process_stat_parser_distinguishes_zombies_from_live_workers() {
     assert!(!process_stat_alive("123 (test worker) Z 1 2 3"));
@@ -483,6 +484,7 @@ fn enter() -> pa_tui::interactive::HeadlessStep {
 // /copy
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_copy_emits_the_ts_osc52_sequence() {
     use base64::Engine;
     // No clipboard tools in the verifier: the copy chain falls to OSC 52 (the TS fallback).
@@ -562,6 +564,7 @@ async fn tui_copy_emits_the_ts_osc52_sequence() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_copy_toast_coalesces_consecutive_copies_and_auto_dismisses() {
     use base64::Engine;
     for var in [
@@ -685,6 +688,7 @@ fn key(code: crossterm::event::KeyCode) -> pa_tui::interactive::HeadlessStep {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_prime_login_renders_the_inline_team_picker() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -801,6 +805,7 @@ async fn tui_prime_login_renders_the_inline_team_picker() {
 
 /// Esc on the team picker cancels the SELECTION (TS `onCancel`): the login still completes.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_prime_login_escape_keeps_the_default_team_status() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -873,6 +878,7 @@ async fn tui_prime_login_escape_keeps_the_default_team_status() {
 // /import
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_import_replaces_the_session_from_a_fixture() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1062,6 +1068,7 @@ async fn tui_import_replaces_the_session_from_a_fixture() {
 // /login + /logout
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_login_and_logout_run_the_provider_flows() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1186,6 +1193,7 @@ async fn tui_login_and_logout_run_the_provider_flows() {
 /// streams (the update replaces only the binary; the daemon keeps running);
 /// the outcome lands as a note row; a second in-flight run is refused.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_update_runs_out_of_band_during_a_turn() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1264,6 +1272,7 @@ async fn tui_update_runs_out_of_band_during_a_turn() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_update_failure_lands_the_error_row() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -1336,6 +1345,7 @@ async fn tui_update_failure_lands_the_error_row() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn tui_logout_with_no_stored_credentials_reports_the_ts_status() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

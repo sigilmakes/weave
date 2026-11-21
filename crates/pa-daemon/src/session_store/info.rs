@@ -749,6 +749,7 @@ pub fn find_most_recent_session_for_cwd(session_dir: &Path, cwd: &str) -> Option
 mod cache_tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn cached_prefix_resume_subtracts_a_duplicate_attribution_once() {
         use std::io::{BufReader, Seek, SeekFrom};
@@ -795,6 +796,7 @@ mod cache_tests {
         dir.close().unwrap();
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn attribution_ids_share_the_retained_usage_budget_and_trigger_lru_eviction() {
         let generation = SessionInfoGeneration {

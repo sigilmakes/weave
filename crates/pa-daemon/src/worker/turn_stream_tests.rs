@@ -239,6 +239,7 @@ async fn gate_sighting_events(
 /// A sighting on the trailing `Done` of a self-completed run must not arm the
 /// fallback's silence — the closer still pairs the run's `agent_start`.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_late_abort_sighting_on_a_completed_runs_done_keeps_the_fallback_closer() {
     let events = gate_sighting_events(vec![EngineEvent::Done(Ok(()))], true, false).await;
     let starts = positions_of(&events, "agent_start");
@@ -258,6 +259,7 @@ async fn a_late_abort_sighting_on_a_completed_runs_done_keeps_the_fallback_close
 /// `DoneAborted` with no engine `agent_end`: the aborted-outcome carrier arms the
 /// silence.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn done_aborted_arms_the_fallback_silence() {
     let events = gate_sighting_events(vec![EngineEvent::DoneAborted], true, false).await;
     assert!(
@@ -269,6 +271,7 @@ async fn done_aborted_arms_the_fallback_silence() {
 /// A settle frame that would forward on a plain flag sighting drops when
 /// `suppress_aborted_row` is set.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_suppressed_row_sighting_drops_and_arms_the_silence() {
     let events = gate_sighting_events(
         vec![
@@ -296,6 +299,7 @@ async fn the_suppressed_row_sighting_drops_and_arms_the_silence() {
 /// Engine-only stores cannot persist these transitions: the worker must
 /// commit both rows in the same stream order as the assistant/tool rows.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn model_transitions_reach_the_worker_owned_session_file() {
     for abort_suppressed in [None, Some(false), Some(true)] {
         let dir = tempfile::tempdir().unwrap();
@@ -397,6 +401,7 @@ async fn model_transitions_reach_the_worker_owned_session_file() {
 /// cannot fence the engine's durable restore. File-backed prompts capture the
 /// leaf after next-turn prefix rows have persisted.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn prompt_restore_boundary_is_supplied_only_for_file_backed_stores() {
     let dir = tempfile::tempdir().unwrap();
     for file_backed in [false, true] {

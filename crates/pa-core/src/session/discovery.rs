@@ -354,6 +354,7 @@ mod tests {
         tempfile::tempdir().unwrap()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn path_like_selectors_pass_through() {
         assert!(looks_like_session_path("./a.jsonl"));
@@ -367,6 +368,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn exact_local_match_resolves_by_normalized_id() {
         let dir = temp_dir();
@@ -376,6 +378,7 @@ mod tests {
         assert_eq!(resolved, ResolvedSession::Local(path));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn global_match_reports_the_session_cwd() {
         let dir = temp_dir();
@@ -390,6 +393,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn ambiguous_matches_error_with_ids() {
         let dir = temp_dir();
@@ -417,6 +421,7 @@ mod tests {
         assert!(message.contains("aaaa0002"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn not_found_offers_a_close_suggestion() {
         let dir = temp_dir();
@@ -440,6 +445,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn most_recent_session_for_cwd_prefers_newest_mtime() {
         let dir = temp_dir();
@@ -459,6 +465,7 @@ mod tests {
         );
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn most_recent_ignores_other_cwds() {
         let dir = temp_dir();

@@ -230,6 +230,7 @@ fn view_options(
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn panel_expand_drill_in_and_back_re_expands_the_tree() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");
@@ -466,6 +467,7 @@ async fn panel_expand_drill_in_and_back_re_expands_the_tree() {
 /// A `keybindings.json` fixture rebinding the open action (`app.agents.open` right
 /// -> ctrl+g) — the hint renders the OVERRIDE key; it opens, the default key does not.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn agents_view_fires_user_keybindings_from_settings() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let agent_dir = dir.path().join("agent");

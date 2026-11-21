@@ -272,6 +272,7 @@ impl Session {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn kill_cancels_goal_and_heartbeat_and_no_wake_revives_the_session() {
     let root = tempfile::TempDir::new().expect("temp dir");

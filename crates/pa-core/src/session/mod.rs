@@ -376,6 +376,7 @@ mod context_tests {
         .to_string()
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn context_walks_parent_chain() {
         let content = format!(
@@ -403,6 +404,7 @@ mod context_tests {
         ));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn compaction_rebuilds_summary_first() {
         let content = String::from(
@@ -439,6 +441,7 @@ mod context_tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn child_usage_attribution_folds_into_assistant() {
         let content = format!(

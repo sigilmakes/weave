@@ -265,6 +265,7 @@ mod tests {
         }
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refs_clone_original_native_body_without_any_json_normalization() {
         let owner = target(ContextDataMode::RefsV1);
@@ -277,6 +278,7 @@ mod tests {
         assert!(serde_json::to_string(&descriptor).unwrap().len() < 1024);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refs_reject_every_forged_scope_and_cross_call_or_typed_slot() {
         let owner = target(ContextDataMode::RefsV1);
@@ -315,6 +317,7 @@ mod tests {
             .is_err());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn refs_allow_only_bounded_ordered_nonoverlapping_spans() {
         let owner = target(ContextDataMode::RefsV1);
@@ -347,6 +350,7 @@ mod tests {
             .contains("span resource"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn json_callbacks_keep_full_bodies_and_all_modes_reject_oversized_controls() {
         let owner = target(ContextDataMode::Json);
@@ -373,6 +377,7 @@ mod tests {
             .is_none());
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn archive_headers_keep_large_ciphertext_rest_and_coverage_native() {
         let owner = target(ContextDataMode::RefsV1);

@@ -57,6 +57,7 @@ pub fn private_prime_inference_models() -> Vec<Model> {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn private_id_predicate() {
         assert!(is_private_prime_inference_model_id("internal/glm-5.2-fast"));
@@ -80,6 +81,7 @@ mod tests {
     /// Differential: the provider base URL must equal the TS reference's
     /// `PRIME_INFERENCE_BASE_URL` - the URL the installed TS binary actually
     /// calls. Golden is read from the TS source, no network.
+    #[pa_test_scratch::pa_test]
     #[test]
     fn base_url_matches_ts_reference() {
         let Some(root) = ts_reference_root() else {
@@ -102,6 +104,7 @@ mod tests {
         assert_eq!(PRIME_INFERENCE_BASE_URL, expected);
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn generated_catalog_base_urls_match_const() {
         let models = pa_ai::models_generated::get_models("prime-inference");

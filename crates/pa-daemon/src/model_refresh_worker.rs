@@ -99,6 +99,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn worker_refresh_reports_are_direct_and_empty_sources_do_not_fetch() {
         let dir = tempfile::TempDir::new().unwrap();
         let worker = worker(dir.path());
@@ -114,6 +115,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn worker_apply_snapshots_is_allowed_while_busy_and_keeps_current_turn() {
         let dir = tempfile::TempDir::new().unwrap();
         let worker = worker(dir.path());
@@ -129,6 +131,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn refresh_commands_reject_invalid_payloads_without_changing_turn() {
         let dir = tempfile::TempDir::new().unwrap();
         let worker = worker(dir.path());

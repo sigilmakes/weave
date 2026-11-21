@@ -886,6 +886,7 @@ mod tests {
     /// A worker registering while the blocking artifact scan is in flight
     /// owns its job before the passive path can write to the shared store.
     #[tokio::test(start_paused = true)]
+    #[pa_test_scratch::pa_test]
     async fn a_worker_registered_during_the_scan_gets_its_heartbeat_manage() {
         use crate::registry::{ResidentWorker, WorkerReply};
         use crate::supervisor::subscribers::ClientSubscriptions;
@@ -1045,6 +1046,7 @@ mod tests {
     /// first read STILL answers the warm row — a read that scanned inline
     /// at that moment would see the deleted fixture and answer nothing.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_passive_catalog_warms_at_boot_and_the_first_read_serves_the_snapshot() {
         let dir = tempfile::tempdir().expect("temp dir");
         let agent_dir = dir.path().join("agent");
@@ -1142,6 +1144,7 @@ mod tests {
     /// adopt signal unfired the snapshot never lands; once the signal
     /// fires, it does.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn the_boot_warmup_waits_out_the_adopt_pass_before_scanning() {
         let dir = tempfile::tempdir().expect("temp dir");
         let agent_dir = dir.path().join("agent");

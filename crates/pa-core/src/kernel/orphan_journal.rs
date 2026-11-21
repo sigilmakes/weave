@@ -244,6 +244,7 @@ pub fn reap_worker_orphan_processes(path: &Path, worker_pid: i32) {
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn process_start_id_reads_the_platform_ladder() {
         // Linux answers from /proc (`proc:`); macOS/BSD answer
@@ -253,6 +254,7 @@ mod tests {
         assert!(id.starts_with("proc:") || id.starts_with("ps:"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn civil_conversion_known_dates() {
         assert_eq!(civil_from_unix(0), (1970, 1, 1, 0, 0, 0));
@@ -264,6 +266,7 @@ mod tests {
     /// attempted; whether it fails or hits a reused pid, a blind retry is
     /// unsafe, so the journal is spent) and the same pid journaled with a
     /// stale identity (the start-id check never reaps a reused pid).
+    #[pa_test_scratch::pa_test]
     #[test]
     fn worker_reap_spends_stale_and_identity_free_records() {
         let dir = tempfile::tempdir().expect("temp dir");

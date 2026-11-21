@@ -70,6 +70,7 @@ fn worker_in(dir: &std::path::Path, session_id: &str) -> Worker {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_mark_command_persists_and_serves_the_gate() {
     let dir = tempfile::tempdir().unwrap();
     let session_dir = dir.path().join("sessions");

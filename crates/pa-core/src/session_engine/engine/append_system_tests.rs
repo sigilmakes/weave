@@ -100,6 +100,7 @@ async fn assert_prompt_case(case: PromptCase) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn append_system_global_reaches_provider() {
     assert_prompt_case(PromptCase {
         custom_system: true,
@@ -112,6 +113,7 @@ async fn append_system_global_reaches_provider() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn append_system_project_overrides_global() {
     assert_prompt_case(PromptCase {
         custom_system: true,
@@ -124,6 +126,7 @@ async fn append_system_project_overrides_global() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn append_system_explicit_overrides_files() {
     assert_prompt_case(PromptCase {
         custom_system: true,
@@ -136,6 +139,7 @@ async fn append_system_explicit_overrides_files() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn append_system_explicit_file_is_resolved() {
     let tmp = tempfile::tempdir().unwrap();
     let path = tmp.path().join("override.md");
@@ -151,6 +155,7 @@ async fn append_system_explicit_file_is_resolved() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn append_system_empty_project_suppresses_global() {
     assert_prompt_case(PromptCase {
         custom_system: true,
@@ -163,6 +168,7 @@ async fn append_system_empty_project_suppresses_global() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn append_system_empty_explicit_suppresses_files() {
     assert_prompt_case(PromptCase {
         custom_system: true,
@@ -175,6 +181,7 @@ async fn append_system_empty_explicit_suppresses_files() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn append_system_preserves_default_system_layers() {
     assert_prompt_case(PromptCase {
         custom_system: false,

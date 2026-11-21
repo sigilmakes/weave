@@ -227,11 +227,13 @@ fn timing_on(log_path: &Path) -> Arc<RequestTimingWiring> {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn emits_the_full_timeline_first_byte_from_the_response_hook() {
     emits_the_full_timeline(true).await;
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn emits_the_full_timeline_first_byte_from_the_start_event() {
     emits_the_full_timeline(false).await;
 }
@@ -314,6 +316,7 @@ async fn emits_the_full_timeline(with_response_hook: bool) {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn measures_the_payload_once_and_never_when_disabled() {
     let dir = tempfile::tempdir().unwrap();
     let log_path = dir.path().join("agent.jsonl");
@@ -438,6 +441,7 @@ async fn measures_the_payload_once_and_never_when_disabled() {
 /// The identity-matched slot leaves the parent's entry in place; the
 /// side question correlates on a fresh sequence.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_cloned_stream_seam_never_steals_the_parent_correlation() {
     let dir = tempfile::tempdir().unwrap();
     let log_path = dir.path().join("agent.jsonl");
@@ -538,6 +542,7 @@ async fn a_cloned_stream_seam_never_steals_the_parent_correlation() {
 /// protocol encodes failures as terminal events and cannot throw
 /// mid-iteration.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reports_stream_fn_failures_as_failed() {
     let dir = tempfile::tempdir().unwrap();
     let log_path = dir.path().join("agent.jsonl");
@@ -568,6 +573,7 @@ async fn reports_stream_fn_failures_as_failed() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reports_terminal_error_events() {
     for (stop_reason, outcome, reason_text) in [
         (StopReason::Error, "failed", "error"),
@@ -628,6 +634,7 @@ async fn reports_terminal_error_events() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn reports_early_termination_as_aborted() {
     let dir = tempfile::tempdir().unwrap();
     let log_path = dir.path().join("agent.jsonl");
@@ -652,6 +659,7 @@ async fn reports_early_termination_as_aborted() {
     assert_eq!(summary.get("outcome"), Some(&json!("aborted")));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn truthy_env_flag_follows_the_offline_convention() {
     for on in ["1", "true", "yes", "TRUE", "Yes"] {
@@ -671,6 +679,7 @@ fn truthy_env_flag_follows_the_offline_convention() {
 
 /// Serialized on the env lock: the process env is global.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_env_override_enables_request_timing() {
     let _guard = REQUEST_TIMING_ENV_LOCK.lock().await;
     let previous = std::env::var(REQUEST_TIMING_ENV).ok();
@@ -685,6 +694,7 @@ async fn the_env_override_enables_request_timing() {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_settings_flag_round_trips_and_defaults_off() {
     let settings: crate::settings::Settings =
@@ -705,6 +715,7 @@ fn the_settings_flag_round_trips_and_defaults_off() {
 /// absent (the TS omission shape); the engine wires the instrumented
 /// seams from the `requestTiming` settings key.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn engine_sessions_emit_the_timeline_only_when_the_flag_is_on() {
     use crate::session_engine::engine::{create_session, SessionEngineConfig};
     use crate::session_engine::provider_adapter::{json_round_trip, real_stream_fn};
@@ -866,6 +877,7 @@ fn payload_calling_provider() -> StreamFn {
 /// captured body.
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_payload_capture_writes_the_exact_outbound_body() {
     let _writer_lock = super::payload::WRITER_TEST_LOCK.lock().await;
     let dir = tempfile::tempdir().unwrap();
@@ -917,6 +929,7 @@ async fn the_payload_capture_writes_the_exact_outbound_body() {
 
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_payload_capture_writes_nothing_when_the_flag_is_off() {
     let dir = tempfile::tempdir().unwrap();
     let log_path = dir.path().join("agent.jsonl");
@@ -945,6 +958,7 @@ async fn the_payload_capture_writes_nothing_when_the_flag_is_off() {
 /// The daemon workers' session build is this same `create_session`.
 #[cfg(unix)]
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn engine_sessions_capture_the_outbound_payload_when_the_flag_is_on() {
     use crate::session_engine::engine::{create_session, SessionEngineConfig};
 

@@ -116,6 +116,7 @@ mod tests {
         Ok(())
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn lockfile_changes_invalidate_identity_and_missing_lock_fails() -> anyhow::Result<()> {
         let temp = tempfile::tempdir()?;
@@ -129,6 +130,7 @@ mod tests {
         Ok(())
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn missing_or_incomplete_runtime_sources_are_not_resolved() -> anyhow::Result<()> {
         let temp = tempfile::tempdir()?;
@@ -159,6 +161,7 @@ mod tests {
         Ok(())
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn packaged_dist_and_checkout_sources_resolve_to_absolute_paths() -> anyhow::Result<()> {
         let temp = tempfile::tempdir()?;
@@ -183,6 +186,7 @@ mod tests {
         Ok(())
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn relative_package_paths_are_never_returned_as_requirements() -> anyhow::Result<()> {
         const CHILD_ROOT: &str = "PA_TEST_RELATIVE_RUNTIME_SOURCE_ROOT";

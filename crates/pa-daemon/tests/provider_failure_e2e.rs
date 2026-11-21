@@ -710,6 +710,7 @@ fn event_types(events: &[Value]) -> Vec<String> {
         .collect()
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn provider_failure_is_retried_then_surfaced_to_attached_clients() {
     let (_dir, mock, _supervisor, mut client, session_id) = setup("failing", 5, "never reached");
@@ -857,6 +858,7 @@ fn provider_failure_is_retried_then_surfaced_to_attached_clients() {
 /// The 429-storm simulation (operator ruling 2026-09-23): a rate-limiting provider gets
 /// bounded exponential backoff; Retry-After wins over the tiny base delay, and the episode
 /// leaves exactly ONE durable outcome row.
+#[pa_test_scratch::pa_test]
 #[test]
 fn storm_429_caps_requests_honors_retry_after_and_leaves_one_outcome_row() {
     let (_dir, mock, _supervisor, mut client, session_id) = setup_with_rejection(
@@ -965,6 +967,7 @@ fn storm_429_caps_requests_honors_retry_after_and_leaves_one_outcome_row() {
 
 /// THE 402 REGRESSION: a wallet-drain 402 must classify by STATUS (the `payment_required`
 /// kind, first attempt, no ladder) and still emit the disclosure row.
+#[pa_test_scratch::pa_test]
 #[test]
 fn payment_402_settles_once_with_the_disclosure() {
     let (_dir, mock, _supervisor, mut client, session_id) =
@@ -1013,6 +1016,7 @@ fn payment_402_settles_once_with_the_disclosure() {
 /// THE GOAL-SIDE 402 REGRESSION: a goal whose continuation turn dies on the wallet-drain
 /// 402 refuses the NEXT continuation and finishes the goal. The disclosure row still
 /// fires (BUG 1).
+#[pa_test_scratch::pa_test]
 #[test]
 fn goal_continuation_refuses_after_the_402_corpse() {
     let (dir, mock, _supervisor, mut client, session_id) = setup_with_rejection(
@@ -1210,6 +1214,7 @@ fn read_exact_soft(
     Some(())
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn provider_failure_surfaces_on_the_direct_transport_path() {
     let (_dir, mock, _supervisor, mut client, session_id) = setup("direct", 5, "never reached");
@@ -1312,6 +1317,7 @@ fn provider_failure_surfaces_on_the_direct_transport_path() {
     assert_eq!(mock.count(), 3, "requests: initial + 2 retries");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn provider_failure_recovered_by_retry_settles_the_turn() {
     let (_dir, mock, _supervisor, mut client, session_id) = setup("healing", 2, "recovered reply");
@@ -1421,6 +1427,7 @@ fn provider_failure_recovered_by_retry_settles_the_turn() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn socket_presence_is_not_readiness_until_listen_succeeds() {
     let dir = tempfile::TempDir::new().expect("temp dir");
@@ -1463,6 +1470,7 @@ fn socket_presence_is_not_readiness_until_listen_succeeds() {
     drop(stream);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn readiness_reports_child_exit_instead_of_waiting_on_a_stale_socket() {
     use std::os::unix::process::ExitStatusExt;

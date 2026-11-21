@@ -6,6 +6,7 @@ use super::*;
 
 // TS `_processAgentEvent` session-file parity: a `role: "toolResult"`
 // entry persists, streams, and counts.
+#[pa_test_scratch::pa_test]
 #[test]
 fn tool_result_entries_persisted_and_streamed() {
     let dir = tempfile::TempDir::new().expect("temp dir");

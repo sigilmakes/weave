@@ -22,6 +22,7 @@ fn roundtrip_descriptor(raw: &str, path: &std::path::Path) {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn committed_fixture_roundtrips() {
     let mut count = 0usize;
@@ -45,6 +46,7 @@ fn committed_fixture_roundtrips() {
 
 /// Live descriptors are opt-in: real daemon state, presence varies per machine. Set
 /// `PA_TYPES_LIVE_WORKERS=1` (optionally `PA_TYPES_WORKERS_DIR`) to sweep them.
+#[pa_test_scratch::pa_test]
 #[test]
 fn live_worker_descriptors_roundtrip_losslessly() {
     if std::env::var_os("PA_TYPES_LIVE_WORKERS").as_deref() != Some(std::ffi::OsStr::new("1")) {

@@ -222,6 +222,7 @@ impl Drop for OwnedModelServer {
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn branch_summary_ack_failure_reaches_no_model() {
     let dir = tempfile::tempdir().unwrap(); // TempDir is private and RAII-owned.
@@ -387,6 +388,7 @@ fn branch_summary_ack_failure_reaches_no_model() {
     drop(server); // Always stops, wakes, and joins its owned server thread.
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn admitted_current_has_empty_proof_without_traversing_suffix() {
     // Current is intentionally not a graph validator; SDK owns prefix validation.
@@ -403,6 +405,7 @@ fn admitted_current_has_empty_proof_without_traversing_suffix() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn admitted_empty_returns_exact_fifo_users_on_selected_branch() {
     let entries = vec![
@@ -423,6 +426,7 @@ fn admitted_empty_returns_exact_fifo_users_on_selected_branch() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn admitted_leaf_excludes_boundary_and_unselected_sibling() {
     let entries = vec![
@@ -449,6 +453,7 @@ fn admitted_leaf_excludes_boundary_and_unselected_sibling() {
     assert!(error.to_string().contains("boundary is absent"), "{error}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn admitted_missing_entry_fails_closed() {
     let entries = vec![user_entry("tip", Some("missing"), "body")];
@@ -461,6 +466,7 @@ fn admitted_missing_entry_fails_closed() {
     assert!(admitted_input_ids(&[], Some("missing"), &ContextStartupBoundary::Empty).is_err());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn admitted_missing_leaf_boundary_fails_closed() {
     let entries = vec![user_entry("tip", None, "body")];
@@ -479,6 +485,7 @@ fn admitted_missing_leaf_boundary_fails_closed() {
     .is_err());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn admitted_cycle_fails_closed() {
     let entries = vec![
@@ -490,6 +497,7 @@ fn admitted_cycle_fails_closed() {
     assert!(error.to_string().contains("contains a cycle"), "{error}");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn admitted_same_body_distinct_ids_are_preserved() {
     let entries = vec![

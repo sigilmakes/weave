@@ -121,6 +121,7 @@ fn texts_at(events: &[Value], positions: &[usize]) -> Vec<String> {
 /// A provider that outruns the flush tick still broadcasts at most one
 /// parked update per tick — never one wire frame per delta.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn a_provider_burst_broadcasts_one_coalesced_update_per_tick_not_per_delta() {
     const DELTAS: usize = 120;
     // 1ms spacing: the burst spans ~120ms, so the 50ms flusher tick
@@ -167,6 +168,7 @@ async fn a_provider_burst_broadcasts_one_coalesced_update_per_tick_not_per_delta
 /// medians, not single runs.
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 #[ignore = "run with cargo test -p pa-daemon --release streamed_turn_pipeline_benchmark -- --ignored --nocapture"]
 async fn streamed_turn_pipeline_benchmark() {
     for text_kb in [64usize, 256, 512] {
@@ -217,6 +219,7 @@ async fn streamed_turn_pipeline_benchmark() {
 /// `text_delta` update before `message_end` carries the final content.
 #[allow(clippy::await_holding_lock)] // the faux registry is process-global: the guard must span the async flow
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn the_last_parked_update_carries_the_final_content() {
     let _faux = crate::agent_engine::FAUX_TEST_LOCK
         .lock()
@@ -258,6 +261,7 @@ async fn the_last_parked_update_carries_the_final_content() {
 
 /// The client sees the full message without a tick wait and nothing lands out of order.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn an_instant_burst_flushes_the_final_snapshot_with_its_settle_frame() {
     const DELTAS: usize = 200;
     let engine = Arc::new(BurstStreamEngine {

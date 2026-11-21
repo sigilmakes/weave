@@ -53,6 +53,7 @@ fn user(text: &str) -> AgentMessage {
     })
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn reads_branch_commit_and_normalized_repo_url() {
     let repo = tempfile::tempdir().unwrap();
@@ -79,6 +80,7 @@ fn reads_branch_commit_and_normalized_repo_url() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn detached_head_reports_commit_without_branch() {
     let repo = tempfile::tempdir().unwrap();
@@ -91,6 +93,7 @@ fn detached_head_reports_commit_without_branch() {
     assert_eq!(context.branch, None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn omits_repo_url_without_origin() {
     let repo = tempfile::tempdir().unwrap();
@@ -102,6 +105,7 @@ fn omits_repo_url_without_origin() {
     assert_eq!(context.commit.as_deref(), Some(sha.as_str()));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn keeps_ssh_remote_url_verbatim_when_unnormalizable() {
     let repo = tempfile::tempdir().unwrap();
@@ -119,12 +123,14 @@ fn keeps_ssh_remote_url_verbatim_when_unnormalizable() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn returns_none_outside_a_git_repo() {
     let dir = tempfile::tempdir().unwrap();
     assert_eq!(capture_git_context(dir.path()), None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn fresh_repo_without_commits_still_reports_branch() {
     let repo = tempfile::tempdir().unwrap();
@@ -135,6 +141,7 @@ fn fresh_repo_without_commits_still_reports_branch() {
     assert_eq!(context.commit, None);
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn dirty_tree_does_not_change_capture() {
     let repo = tempfile::tempdir().unwrap();
@@ -167,6 +174,7 @@ fn dirty_tree_does_not_change_capture() {
 /// parses into the same Rust git context, wire shape included. The line below is the verbatim first
 /// line of `~/.prime/sessions/<id>.jsonl` produced by `prime-agent -p --session-dir ... "say hi"`
 /// in that repo (the header is written before any model call).
+#[pa_test_scratch::pa_test]
 #[test]
 fn ts_binary_session_header_round_trips() {
     let ts_header = concat!(
@@ -202,6 +210,7 @@ fn ts_binary_session_header_round_trips() {
 
 // Session git-state lifecycle
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn session_header_captures_git_context() {
     let repo = tempfile::tempdir().unwrap();
@@ -233,6 +242,7 @@ fn session_header_captures_git_context() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn no_git_state_entry_when_nothing_changed() {
     let repo = tempfile::tempdir().unwrap();
@@ -254,6 +264,7 @@ fn no_git_state_entry_when_nothing_changed() {
         .any(|entry| matches!(entry, FileEntry::GitState { .. })));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn records_git_state_when_commit_changes() {
     let repo = tempfile::tempdir().unwrap();
@@ -289,6 +300,7 @@ fn records_git_state_when_commit_changes() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn re_records_git_state_on_branch_without_it_on_active_path() {
     let repo = tempfile::tempdir().unwrap();
@@ -314,6 +326,7 @@ fn re_records_git_state_on_branch_without_it_on_active_path() {
         .is_some());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn git_state_entries_stay_out_of_llm_context() {
     let repo = tempfile::tempdir().unwrap();

@@ -426,6 +426,7 @@ mod tests {
     /// The close paths abort every live run and wait for the cancelled events to
     /// queue: the settle returns only after the terminal frame reached the pump.
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn shutdown_settle_queues_the_cancelled_events() {
         let pump = Arc::new(EventPump::new());
         let mut receiver = pump.subscribe();
@@ -465,6 +466,7 @@ mod tests {
     /// A close owns the registry's tail: a racing start is rejected instead of
     /// being admitted into a worker about to exit (its pane would wedge).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn start_during_the_close_is_rejected() {
         let pump = Arc::new(EventPump::new());
         let manager = SideQuestionManager::new(
@@ -490,6 +492,7 @@ mod tests {
     /// The detach abort keeps the registry entry until the run's terminal
     /// cancelled event queued (a detach racing a close must not empty the registry).
     #[tokio::test]
+    #[pa_test_scratch::pa_test]
     async fn detach_abort_settles_the_entry_it_aborts() {
         let pump = Arc::new(EventPump::new());
         let mut receiver = pump.subscribe();
@@ -536,6 +539,7 @@ mod tests {
     /// stale entry (the probe runs without awaiting, so the multi-thread
     /// flavor is required — a current-thread runtime would deadlock).
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    #[pa_test_scratch::pa_test]
     async fn same_id_restart_after_the_cancelled_event_is_admitted() {
         let pump = Arc::new(EventPump::new());
         let mut receiver = pump.subscribe();

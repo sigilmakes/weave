@@ -201,6 +201,7 @@ mod tests {
         .expect("descriptor json")
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_subagent_names_its_parent_by_active_session_id() {
         let metadata = json!({
@@ -214,6 +215,7 @@ mod tests {
         assert!(!child_names_parent(&child, "another-root"));
     }
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn a_top_level_session_never_matches_a_parent() {
         // No runtime metadata: a plain top-level session create.

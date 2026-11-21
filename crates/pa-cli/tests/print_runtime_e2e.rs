@@ -36,6 +36,7 @@ fn run(args: &[&str], script: &serde_json::Value) -> (String, String, i32) {
     )
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_text_output_matches_the_scripted_response() {
     let script = serde_json::json!({ "responses": ["first answer"] });
@@ -45,6 +46,7 @@ fn print_mode_text_output_matches_the_scripted_response() {
     assert!(stderr.is_empty());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_multi_prompt_consumes_responses_in_order() {
     let script = serde_json::json!({ "responses": ["first answer", "second answer"] });
@@ -53,6 +55,7 @@ fn print_mode_multi_prompt_consumes_responses_in_order() {
     assert_eq!(stdout, "second answer\n");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_json_streams_ts_shaped_events() {
     let script = serde_json::json!({ "responses": ["json answer"] });
@@ -90,6 +93,7 @@ fn print_mode_json_streams_ts_shaped_events() {
     assert_eq!(*types.last().unwrap(), "agent_end");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_reports_provider_errors_as_exit_one() {
     // No responses queued: the faux provider returns an error stop reason.
@@ -156,6 +160,7 @@ fn read_entries(path: &std::path::Path) -> Vec<serde_json::Value> {
 
 /// The goal cap's text-mode end state: the capped run exits 1 with the reason, and a later
 /// resume of the capped session answers normally — the persisted cap never swallows a run.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_goal_cap_reports_the_reason_and_exits_one() {
     let home = isolated_home();
@@ -204,6 +209,7 @@ fn leased_session_files(home: &std::path::Path) -> Vec<String> {
     leased
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_persists_a_session_file_by_default() {
     let home = isolated_home();
@@ -239,6 +245,7 @@ fn print_mode_persists_a_session_file_by_default() {
     assert_eq!(entries[0]["cwd"], home.path().display().to_string());
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_no_session_writes_nothing() {
     let home = isolated_home();
@@ -251,6 +258,7 @@ fn print_mode_no_session_writes_nothing() {
 
 /// A regular file at the lease root forces EEXIST before any persistent admission.
 /// Exercise all initial in-process modes with a real, test-owned HTTP provider.
+#[pa_test_scratch::pa_test]
 #[test]
 fn fresh_lease_failure_rejects_print_json_and_rpc_before_model_http_or_journal_append() {
     use std::io::{Read, Write};
@@ -361,6 +369,7 @@ fn fresh_lease_failure_rejects_print_json_and_rpc_before_model_http_or_journal_a
     }
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn fresh_lease_failure_does_not_block_no_session_mode() {
     let home = isolated_home();
@@ -379,6 +388,7 @@ fn fresh_lease_failure_does_not_block_no_session_mode() {
     assert_eq!(std::fs::read(blocker).unwrap(), b"not a directory");
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_resume_appends_to_the_same_session_file() {
     let home = isolated_home();
@@ -418,6 +428,7 @@ fn print_mode_resume_appends_to_the_same_session_file() {
     assert!(texts.contains(&"second"));
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_continue_recent_reuses_the_latest_session() {
     let home = isolated_home();
@@ -439,6 +450,7 @@ fn print_mode_continue_recent_reuses_the_latest_session() {
 
 /// A finished print run releases the session file's runtime lease: the run
 /// exits and no owner record survives under `session-leases`.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_releases_the_session_lease_when_the_run_ends() {
     let home = isolated_home();
@@ -454,6 +466,7 @@ fn print_mode_releases_the_session_lease_when_the_run_ends() {
     );
 }
 
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_resume_unknown_selector_fails_with_browse_hint() {
     let home = isolated_home();
@@ -473,6 +486,7 @@ fn print_mode_resume_unknown_selector_fails_with_browse_hint() {
 }
 
 /// `--thinking max` on a reasoning faux model must persist the clamped effective level.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_thinking_max_persists_the_clamped_high_level() {
     let home = isolated_home();
@@ -494,6 +508,7 @@ fn print_mode_thinking_max_persists_the_clamped_high_level() {
 }
 
 /// The clamp also applies on the way down: a non-reasoning model maps any requested level to off.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_thinking_clamps_to_off_for_non_reasoning_models() {
     let home = isolated_home();
@@ -549,6 +564,7 @@ const OVERFLOW_RECOVERY_FAILED: &str = "Context overflow recovery failed after o
 /// The full compact-and-retry cycle (verified against the TS binary): an
 /// overflow drops the failed turn, compacts once, re-issues, and the second
 /// overflow ends the run, exit 1.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_overflow_compacts_retries_once_then_reports() {
     let home = isolated_home();
@@ -602,6 +618,7 @@ fn print_mode_overflow_compacts_retries_once_then_reports() {
 }
 
 /// The retry on the compacted context recovers the turn (exit 0).
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_overflow_retry_recovers_the_turn() {
     let home = isolated_home();
@@ -637,6 +654,7 @@ fn print_mode_overflow_retry_recovers_the_turn() {
 
 /// A skipped recovery (nothing compactable) surfaces the warning row and
 /// exits 0 — the TS text-mode contract.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_overflow_skip_surfaces_the_warning_row() {
     let home = isolated_home();
@@ -664,6 +682,7 @@ fn print_mode_overflow_skip_surfaces_the_warning_row() {
 /// against the TS binary): the `compaction_start`/`compaction_end` pair with
 /// `willRetry: true`, the retried turn without a new user message,
 /// and the reported failure surface.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_overflow_json_streams_the_compaction_events() {
     let home = isolated_home();
@@ -762,6 +781,7 @@ fn print_mode_overflow_json_streams_the_compaction_events() {
 /// The stale-overflow recovery across runs (the `--continue` shape,
 /// verified against the TS binary): the resumed run's pre-turn arm compacts
 /// the stale overflow before the admitted prompt.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_stale_overflow_recovers_before_the_next_prompt_after_a_resume() {
     let home = isolated_home();
@@ -808,6 +828,7 @@ fn print_mode_stale_overflow_recovers_before_the_next_prompt_after_a_resume() {
 
 /// The streaming deltas (TS `message_update`): the wire carries the slim
 /// deltas (`partial` never rides the wire).
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_json_streams_the_message_update_deltas() {
     let home = isolated_home();
@@ -862,6 +883,7 @@ fn print_mode_json_streams_the_message_update_deltas() {
 /// The threshold compaction arm (TS `_checkCompaction` Case 3): a settled
 /// turn crossing the reserve headroom streams the `compaction_start`/
 /// `compaction_end` pair with the `threshold` reason.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_json_streams_the_threshold_compaction_pair() {
     let home = isolated_home();
@@ -967,6 +989,7 @@ fn run_in_home_cwd(
 /// TS `createSessionManager`'s fork arm: `--fork <selector>` copies the
 /// source session into a NEW file (TS `SessionManager.forkFrom`), the run
 /// continues the copy, and the fork header parents at the source.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_fork_copies_the_session_into_a_new_file() {
     let home = isolated_home();
@@ -1021,6 +1044,7 @@ fn print_mode_fork_copies_the_session_into_a_new_file() {
 
 /// `--fork` is the cross-project path: another project's session forks
 /// into the CURRENT cwd (the TS GLOBAL arm); `--resume` refuses it.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_fork_imports_a_global_session_into_this_cwd() {
     let home = isolated_home();
@@ -1091,6 +1115,7 @@ fn print_mode_fork_imports_a_global_session_into_this_cwd() {
 
 /// TS `forkFrom`'s failure contract: an empty source file errors with the
 /// TS message, and `--fork` still refuses its conflicting flags.
+#[pa_test_scratch::pa_test]
 #[test]
 fn print_mode_fork_rejects_empty_sources_and_conflicting_flags() {
     let home = isolated_home();

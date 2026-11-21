@@ -430,6 +430,7 @@ fn run_promote_gates(cwd: &Path, steps: &[Step]) -> (String, serde_json::Value) 
 
 /// Native release jobs must exercise the current channel installer as well
 /// as the retained TypeScript updater before their artifacts reach promotion.
+#[pa_test_scratch::pa_test]
 #[test]
 fn native_release_jobs_gate_fresh_and_legacy_installation() {
     let text = fs::read_to_string(repo_root().join(".github/upstream-workflows/release.yml"))
@@ -465,6 +466,7 @@ fn native_release_jobs_gate_fresh_and_legacy_installation() {
 /// its own runner (never inside build-gnu's linux container), the livecheck
 /// names the `.exe` binary, promote needs the job, and the channel
 /// completeness gate refuses a manifest that dropped a platform row.
+#[pa_test_scratch::pa_test]
 #[test]
 fn windows_build_job_contract() {
     let text = fs::read_to_string(repo_root().join(".github/upstream-workflows/release.yml"))
@@ -550,6 +552,7 @@ fn windows_build_job_contract() {
 /// The operator hit exactly that on a real box (2026-10-06), so the
 /// crt-static pin is the build step's own env: only the SHIPPED binary is
 /// static, and never through Cargo.toml, whose dev builds stay dynamic.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_windows_build_links_the_static_vc_runtime() {
     let text = fs::read_to_string(repo_root().join(".github/upstream-workflows/release.yml"))
@@ -611,6 +614,7 @@ fn the_windows_build_links_the_static_vc_runtime() {
 
 /// The structural gate: one count-independent download-all step, pinned to
 /// `incoming`, followed by the normalize step before the per-artifact gates.
+#[pa_test_scratch::pa_test]
 #[test]
 fn promote_download_layout_contract() {
     let steps = promote_steps();
@@ -680,6 +684,7 @@ fn promote_download_layout_contract() {
 
 /// The promote gate accepts a usable historical installer layout and rejects
 /// an archive missing a required asset before any release is published.
+#[pa_test_scratch::pa_test]
 #[test]
 fn historical_native_updater_gate_requires_the_compatibility_assets() {
     let Some(_python3) = python3_binary((3, 9)) else {
@@ -712,6 +717,7 @@ fn historical_native_updater_gate_requires_the_compatibility_assets() {
 
 /// A one-target release: the single artifact lands flat in `incoming/` and
 /// the gates must still verify its hashes and attach a manifest.
+#[pa_test_scratch::pa_test]
 #[test]
 fn single_artifact_release_finds_the_downloaded_manifest() {
     let Some(_python3) = python3_binary((3, 12)) else {
@@ -758,6 +764,7 @@ fn single_artifact_release_finds_the_downloaded_manifest() {
 /// carry all five binaries (the Windows row included), and every
 /// platform's payload unpacks under its target triple with the staged
 /// binary name (`prime-agent.exe` on the MSVC target).
+#[pa_test_scratch::pa_test]
 #[test]
 fn five_target_release_finds_all_downloaded_manifests() {
     let Some(_python3) = python3_binary((3, 12)) else {
@@ -806,6 +813,7 @@ fn five_target_release_finds_all_downloaded_manifests() {
 }
 
 /// A release whose artifacts never arrived must fail loudly at the normalize gate.
+#[pa_test_scratch::pa_test]
 #[test]
 fn zero_artifacts_fail_loudly_instead_of_verifying_nothing() {
     let Some(_python3) = python3_binary((3, 0)) else {
@@ -831,6 +839,7 @@ fn zero_artifacts_fail_loudly_instead_of_verifying_nothing() {
 
 /// Production installer updates require a stable release on both platforms;
 /// beta releases publish only the explicitly selected beta installer pair.
+#[pa_test_scratch::pa_test]
 #[test]
 fn production_installers_are_published_only_by_stable_releases() {
     let text = fs::read_to_string(repo_root().join(".github/upstream-workflows/release.yml"))
@@ -890,6 +899,7 @@ fn production_installers_are_published_only_by_stable_releases() {
 /// first Rust stable cut re-publishes latest.json; this pins the
 /// emission's half of that contract — when that cut lands, the stable
 /// manifest carries the Windows row under `binaries_v2`.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_channel_manifest_carries_the_windows_row_on_both_channels() {
     let Some(_python3) = python3_binary((3, 12)) else {
@@ -1041,6 +1051,7 @@ fn the_channel_manifest_carries_the_windows_row_on_both_channels() {
 /// the completeness gate refuses the release and names the missing
 /// platform — a Windows install stranded on the old channel version is
 /// worse than a failed cut.
+#[pa_test_scratch::pa_test]
 #[test]
 fn the_channel_manifest_refuses_a_release_missing_the_windows_row() {
     let Some(_python3) = python3_binary((3, 12)) else {

@@ -25,6 +25,7 @@ fn refusal(owner: Option<&str>, executable: Option<&Path>) -> Option<&'static st
 mod tests {
     use super::*;
 
+    #[pa_test_scratch::pa_test]
     #[test]
     fn nix_owner_and_store_payloads_refuse_self_update_without_prefix_collisions() {
         assert_eq!(

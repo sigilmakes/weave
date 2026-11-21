@@ -62,6 +62,7 @@ async fn created_worker() -> Arc<Worker> {
 
 /// `heartbeat` is present and null (no cron store on this worker).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_connection_state_matches_the_ts_shape() {
     let worker = created_worker().await;
     let response = worker
@@ -120,6 +121,7 @@ async fn get_connection_state_matches_the_ts_shape() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_rlm_children_carries_the_sequence() {
     let worker = created_worker().await;
     let response = worker
@@ -145,6 +147,7 @@ async fn get_rlm_children_carries_the_sequence() {
 
 /// Child attributions move the split between `ownUsage` and `totalUsage`.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_context_tree_matches_the_ts_root_node() {
     let worker = created_worker().await;
     let response = worker
@@ -185,6 +188,7 @@ async fn get_context_tree_matches_the_ts_root_node() {
 /// own row (input 2690, cost $0, `totalTokens` clamped to zero); `totalUsage`
 /// carries the attributed child spend (input 52898, cost $0.0089957).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_context_tree_folds_the_captured_attributions() {
     let root = std::env::temp_dir().join(format!("pa-worker-af-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&root).unwrap();
@@ -239,6 +243,7 @@ async fn get_context_tree_folds_the_captured_attributions() {
 /// models mid-conversation accumulates the per-model costs INCLUDING the
 /// switch's cache-write burst (the cost blocks are `calculate_cost` records).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_context_tree_breaks_own_usage_down_by_model() {
     let root = std::env::temp_dir().join(format!("pa-worker-bm-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&root).unwrap();
@@ -329,6 +334,7 @@ async fn get_context_tree_breaks_own_usage_down_by_model() {
 /// makes the buckets sum past `ownUsage`, so `ownUsageByModel` is omitted
 /// and the display degrades to the plain totals instead of overstating the node.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_context_tree_omits_the_breakdown_when_an_attribution_exceeds_its_bucket() {
     let root = std::env::temp_dir().join(format!("pa-worker-bmx-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&root).unwrap();
@@ -387,6 +393,7 @@ async fn get_context_tree_omits_the_breakdown_when_an_attribution_exceeds_its_bu
 /// The control for the omission rule: a fitting attribution reconciles and the breakdown
 /// stays served.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_context_tree_keeps_the_breakdown_when_an_attribution_fits_its_bucket() {
     let root = std::env::temp_dir().join(format!("pa-worker-bmf-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&root).unwrap();
@@ -441,6 +448,7 @@ async fn get_context_tree_keeps_the_breakdown_when_an_attribution_fits_its_bucke
 /// `get_context_tree` surfaces the persisted child sessions: idle, settled, and
 /// restart-orphaned subagents all appear, with real usage and grandchildren.
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_context_tree_lists_persisted_children() {
     let root = std::env::temp_dir().join(format!("pa-worker-ct-{}", uuid::Uuid::new_v4()));
     let agent_dir = root.join("agent");
@@ -557,6 +565,7 @@ async fn get_context_tree_lists_persisted_children() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn commands_and_resources_match_the_empty_loader_shape() {
     let worker = created_worker().await;
     let response = worker
@@ -581,6 +590,7 @@ async fn commands_and_resources_match_the_empty_loader_shape() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn get_session_context_matches_the_ts_context_shape() {
     let worker = created_worker().await;
     let response = worker
@@ -629,6 +639,7 @@ async fn get_session_context_matches_the_ts_context_shape() {
 /// No prompt (empty string, the TS key present) and no tools (the `toolDefinition`
 /// key omitted, like the TS `undefined` field).
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn system_prompt_and_tool_definition_match_the_ts_shapes() {
     let worker = created_worker().await;
     let response = worker
@@ -663,6 +674,7 @@ async fn system_prompt_and_tool_definition_match_the_ts_shapes() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn rlm_max_depth_status_matches_the_ts_shape() {
     let worker = created_worker().await;
     let response = worker
@@ -679,6 +691,7 @@ async fn rlm_max_depth_status_matches_the_ts_shape() {
 }
 
 #[tokio::test]
+#[pa_test_scratch::pa_test]
 async fn model_catalog_and_available_models_match_the_ts_shapes() {
     let dir = tempfile::tempdir().expect("tempdir");
     std::fs::create_dir_all(dir.path().join("agent")).expect("agent dir");
