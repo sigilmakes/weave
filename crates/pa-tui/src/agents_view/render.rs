@@ -3,8 +3,8 @@
 //! headless renderer.
 use super::{
     build_layout, mpsc, pad_line, section_title, str_width, truncate_text, AgentsStep,
-    AgentsViewMode, AgentsViewRow, AgentsViewUiMode, Composer, Duration, Line, Result, RowKind,
-    RowLayout, Section, Theme, ThemeColor, UiInput, Value,
+    AgentsViewMode, AgentsViewRow, AgentsViewUiMode, Composer, Line, Result, RowKind, RowLayout,
+    Section, Theme, ThemeColor, UiInput, Value,
 };
 
 impl AgentsViewMode {
@@ -979,8 +979,9 @@ impl Renderer {
                                 }
                             }
                             AgentsStep::WaitSettle { timeout_ms } => {
-                                let _ = ui_tx.send(UiInput::Settled);
-                                tokio::time::sleep(Duration::from_millis(timeout_ms)).await;
+                                if ui_tx.send(UiInput::WaitSettle { timeout_ms }).is_err() {
+                                    return;
+                                }
                             }
                             AgentsStep::WaitRender { needle, timeout_ms } => {
                                 if ui_tx

@@ -130,7 +130,7 @@ pub enum AgentsStep {
     Type(String),
     /// One raw key id (e.g. "down", "enter", "ctrl+c").
     Key(String),
-    /// Hold until the roster settles (or the deadline passes).
+    /// Hold until the roster, saved catalog, and preceding actions have landed and rendered.
     WaitSettle { timeout_ms: u64 },
     /// Hold until a frame rendered after this step contains `needle` (bounded by `timeout_ms`):
     /// the condition wait for daemon-driven rows.
@@ -204,7 +204,9 @@ enum UiInput {
     /// The headless plan's `Notify` step, popped in plan order.
     Notify(std::sync::Arc<tokio::sync::Notify>),
     Resize,
-    Settled,
+    WaitSettle {
+        timeout_ms: u64,
+    },
     Done,
     /// The saved-catalog fetch landed: the Inactive section rebuilds from these rows.
     SavedLoaded {
@@ -758,58 +760,97 @@ async fn run_agents_view_surface(
     // arming (the condition scans only post-arming frames).
     let mut wait_render_deadline: Option<tokio::time::Instant> = None;
     let mut wait_render_baseline: usize = 0;
+    let mut wait_settle_deadline: Option<tokio::time::Instant> = None;
+    let mut headless_failure = None;
+    let mut outstanding_actions = 0;
 
     while mode.running {
         let mut redraw = false;
+        pending.extend(std::iter::from_fn(|| ui_rx.try_recv().ok()));
         // `WaitRender` holds the queued plan batch until a post-arming frame contains the needle;
         // the daemon-driven answers jump the hold (the promotion below), or the catalog's landing
         // would wedge the wait on its own condition.
         let mut barrier_holds = false;
-        if wait_render_deadline.is_some() {
+        if matches!(
+            pending.first(),
+            Some(UiInput::WaitSettle { .. } | UiInput::WaitRender { .. })
+        ) {
             if let Some(index) = pending.iter().position(is_daemon_answer) {
                 let input = pending.remove(index);
                 pending.insert(0, input);
             }
         }
-        while let Some(UiInput::WaitRender { needle, timeout_ms }) = pending.first() {
-            let needle = needle.clone();
-            let timeout_ms = *timeout_ms;
-            let frames = renderer.headless_frames();
-            if let Some(deadline) = wait_render_deadline {
-                let satisfied = frames.is_some_and(|frames| {
-                    frames
-                        .get(wait_render_baseline..)
-                        .unwrap_or_default()
-                        .iter()
-                        .any(|frame| frame.contains(&needle))
+        loop {
+            let previous_pending = pending.len();
+            while let Some(UiInput::WaitSettle { timeout_ms }) = pending.first() {
+                if catalog_request.is_none() && saved_flush.is_none() && outstanding_actions == 0 {
+                    wait_settle_deadline = None;
+                    pending.remove(0);
+                    continue;
+                }
+                let deadline = *wait_settle_deadline.get_or_insert_with(|| {
+                    tokio::time::Instant::now() + Duration::from_millis(*timeout_ms)
                 });
-                if satisfied {
-                    wait_render_deadline = None;
-                    pending.remove(0);
-                    continue;
+                if tokio::time::Instant::now() >= deadline {
+                    headless_failure = Some(format!(
+                        "WaitSettle timed out waiting for the rendered saved catalog and preceding actions: catalog_request={catalog_request:?}, saved_flush={saved_flush:?}, unfinished_actions={outstanding_actions}, last_frame={:?}",
+                        renderer.headless_frames().and_then(|frames| frames.last()),
+                    ));
+                    mode.running = false;
+                    break;
                 }
-                if tokio::time::Instant::now() > deadline {
-                    wait_render_deadline = None;
-                    pending.remove(0);
-                    // The deadline pops the hold and the plan proceeds; the status note reports the
-                    // wait, never the needle — quoting it would satisfy the failed condition.
-                    mode.set_status("timed out waiting for the headless render condition");
-                    redraw = true;
-                    continue;
-                }
-            } else {
-                let holds_now = frames.is_some_and(|frames| {
-                    frames.last().is_some_and(|frame| frame.contains(&needle))
-                });
-                if holds_now {
-                    pending.remove(0);
-                    continue;
-                }
-                wait_render_baseline = frames.map_or(0, <[String]>::len);
-                wait_render_deadline =
-                    Some(tokio::time::Instant::now() + Duration::from_millis(timeout_ms));
+                barrier_holds = true;
+                break;
             }
-            barrier_holds = true;
+            if !mode.running {
+                break;
+            }
+            while let Some(UiInput::WaitRender { needle, timeout_ms }) = pending.first() {
+                let needle = needle.clone();
+                let timeout_ms = *timeout_ms;
+                let frames = renderer.headless_frames();
+                if let Some(deadline) = wait_render_deadline {
+                    let satisfied = frames.is_some_and(|frames| {
+                        frames
+                            .get(wait_render_baseline..)
+                            .unwrap_or_default()
+                            .iter()
+                            .any(|frame| frame.contains(&needle))
+                    });
+                    if satisfied {
+                        wait_render_deadline = None;
+                        pending.remove(0);
+                        continue;
+                    }
+                    if tokio::time::Instant::now() > deadline {
+                        wait_render_deadline = None;
+                        pending.remove(0);
+                        // The deadline pops the hold and the plan proceeds; the status note reports the
+                        // wait, never the needle — quoting it would satisfy the failed condition.
+                        mode.set_status("timed out waiting for the headless render condition");
+                        redraw = true;
+                        continue;
+                    }
+                } else {
+                    let holds_now = frames.is_some_and(|frames| {
+                        frames.last().is_some_and(|frame| frame.contains(&needle))
+                    });
+                    if holds_now {
+                        pending.remove(0);
+                        continue;
+                    }
+                    wait_render_baseline = frames.map_or(0, <[String]>::len);
+                    wait_render_deadline =
+                        Some(tokio::time::Instant::now() + Duration::from_millis(timeout_ms));
+                }
+                barrier_holds = true;
+                break;
+            }
+            if barrier_holds || pending.len() == previous_pending {
+                break;
+            }
+        }
+        if !mode.running {
             break;
         }
         let popped = if barrier_holds {
@@ -820,6 +861,7 @@ async fn run_agents_view_surface(
         if let Some(input) = popped {
             match input {
                 UiInput::Key(key) => {
+                    let previous_dispatches = action_dispatches.len();
                     mode.handle_key(&key);
                     // The parked suggestion request materializes once the key's edits
                     // landed.
@@ -875,6 +917,7 @@ async fn run_agents_view_surface(
                     if let Some((key, active_session_id)) = mode.pending_headline.take() {
                         spawn_headline_fetch(&client, ui_tx.clone(), key, active_session_id);
                     }
+                    outstanding_actions += action_dispatches.len() - previous_dispatches;
                 }
                 // A plain click opens the row under it; drags and wheel turns are consumed inside.
                 UiInput::Mouse(event) => {
@@ -884,17 +927,31 @@ async fn run_agents_view_surface(
                     mode.handle_paste(&text);
                 }
                 UiInput::Notify(notify) => notify.notify_one(),
-                // `Settled` is the plan's own settle no-op; `WaitRender` never reaches the batch
-                // pop (the pre-pass at the loop head owns it).
-                UiInput::Resize | UiInput::Settled | UiInput::WaitRender { .. } => {}
+                UiInput::Resize => {}
+                UiInput::WaitSettle { timeout_ms } => {
+                    headless_failure = Some(format!(
+                        "WaitSettle reached ordinary input dispatch without evaluation: timeout_ms={timeout_ms}, last_frame={:?}",
+                        renderer.headless_frames().and_then(|frames| frames.last()),
+                    ));
+                    mode.running = false;
+                }
+                UiInput::WaitRender { needle, timeout_ms } => {
+                    headless_failure = Some(format!(
+                        "WaitRender reached ordinary input dispatch without evaluation: needle={needle:?}, timeout_ms={timeout_ms}, last_frame={:?}",
+                        renderer.headless_frames().and_then(|frames| frames.last()),
+                    ));
+                    mode.running = false;
+                }
                 UiInput::DeleteResult {
                     message,
                     tone,
                     deleted_saved_path,
                 } => {
+                    outstanding_actions -= 1;
                     mode.delete_result(&message, tone, deleted_saved_path);
                 }
                 UiInput::RenameResult { rename, outcome } => {
+                    outstanding_actions -= 1;
                     mode.rename_result(rename, outcome);
                 }
                 UiInput::HeadlineResult { key, result } => {
@@ -907,9 +964,11 @@ async fn run_agents_view_surface(
                     mode.set_status(&text);
                 }
                 UiInput::ReplyResult { key, outcome } => {
+                    outstanding_actions -= 1;
                     mode.reply_result(&key, outcome);
                 }
                 UiInput::KillResult { key, outcome } => {
+                    outstanding_actions -= 1;
                     mode.kill_result(&key, outcome);
                 }
                 // The saved-catalog scan landed: the Inactive section builds now.
@@ -1047,7 +1106,7 @@ async fn run_agents_view_surface(
                     // The render barrier's deadline: an armed hold whose needle never lands
                     // still pops here, so a quiet daemon cannot wedge the loop.
                     () = async {
-                        match wait_render_deadline {
+                        match wait_render_deadline.or(wait_settle_deadline) {
                             Some(at) => tokio::time::sleep_until(at).await,
                             None => std::future::pending().await,
                         }
@@ -1169,6 +1228,12 @@ async fn run_agents_view_surface(
         client.close();
         None
     };
+    if let Some(failure) = headless_failure {
+        if let Some(link) = link {
+            link.client.close();
+        }
+        anyhow::bail!(failure);
+    }
     Ok(AgentsViewRun {
         link,
         outcome: AgentsViewOutcome {
