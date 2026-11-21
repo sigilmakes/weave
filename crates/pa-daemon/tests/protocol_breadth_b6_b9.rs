@@ -609,6 +609,8 @@ fn disconnect_mid_write_releases_the_held_input_pause() {
         "p-2",
         &json!({ "type": "prompt_and_wait", "activeSessionId": session_id, "message": "queued behind", "admissionId": "adm-1" }),
     );
+    let mut lines = std::collections::VecDeque::new();
+    wait_for_queued_prompt(&mut a, &session_id, &mut lines);
     a.send_command(
         "pa-1",
         &json!({ "type": "acquire_session_input_pause", "activeSessionId": session_id, "leaseKey": "gate" }),
@@ -721,63 +723,44 @@ fn wave_b9_session_navigation_wire_shapes() {
     assert_eq!(response["success"], false, "{response}");
 }
 
-/// Cancel `admission_id` once the dispatcher has registered it. TS registers an admission at
-/// parse time; this port registers in the dispatch task, so a cancel that lands in that window
-/// answers "unknown" and is retried here instead of racing one fixed sleep. Responses that
-/// arrive before the cancel's own response are appended to `lines`.
-fn cancel_owned_admission(
+fn wait_for_queued_prompt(
     client: &mut Client,
     session_id: &str,
-    admission_id: &str,
-    lines: &mut std::collections::VecDeque<serde_json::Value>,
-) -> serde_json::Value {
+    lines: &mut std::collections::VecDeque<Value>,
+) {
     let deadline = Instant::now() + Duration::from_secs(5);
-    let mut attempt = 0;
     loop {
-        attempt += 1;
-        let id = format!("cancel-{admission_id}-{attempt}");
         client.send_command(
-            &id,
-            &json!({ "type": "cancel_prompt_admission", "activeSessionId": session_id, "admissionId": admission_id, "cancelOwned": true }),
+            "queue-ready",
+            &json!({ "type": "get_queue", "activeSessionId": session_id }),
         );
-        // The cancelled wait's failure response may land before the cancel's own response
-        // (the dropped queue item settles the wait), so the read buffers instead of dropping.
-        let (response, buffered) = client.read_response_and_lines(&id);
+        let (response, buffered) = client.read_response_and_lines("queue-ready");
         lines.extend(buffered);
-        if response["data"] == json!({ "status": "owned" }) {
-            return response;
+        assert_eq!(response["success"], true, "{response}");
+        if response["data"]["followUp"] == json!(["queued behind"]) {
+            break;
         }
-        assert_eq!(
-            response["data"],
-            json!({ "status": "unknown" }),
-            "{response}"
-        );
         assert!(
             Instant::now() < deadline,
-            "the admission never registered: {response}"
+            "the admitted prompt never queued: {response}"
         );
-        std::thread::sleep(Duration::from_millis(10));
     }
 }
 
-#[pa_test_scratch::pa_test]
-#[test]
-fn wave_b9_prompt_admission_wire_shapes() {
-    let _serial = serial_lock();
-    let dir = tempfile::TempDir::new().expect("temp dir");
-    let agent_dir = dir.path().join("agent");
-    std::fs::create_dir_all(&agent_dir).expect("agent dir");
-
+fn slow_admission_session(
+    dir: &std::path::Path,
+    agent_dir: &std::path::Path,
+) -> (Daemon, Client, String) {
     // A slow scripted session: the first turn stays busy so an admitted prompt queues behind it
     // (the deterministic cancel window).
-    let socket = dir.path().join("adm.sock");
-    let _daemon = spawn_daemon(&socket, &agent_dir);
+    let socket = dir.join("adm.sock");
+    let daemon = spawn_daemon(&socket, agent_dir);
     let (mut client, _hello) = Client::connect(&socket);
-    let script_path = dir.path().join("slow.json");
+    let script_path = dir.join("slow.json");
     std::fs::write(
         &script_path,
         json!({ "responses": [
-            { "text": "slow", "delayMs": 400 },
+            { "text": "slow", "delayMs": 60_000 },
             { "text": "second", "delayMs": 10 },
         ] })
         .to_string(),
@@ -788,7 +771,7 @@ fn wave_b9_prompt_admission_wire_shapes() {
         &json!({
             "type": "create",
             "config": {
-                "cwd": dir.path().to_string_lossy(),
+                "cwd": dir.to_string_lossy(),
                 "sessionDir": agent_dir.join("sessions").to_string_lossy(),
                 "script": script_path.to_string_lossy(),
             },
@@ -801,6 +784,19 @@ fn wave_b9_prompt_admission_wire_shapes() {
         .or_else(|| created["data"]["sessionId"].as_str())
         .expect("session id")
         .to_string();
+
+    (daemon, client, session_id)
+}
+
+#[pa_test_scratch::pa_test]
+#[test]
+fn wave_b9_prompt_admission_wire_shapes() {
+    let _serial = serial_lock();
+    let dir = tempfile::TempDir::new().expect("temp dir");
+    let agent_dir = dir.path().join("agent");
+    std::fs::create_dir_all(&agent_dir).expect("agent dir");
+
+    let (_daemon, mut client, session_id) = slow_admission_session(dir.path(), &agent_dir);
 
     client.send_command(
         "c-0",
@@ -832,8 +828,15 @@ fn wave_b9_prompt_admission_wire_shapes() {
     // The queued prompt committed at admission: cancelOwned withdraws that item without
     // aborting the unrelated slow turn.
     let mut lines = std::collections::VecDeque::new();
-    let response = cancel_owned_admission(&mut client, &session_id, "adm-1", &mut lines);
+    wait_for_queued_prompt(&mut client, &session_id, &mut lines);
+    client.send_command(
+        "cancel-adm-1",
+        &json!({ "type": "cancel_prompt_admission", "activeSessionId": session_id, "admissionId": "adm-1", "cancelOwned": true }),
+    );
+    let (response, buffered) = client.read_response_and_lines("cancel-adm-1");
+    lines.extend(buffered);
     assert_eq!(response["success"], true, "{response}");
+    assert_eq!(response["data"], json!({ "status": "owned" }), "{response}");
     // The cancelled prompt_and_wait fails its wait (the dropped queue item
     // never completes).
     let response = match lines
@@ -845,7 +848,6 @@ fn wave_b9_prompt_admission_wire_shapes() {
     };
     assert_eq!(response["success"], false, "{response}");
 
-    std::thread::sleep(Duration::from_millis(700));
     client.send_command(
         "q-1",
         &json!({ "type": "get_queue", "activeSessionId": session_id }),
@@ -853,7 +855,35 @@ fn wave_b9_prompt_admission_wire_shapes() {
     let response = client.read_response("q-1");
     assert_eq!(response["data"]["steering"], json!([]), "{response}");
     assert_eq!(response["data"]["followUp"], json!([]), "{response}");
+    client.send_command(
+        "state-after-cancel",
+        &json!({ "type": "get_state", "activeSessionId": session_id }),
+    );
+    let response = client.read_response("state-after-cancel");
+    assert_eq!(response["data"]["isStreaming"], true, "{response}");
 
+    client.send_command(
+        "abort-slow-turn",
+        &json!({ "type": "abort", "activeSessionId": session_id }),
+    );
+    let response = client.read_response("abort-slow-turn");
+    assert_eq!(response["success"], true, "{response}");
+}
+
+#[pa_test_scratch::pa_test]
+#[test]
+fn wave_b9_non_wait_prompt_admission_wire_shapes() {
+    let _serial = serial_lock();
+    let dir = tempfile::TempDir::new().expect("temp dir");
+    let agent_dir = dir.path().join("agent");
+    std::fs::create_dir_all(&agent_dir).expect("agent dir");
+    let (_daemon, mut client, session_id) = slow_admission_session(dir.path(), &agent_dir);
+
+    client.send_command(
+        "p-1",
+        &json!({ "type": "prompt", "activeSessionId": session_id, "message": "go" }),
+    );
+    let _ = client.read_response("p-1");
     // A non-wait prompt's public admission ends when its success response
     // lands, even if its queued turn has not run yet (TS prompt lifetime).
     client.send_command(
@@ -876,6 +906,13 @@ fn wave_b9_prompt_admission_wire_shapes() {
     );
     let response = client.read_response("c-2");
     assert_eq!(response["data"], json!({ "status": "unknown" }));
+
+    client.send_command(
+        "abort-slow-turn",
+        &json!({ "type": "abort", "activeSessionId": session_id }),
+    );
+    let response = client.read_response("abort-slow-turn");
+    assert_eq!(response["success"], true, "{response}");
 }
 
 #[pa_test_scratch::pa_test]
