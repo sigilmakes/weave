@@ -156,7 +156,7 @@ async fn fresh_capture_skips_until_a_settled_cell_changes_the_namespace() {
 }
 
 #[tokio::test]
-async fn prune_capture_runs_while_over_cap_survivors_live_then_skips_back_to_back() {
+async fn an_over_cap_value_is_skipped_from_the_write_and_survives_in_the_namespace() {
     let dir = tempfile::TempDir::new().expect("temp dir");
     let manifest_path = manifest_path_in(dir.path());
     let Some(options) = test_options(Some(dir.path())) else {
@@ -168,8 +168,8 @@ async fn prune_capture_runs_while_over_cap_survivors_live_then_skips_back_to_bac
         .start(KernelStartOptions::default())
         .await
         .expect("kernel must start");
-    // `big` exceeds the 16MiB per-variable cap: the non-pruning capture
-    // skips it (a live over-cap survivor).
+    // `big` exceeds the 16MiB per-variable write bound: the capture skips it
+    // from the payload and leaves it in the kernel.
     let defined = execute(&manager, "big = \"x\" * (16 * 1024 * 1024 + 1)\nsmall = 1").await;
     assert_eq!(
         defined.status,
@@ -190,49 +190,44 @@ async fn prune_capture_runs_while_over_cap_survivors_live_then_skips_back_to_bac
     );
     assert!(committed.saved.iter().any(|name| name == "small"));
 
-    // The pruning capture must NOT skip: `big` is a live over-cap survivor,
-    // so the prune removes it and reports it — the #227 notice semantics.
-    let pruned = manager
-        .prune_oversized_variables()
-        .await
-        .expect("prune capture");
-    assert_eq!(
-        pruned.pruned.as_deref(),
-        Some(std::slice::from_ref(&"big".to_string())),
-        "the pruning capture must remove the live over-cap survivor"
-    );
-
-    // Back-to-back: nothing settled since the pruning commit and no live
-    // over-cap survivor remains, so the second pruning capture is fresh.
+    // Back-to-back: nothing settled since the commit, so the second capture
+    // replays it and never re-dumps or deletes anything.
     tokio::time::sleep(Duration::from_millis(5)).await;
-    let after_prune = file_bytes(&manifest_path);
-    let fresh_prune = manager
-        .prune_oversized_variables()
-        .await
-        .expect("fresh prune capture");
-    assert_eq!(
-        fresh_prune.pruned, None,
-        "the fresh prune reports nothing left to prune"
-    );
-    assert!(
-        fresh_prune.saved.iter().any(|name| name == "small"),
-        "the fresh prune replays the committed saved list"
-    );
+    let after_commit = file_bytes(&manifest_path);
+    let fresh = manager.snapshot_state().await.expect("fresh capture");
+    assert_eq!(fresh, committed, "the fresh capture replays the commit");
     assert_eq!(
         file_bytes(&manifest_path),
-        after_prune,
-        "the fresh pruning capture must not rewrite the manifest"
+        after_commit,
+        "the fresh capture must not rewrite the manifest"
     );
 
-    // The first prune really removed `big` from the live namespace (this
-    // check settles a cell, so it must come after the fresh-skip oracle).
-    let gone = execute(&manager, "big").await;
+    // The over-cap value is still live: the snapshot only left it out.
+    let live = execute(&manager, "len(big)").await;
+    assert_eq!(live.status, ExecuteStatus::Ok, "cell: {:?}", live.stderr);
+    assert_eq!(live.result.as_deref(), Some("16777217"));
+
+    // A restart restores everything the payload holds and nothing else:
+    // `small` comes back, `big` does not.
+    manager.kill();
+    let Some(reader_options) = test_options(Some(dir.path())) else {
+        return;
+    };
+    let reader = ReplKernelManager::new(reader_options);
+    reader
+        .start(KernelStartOptions::default())
+        .await
+        .expect("kernel must start");
+    let restore = reader.restore_state().await.expect("restore");
+    assert!(restore.restored.iter().any(|name| name == "small"));
+    assert!(!restore.restored.iter().any(|name| name == "big"));
+    let gone = execute(&reader, "big").await;
     assert_ne!(
         gone.status,
         ExecuteStatus::Ok,
-        "big must be gone from the namespace"
+        "the over-cap value must not come back"
     );
-    manager.kill();
+    reader.kill();
 }
 
 #[tokio::test]
