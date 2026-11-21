@@ -304,17 +304,108 @@ const CORPUS: &[&[&str]] = &[
 ];
 
 fn ts_binary() -> Option<PathBuf> {
-    if let Ok(path) = std::env::var("PA_TS_BINARY") {
+    let result = if let Some(path) = std::env::var_os("PA_TS_BINARY") {
         let path = PathBuf::from(path);
-        return path.exists().then_some(path);
+        if path.is_file() {
+            Ok(path)
+        } else {
+            Err(format!(
+                "searched PA_TS_BINARY={}; found no reference file",
+                path.display()
+            ))
+        }
+    } else {
+        ts_binary_on_path(&std::env::var_os("PATH").unwrap_or_default())
+    };
+    match result {
+        Ok(path) => {
+            let source = if std::env::var_os("PA_TS_BINARY").is_some() {
+                "PA_TS_BINARY (explicit override)"
+            } else {
+                "PATH (TypeScript launcher marker verified)"
+            };
+            eprintln!("TS reference: {} via {source}", path.display());
+            Some(path)
+        }
+        Err(reason) => {
+            eprintln!("SKIPPED: {reason}; set PA_TS_BINARY to the TypeScript reference");
+            None
+        }
     }
-    let found = Command::new("which")
-        .arg("prime-agent")
-        .output()
-        .ok()
-        .filter(|out| out.status.success())?;
-    let path = String::from_utf8_lossy(&found.stdout).trim().to_string();
-    (!path.is_empty()).then(|| PathBuf::from(path))
+}
+
+fn ts_binary_on_path(search_path: &std::ffi::OsStr) -> Result<PathBuf, String> {
+    use std::os::unix::fs::PermissionsExt as _;
+
+    // The pinned TS Nix package launches this bundled JavaScript entry point.
+    // Versions and executable names are shared with Rust and are not provenance.
+    const TS_ENTRY_POINT: &str = "/packages/coding-agent/dist/bundle/cli.js";
+
+    let searched = format!(
+        "searched PATH={} for prime-agent",
+        search_path.to_string_lossy()
+    );
+    let path = std::env::split_paths(search_path)
+        .map(|dir| dir.join("prime-agent"))
+        .find(|path| {
+            path.metadata().is_ok_and(|metadata| {
+                metadata.is_file() && metadata.permissions().mode() & 0o111 != 0
+            })
+        })
+        .ok_or_else(|| format!("{searched}; found no executable"))?;
+    let resolved = path
+        .canonicalize()
+        .map_err(|error| format!("{searched}; found {}; rejected: {error}", path.display()))?;
+    let found = format!(
+        "{searched}; found {} -> {}",
+        path.display(),
+        resolved.display()
+    );
+    let contents = std::fs::read(&resolved)
+        .map_err(|error| format!("{found}; rejected: cannot read launcher: {error}"))?;
+    if contents.starts_with(b"#!") && String::from_utf8_lossy(&contents).contains(TS_ENTRY_POINT) {
+        return Ok(path);
+    }
+    let kind = if contents.starts_with(b"\x7fELF") {
+        "ELF executable, not a TypeScript launcher"
+    } else {
+        "missing TypeScript launcher marker"
+    };
+    Err(format!("{found}; rejected: {kind} ({TS_ENTRY_POINT})"))
+}
+
+#[test]
+fn path_reference_rejects_rust_binary() {
+    let directory = tempfile::tempdir().unwrap();
+    let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
+    let candidate = directory.path().join("prime-agent");
+    std::os::unix::fs::symlink(&rust, &candidate).unwrap();
+    let error = ts_binary_on_path(directory.path().as_os_str()).unwrap_err();
+    assert!(error.contains(&format!(
+        "searched PATH={} for prime-agent",
+        directory.path().display()
+    )));
+    assert!(error.contains(&candidate.display().to_string()));
+    assert!(error.contains(&rust.canonicalize().unwrap().display().to_string()));
+    assert!(error.contains("ELF executable, not a TypeScript launcher"));
+}
+
+#[test]
+fn path_reference_accepts_typescript_launcher_marker() {
+    use std::os::unix::fs::PermissionsExt as _;
+
+    let directory = tempfile::tempdir().unwrap();
+    let candidate = directory.path().join("prime-agent");
+    std::fs::write(
+        &candidate,
+        "#!/bin/sh\nexec node /reference/lib/prime-agent/packages/coding-agent/dist/bundle/cli.js \"$@\"\n",
+    )
+    .unwrap();
+    std::fs::set_permissions(&candidate, std::fs::Permissions::from_mode(0o755)).unwrap();
+    assert_eq!(
+        ts_binary_on_path(directory.path().as_os_str()),
+        Ok(candidate)
+    );
 }
 
 struct InvocationOutput {
@@ -639,7 +730,6 @@ fn native_cli_contract_fixtures() {
 #[test]
 fn differential_corpus_matches_ts_binary() {
     let Some(ts) = ts_binary() else {
-        eprintln!("SKIPPED: TS prime-agent binary not found (set PA_TS_BINARY)");
         return;
     };
     let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
@@ -716,7 +806,6 @@ fn run_with_env(
 #[test]
 fn differential_env_flag_cases_match_ts_binary() {
     let Some(ts) = ts_binary() else {
-        eprintln!("SKIPPED: TS prime-agent binary not found (set PA_TS_BINARY)");
         return;
     };
     let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
@@ -788,7 +877,6 @@ fn exported_css_vars(html: &str) -> Vec<String> {
 #[test]
 fn differential_session_export_matches_ts_binary() {
     let Some(ts) = ts_binary() else {
-        eprintln!("SKIPPED: TS prime-agent binary not found (set PA_TS_BINARY)");
         return;
     };
     let rust = PathBuf::from(env!("CARGO_BIN_EXE_prime-agent"));
