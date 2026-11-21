@@ -53,6 +53,57 @@ class ChildOwnership(unittest.TestCase):
         self.assertFalse({signal.SIGINT, signal.SIGTERM} & set(json.loads(stdout)))
         self.assertFalse(children.active)
 
+    def test_launcher_child_can_create_its_own_session(self):
+        children = Children()
+        pid_file = self.cwd / "binary.pid"
+        launcher = Path(__file__).with_name("test_timing_launcher.py")
+        code = "import json, os; os.setsid(); print(json.dumps({'pid': os.getpid(), 'sid': os.getsid(0)}))"
+        child = children.spawn(
+            [sys.executable, "-I", str(launcher), "--pid-file", str(pid_file), "--",
+             sys.executable, "-I", "-c", code], cwd=self.cwd, env=self.env,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            children.resume_signals()
+            stdout, stderr = child.communicate()
+        finally:
+            child.wait()
+            children.complete(child)
+        self.assertEqual((child.returncode, stderr), (0, ""))
+        actual_pid = int(pid_file.read_text())
+        self.assertNotEqual(actual_pid, child.pid)
+        self.assertEqual(json.loads(stdout), {"pid": actual_pid, "sid": actual_pid})
+
+    def test_launcher_forwards_term_to_child_in_separate_session(self):
+        children = Children()
+        pid_file = self.cwd / "binary.pid"
+        launcher = Path(__file__).with_name("test_timing_launcher.py")
+        child = children.spawn(
+            [sys.executable, "-I", str(launcher), "--pid-file", str(pid_file), "--",
+             sys.executable, "-I", "-c", "import os, signal; os.setsid(); print('ready', flush=True); signal.pause()"],
+            cwd=self.cwd, env=self.env, stdout=subprocess.PIPE, text=True)
+
+        def reap():
+            try:
+                return child.wait()
+            finally:
+                children.complete(child)
+
+        try:
+            with ThreadPoolExecutor(max_workers=1) as workers:
+                future = workers.submit(reap)
+                try:
+                    children.resume_signals()
+                    self.assertEqual(child.stdout.readline(), "ready\n")
+                    actual_pid = int(pid_file.read_text())
+                    self.assertEqual(os.getsid(actual_pid), actual_pid)
+                    self.assertNotEqual(actual_pid, child.pid)
+                finally:
+                    children.cancel()
+                self.assertEqual(future.result(), -signal.SIGTERM)
+            self.assertFalse(children.active)
+        finally:
+            child.stdout.close()
+
     def test_cancel_signals_only_tracked_group_and_owner_reaps(self):
         children = Children()
         child = children.spawn(

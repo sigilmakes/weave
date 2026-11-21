@@ -16,6 +16,7 @@ import re
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 from threading import Event, RLock, current_thread, main_thread
@@ -267,7 +268,10 @@ def execute(target, repo, ambient, run_dir, disabled, children):
         target["inventory"], target["ignored"] = inventory(
             target["binary"], cwd, env, directory, target["commands"], children)
         target["expected_nonignored_count"] = len(set(target["inventory"]) - set(target["ignored"]))
-        command = [target["binary"]]
+        pid_file = private / "binary.pid"
+        command = [sys.executable, "-I", str(Path(__file__).with_name("test_timing_launcher.py")),
+                   "--pid-file", str(pid_file), "--", target["binary"]]
+        target["pid_file"] = str(pid_file)
         target["commands"].append({"command": command, "cwd": str(cwd), "environment": env})
         with (directory / "harness.log").open("w") as output:
             started = time.monotonic_ns()
@@ -275,7 +279,7 @@ def execute(target, repo, ambient, run_dir, disabled, children):
             target["start_monotonic_ns"] = started
             child = children.spawn(command, cwd=cwd, env=env, stdout=output,
                                    stderr=subprocess.STDOUT)
-            target["pid"] = child.pid
+            target["launcher_pid"] = child.pid
             try:
                 children.resume_signals()
                 _, status, usage = os.wait4(child.pid, 0)
@@ -293,6 +297,7 @@ def execute(target, repo, ambient, run_dir, disabled, children):
             target.update(exit_code=child.returncode, elapsed_ns=time.monotonic_ns() - started,
                           end_unix_ns=time.time_ns(), cpu_user_seconds=usage.ru_utime,
                           cpu_system_seconds=usage.ru_stime)
+        target["pid"] = int(pid_file.read_text().strip())
         try:
             target["statuses"] = statuses((directory / "harness.log").read_text(),
                                           target["inventory"], target["ignored"])
@@ -300,7 +305,7 @@ def execute(target, repo, ambient, run_dir, disabled, children):
         except ValueError as error:
             target["statuses"] = []
             target["errors"].append(str(error))
-        target["records"] = read_records(timing_dir, target["binary"], child.pid)
+        target["records"] = read_records(timing_dir, target["binary"], target["pid"])
         target["errors"].extend(reconcile(target, target["records"], disabled))
         if child.returncode:
             target["errors"].append(f"binary exited {child.returncode}")
